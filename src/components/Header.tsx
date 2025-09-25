@@ -13,11 +13,11 @@ export const Header = () => {
   const { getCartCount } = useCart();
 
   const navigation = [
-    { name: "Electronics", href: "#electronics" },
-    { name: "Fashion", href: "#fashion" },
-    { name: "Home", href: "#home" },
-    { name: "Sports", href: "#sports" },
-    { name: "Deals", href: "#deals" },
+    { name: "Fruits & Vegetables", href: "#fresh" },
+    { name: "Dairy & Breakfast", href: "#dairy" },
+    { name: "Snacks & Beverages", href: "#snacks" },
+    { name: "Personal Care", href: "#care" },
+    { name: "Household", href: "#household" },
   ];
 
   return (
@@ -28,10 +28,10 @@ export const Header = () => {
             {/* Logo */}
             <div className="flex items-center space-x-2">
               <div className="flex items-center justify-center w-8 h-8 gradient-primary rounded-lg">
-                <span className="text-white font-bold text-sm">SM</span>
+                <span className="text-white font-bold text-sm">Z</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                SuperMart
+                Zepto
               </span>
             </div>
 
@@ -53,7 +53,7 @@ export const Header = () => {
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search products..."
+                  placeholder="Search for groceries & essentials..."
                   className="pl-10 pr-4 w-full"
                 />
               </div>
@@ -107,8 +107,8 @@ export const Header = () => {
                 {/* Mobile Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search products..."
+                   <Input
+                    placeholder="Search for groceries & essentials..."
                     className="pl-10 pr-4 w-full"
                   />
                 </div>

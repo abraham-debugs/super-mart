@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SuperMart E-commerce Design System - All colors MUST be HSL */
+/* Zepto Quick Commerce Design System - All colors MUST be HSL */
 
 @layer base {
   :root {
@@ -10,15 +10,15 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     
-    /* Brand Primary - Professional Blue */
-    --primary: 217.2 91.2% 59.8%;
+    /* Brand Primary - Zepto Green */
+    --primary: 142.1 70.6% 45.3%;
     --primary-foreground: 0 0% 100%;
-    --primary-dark: 217.2 91.2% 45%;
+    --primary-dark: 142.1 70.6% 35%;
     
-    /* Brand Secondary - Modern Purple */
-    --secondary: 264.5 82.5% 70%;
+    /* Brand Secondary - Fresh Green */
+    --secondary: 120 60% 50%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-dark: 264.5 82.5% 55%;
+    --secondary-dark: 120 60% 40%;
     
     /* Success & Commerce */
     --success: 142.1 76.2% 36.3%;
@@ -46,14 +46,14 @@
     --rating-color: 45.4 93.4% 47.5%;
     
     /* Premium Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217.2 91.2% 59.8%), hsl(264.5 82.5% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(264.5 82.5% 70%), hsl(217.2 91.2% 59.8%));
-    --gradient-hero: linear-gradient(135deg, hsl(217.2 91.2% 59.8% / 0.1), hsl(264.5 82.5% 70% / 0.1));
+    --gradient-primary: linear-gradient(135deg, hsl(142.1 70.6% 45.3%), hsl(120 60% 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(120 60% 50%), hsl(142.1 70.6% 45.3%));
+    --gradient-hero: linear-gradient(135deg, hsl(142.1 70.6% 45.3% / 0.1), hsl(120 60% 50% / 0.1));
     
     /* Shadows */
-    --shadow-card: 0 4px 6px -1px hsl(217.2 91.2% 59.8% / 0.1);
-    --shadow-card-hover: 0 10px 25px -3px hsl(217.2 91.2% 59.8% / 0.2);
-    --shadow-primary: 0 10px 30px -10px hsl(217.2 91.2% 59.8% / 0.3);
+    --shadow-card: 0 4px 6px -1px hsl(142.1 70.6% 45.3% / 0.1);
+    --shadow-card-hover: 0 10px 25px -3px hsl(142.1 70.6% 45.3% / 0.2);
+    --shadow-primary: 0 10px 30px -10px hsl(142.1 70.6% 45.3% / 0.3);
 
     --radius: 0.5rem;
 
@@ -80,14 +80,14 @@
     --foreground: 210 40% 98%;
     
     /* Brand Primary - Adjusted for Dark */
-    --primary: 217.2 91.2% 65%;
+    --primary: 142.1 70.6% 55%;
     --primary-foreground: 222.2 84% 4.9%;
-    --primary-dark: 217.2 91.2% 50%;
+    --primary-dark: 142.1 70.6% 45%;
     
     /* Brand Secondary - Adjusted for Dark */
-    --secondary: 264.5 82.5% 75%;
+    --secondary: 120 60% 60%;
     --secondary-foreground: 222.2 84% 4.9%;
-    --secondary-dark: 264.5 82.5% 60%;
+    --secondary-dark: 120 60% 50%;
     
     /* Success & Commerce - Dark Mode */
     --success: 142.1 76.2% 45%;
@@ -115,14 +115,14 @@
     --rating-color: 45.4 93.4% 55%;
     
     /* Premium Gradients - Dark Mode */
-    --gradient-primary: linear-gradient(135deg, hsl(217.2 91.2% 65%), hsl(264.5 82.5% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(264.5 82.5% 75%), hsl(217.2 91.2% 65%));
-    --gradient-hero: linear-gradient(135deg, hsl(217.2 91.2% 65% / 0.1), hsl(264.5 82.5% 75% / 0.1));
+    --gradient-primary: linear-gradient(135deg, hsl(142.1 70.6% 55%), hsl(120 60% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(120 60% 60%), hsl(142.1 70.6% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(142.1 70.6% 55% / 0.1), hsl(120 60% 60% / 0.1));
     
     /* Shadows - Dark Mode */
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
-    --shadow-card-hover: 0 10px 25px -3px hsl(217.2 91.2% 65% / 0.2);
-    --shadow-primary: 0 10px 30px -10px hsl(217.2 91.2% 65% / 0.3);
+    --shadow-card-hover: 0 10px 25px -3px hsl(142.1 70.6% 55% / 0.2);
+    --shadow-primary: 0 10px 30px -10px hsl(142.1 70.6% 55% / 0.3);
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

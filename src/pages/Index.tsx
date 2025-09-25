@@ -14,7 +14,7 @@ const Index = () => {
         
         {/* Featured Products */}
         <ProductGrid 
-          title="Featured Products" 
+          title="Fresh Picks for You" 
           showFilters={false} 
           productsToShow={featuredProducts}
         />
@@ -22,14 +22,14 @@ const Index = () => {
         {/* Best Sellers */}
         <section className="py-12 lg:py-16 bg-muted/50">
           <ProductGrid 
-            title="Best Sellers" 
+            title="Most Loved Items" 
             showFilters={false} 
             productsToShow={bestSellers}
           />
         </section>
         
         {/* All Products */}
-        <ProductGrid title="All Products" />
+        <ProductGrid title="All Groceries & Essentials" />
       </main>
     </div>
   );
