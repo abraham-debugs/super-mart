@@ -2,39 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* SuperMart E-commerce Design System - All colors MUST be HSL */
 
 @layer base {
   :root {
+    /* Core Brand Colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
+    
+    /* Brand Primary - Professional Blue */
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 0 0% 100%;
+    --primary-dark: 217.2 91.2% 45%;
+    
+    /* Brand Secondary - Modern Purple */
+    --secondary: 264.5 82.5% 70%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-dark: 264.5 82.5% 55%;
+    
+    /* Success & Commerce */
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142.1 76.2% 95%;
+    
+    /* Neutral System */
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 217.2 91.2% 59.8%;
+    
+    /* E-commerce Specific */
+    --price-color: 142.1 76.2% 36.3%;
+    --discount-color: 0 84.2% 60.2%;
+    --rating-color: 45.4 93.4% 47.5%;
+    
+    /* Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217.2 91.2% 59.8%), hsl(264.5 82.5% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(264.5 82.5% 70%), hsl(217.2 91.2% 59.8%));
+    --gradient-hero: linear-gradient(135deg, hsl(217.2 91.2% 59.8% / 0.1), hsl(264.5 82.5% 70% / 0.1));
+    
+    /* Shadows */
+    --shadow-card: 0 4px 6px -1px hsl(217.2 91.2% 59.8% / 0.1);
+    --shadow-card-hover: 0 10px 25px -3px hsl(217.2 91.2% 59.8% / 0.2);
+    --shadow-primary: 0 10px 30px -10px hsl(217.2 91.2% 59.8% / 0.3);
 
     --radius: 0.5rem;
 
@@ -56,33 +75,55 @@ All colors MUST be HSL.
   }
 
   .dark {
+    /* Core Brand Colors - Dark Mode */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
+    
+    /* Brand Primary - Adjusted for Dark */
+    --primary: 217.2 91.2% 65%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --primary-dark: 217.2 91.2% 50%;
+    
+    /* Brand Secondary - Adjusted for Dark */
+    --secondary: 264.5 82.5% 75%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary-dark: 264.5 82.5% 60%;
+    
+    /* Success & Commerce - Dark Mode */
+    --success: 142.1 76.2% 45%;
+    --success-foreground: 222.2 84% 4.9%;
+    --success-light: 142.1 76.2% 10%;
+    
+    /* Neutral System - Dark Mode */
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 60%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 217.2 91.2% 65%;
+    
+    /* E-commerce Specific - Dark Mode */
+    --price-color: 142.1 76.2% 50%;
+    --discount-color: 0 84.2% 65%;
+    --rating-color: 45.4 93.4% 55%;
+    
+    /* Premium Gradients - Dark Mode */
+    --gradient-primary: linear-gradient(135deg, hsl(217.2 91.2% 65%), hsl(264.5 82.5% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(264.5 82.5% 75%), hsl(217.2 91.2% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(217.2 91.2% 65% / 0.1), hsl(264.5 82.5% 75% / 0.1));
+    
+    /* Shadows - Dark Mode */
+    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 10px 25px -3px hsl(217.2 91.2% 65% / 0.2);
+    --shadow-primary: 0 10px 30px -10px hsl(217.2 91.2% 65% / 0.3);
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -94,9 +135,49 @@ All colors MUST be HSL.
   }
 }
 
+/* E-commerce Utility Classes */
+@layer components {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  .shadow-primary {
+    box-shadow: var(--shadow-primary);
+  }
+  
+  .price-color {
+    color: hsl(var(--price-color));
+  }
+  
+  .discount-color {
+    color: hsl(var(--discount-color));
+  }
+  
+  .rating-color {
+    color: hsl(var(--rating-color));
+  }
+}
+
+/* Smooth Transitions */
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
   }
 
   body {
