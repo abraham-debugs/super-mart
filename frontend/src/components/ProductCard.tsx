@@ -28,17 +28,17 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="group relative overflow-hidden hover:shadow-card-hover transition-all duration-300 transform hover:-translate-y-1">
+    <Card className="group relative overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
       {/* Badges */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
         {product.isNew && (
-          <Badge className="bg-success text-success-foreground">New</Badge>
+          <Badge className="bg-green-500 text-white text-xs px-2 py-1 rounded">New</Badge>
         )}
         {product.isBestSeller && (
-          <Badge className="bg-primary text-primary-foreground">Best Seller</Badge>
+          <Badge className="bg-blue-500 text-white text-xs px-2 py-1 rounded">Best</Badge>
         )}
         {product.discount && (
-          <Badge className="bg-destructive text-destructive-foreground">
+          <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded">
             -{product.discount}%
           </Badge>
         )}
@@ -48,7 +48,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+        className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-white/90 hover:bg-white border border-gray-200 hover:scale-110 h-8 w-8"
         onClick={handleAddToWishlist}
       >
         <Heart className="h-4 w-4" />
@@ -56,7 +56,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
       <CardContent className="p-0">
         {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden bg-muted">
+        <div className="relative aspect-square overflow-hidden bg-gray-100">
           <img
             src={product.image}
             alt={product.name}
@@ -64,46 +64,30 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           />
           
           {!product.inStock && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-              <span className="text-muted-foreground font-medium">Out of Stock</span>
+            <div className="absolute inset-0 bg-white/90 flex items-center justify-center">
+              <span className="text-gray-500 font-medium text-sm">Out of Stock</span>
             </div>
           )}
         </div>
 
         {/* Product Info */}
-        <div className="p-4">
-          <div className="mb-2">
-            <h3 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h3>
-            <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+        <div className="p-3 space-y-2">
+          <div className="space-y-1">
+            <h3 className="font-medium text-sm line-clamp-2 leading-tight text-gray-900">{product.name}</h3>
+            <p className="text-xs text-gray-500 line-clamp-1 leading-tight">{product.description}</p>
           </div>
 
           {/* Rating */}
-          <div className="flex items-center gap-1 mb-3">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3 w-3 ${
-                    i < Math.floor(product.rating)
-                      ? "fill-rating text-rating"
-                      : "fill-muted text-muted"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              ({product.reviews})
-            </span>
-          </div>
+         
 
           {/* Price */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg text-price">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="font-bold text-sm text-gray-900">
                 {formatPrice(product.price)}
               </span>
               {product.originalPrice && (
-                <span className="text-sm text-muted-foreground line-through">
+                <span className="text-xs text-gray-400 line-through">
                   {formatPrice(product.originalPrice)}
                 </span>
               )}
@@ -114,11 +98,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             onClick={() => addToCart(product)}
             disabled={!product.inStock}
-            className="w-full bg-primary hover:bg-primary-dark text-primary-foreground"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
             size="sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add to Cart
+            <Plus className="h-4 w-4 mr-1" />
+            <span className="text-sm">Add to Cart</span>
           </Button>
         </div>
       </CardContent>

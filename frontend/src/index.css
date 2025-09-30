@@ -1,0 +1,419 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Zepto Quick Commerce Design System - All colors MUST be HSL */
+
+@layer base {
+  :root {
+    /* Core Brand Colors - Soft & Modern */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    /* Brand Primary - Soft Mint */
+    --primary: 158 64% 52%;
+    --primary-foreground: 0 0% 100%;
+    --primary-dark: 158 64% 42%;
+    --primary-light: 158 64% 95%;
+    
+    /* Brand Secondary - Lavender */
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-dark: 262 83% 48%;
+    --secondary-light: 262 83% 95%;
+    
+    /* Accent Colors - Soft Pastels */
+    --accent: 280 100% 70%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 280 100% 95%;
+    
+    /* Success & Commerce - Soft Green */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 95%;
+    
+    /* Warning - Soft Orange */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 95%;
+    
+    /* Neutral System - Warmer Tones */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent-muted: 240 4.8% 95.9%;
+    --accent-muted-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83% 58%;
+    
+    /* E-commerce Specific - Soft Colors */
+    --price-color: 158 64% 42%;
+    --discount-color: 0 84.2% 60.2%;
+    --rating-color: 38 92% 50%;
+    
+    /* Premium Gradients - Soft & Unique */
+    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%), hsl(262 83% 58%));
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 100% 70%));
+    --gradient-hero: linear-gradient(135deg, hsl(158 64% 52% / 0.08), hsl(262 83% 58% / 0.08));
+    --gradient-card: linear-gradient(135deg, hsl(158 64% 52% / 0.05), hsl(262 83% 58% / 0.05));
+    --gradient-accent: linear-gradient(135deg, hsl(280 100% 70% / 0.1), hsl(262 83% 58% / 0.1));
+    
+    /* Soft Shadows */
+    --shadow-card: 0 2px 8px -2px hsl(158 64% 52% / 0.08);
+    --shadow-card-hover: 0 8px 25px -5px hsl(158 64% 52% / 0.15);
+    --shadow-primary: 0 4px 14px -2px hsl(158 64% 52% / 0.2);
+    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Core Brand Colors - Dark Mode with Soft Tones */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    
+    /* Brand Primary - Soft Mint Dark */
+    --primary: 158 64% 62%;
+    --primary-foreground: 240 10% 3.9%;
+    --primary-dark: 158 64% 52%;
+    --primary-light: 158 64% 15%;
+    
+    /* Brand Secondary - Lavender Dark */
+    --secondary: 262 83% 68%;
+    --secondary-foreground: 240 10% 3.9%;
+    --secondary-dark: 262 83% 58%;
+    --secondary-light: 262 83% 15%;
+    
+    /* Accent Colors - Soft Pastels Dark */
+    --accent: 280 100% 80%;
+    --accent-foreground: 240 10% 3.9%;
+    --accent-light: 280 100% 15%;
+    
+    /* Success & Commerce - Dark Mode */
+    --success: 142 76% 46%;
+    --success-foreground: 240 10% 3.9%;
+    --success-light: 142 76% 15%;
+    
+    /* Warning - Dark Mode */
+    --warning: 38 92% 60%;
+    --warning-foreground: 240 10% 3.9%;
+    --warning-light: 38 92% 15%;
+    
+    /* Neutral System - Dark Mode */
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent-muted: 240 3.7% 15.9%;
+    --accent-muted-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 262 83% 68%;
+    
+    /* E-commerce Specific - Dark Mode */
+    --price-color: 158 64% 52%;
+    --discount-color: 0 84.2% 65%;
+    --rating-color: 38 92% 60%;
+    
+    /* Premium Gradients - Dark Mode */
+    --gradient-primary: linear-gradient(135deg, hsl(158 64% 62%), hsl(262 83% 68%));
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 68%), hsl(280 100% 80%));
+    --gradient-hero: linear-gradient(135deg, hsl(158 64% 62% / 0.1), hsl(262 83% 68% / 0.1));
+    --gradient-card: linear-gradient(135deg, hsl(158 64% 62% / 0.05), hsl(262 83% 68% / 0.05));
+    --gradient-accent: linear-gradient(135deg, hsl(280 100% 80% / 0.1), hsl(262 83% 68% / 0.1));
+    
+    /* Shadows - Dark Mode */
+    --shadow-card: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 8px 25px -5px hsl(158 64% 62% / 0.15);
+    --shadow-primary: 0 4px 14px -2px hsl(158 64% 62% / 0.2);
+    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.2);
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+/* E-commerce Utility Classes */
+@layer components {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  .shadow-primary {
+    box-shadow: var(--shadow-primary);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .price-color {
+    color: hsl(var(--price-color));
+  }
+  
+  .discount-color {
+    color: hsl(var(--discount-color));
+  }
+  
+  .rating-color {
+    color: hsl(var(--rating-color));
+  }
+  
+  /* Unique Visual Elements */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .soft-border {
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+  
+  .bg-pattern {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--primary) / 0.08) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+  
+  .bg-pattern-dots {
+    background-image: radial-gradient(circle at 2px 2px, hsl(var(--secondary) / 0.06) 1px, transparent 0);
+    background-size: 32px 32px;
+  }
+  
+  .bg-pattern-grid {
+    background-image: 
+      linear-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  
+  .floating-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .bounce-in {
+    animation: bounceIn 0.6s ease-out;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.8s ease-out;
+  }
+  
+  .scale-in {
+    animation: scaleIn 0.4s ease-out;
+  }
+  
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+  
+  .wiggle {
+    animation: wiggle 0.5s ease-in-out;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  
+  @keyframes scaleIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+    50% { box-shadow: 0 0 0 10px hsl(var(--primary) / 0); }
+  }
+  
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+  }
+  
+  /* Hide scrollbars for category carousel */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Glassmorphism Navbar */
+  .glassmorphism-navbar {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    transition: all 0.3s ease;
+  }
+  
+  .glassmorphism-navbar:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+  }
+  
+  /* Dynamic Island Style */
+  .dynamic-island {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .dynamic-island::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.1) 0%, 
+      rgba(255, 255, 255, 0.05) 50%, 
+      rgba(255, 255, 255, 0.1) 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  
+  /* Enhanced Glassmorphism for Dark Mode */
+  .dark .glassmorphism-navbar {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  }
+  
+  .dark .glassmorphism-navbar:hover {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Floating Animation for Dynamic Island */
+  .floating-navbar {
+    animation: floatNavbar 6s ease-in-out infinite;
+  }
+  
+  @keyframes floatNavbar {
+    0%, 100% { 
+      transform: translateY(0px) scale(1); 
+    }
+    50% { 
+      transform: translateY(-2px) scale(1.01); 
+    }
+  }
+  
+  /* Enhanced Glassmorphism with Gradient */
+  .glassmorphism-navbar {
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.1) 0%, 
+      rgba(255, 255, 255, 0.05) 50%, 
+      rgba(255, 255, 255, 0.1) 100%);
+  }
+  
+  /* Interactive Hover Effects */
+  .glassmorphism-navbar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.6);
+  }
+}
+
+/* Smooth Transitions */
+@layer base {
+  * {
+    @apply border-border transition-colors duration-200;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

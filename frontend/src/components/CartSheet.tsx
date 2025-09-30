@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
+import { useNavigate } from "react-router-dom";
 
 interface CartSheetProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CartSheetProps {
 }
 
 export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
+  const navigate = useNavigate();
   const { items, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
 
   const formatPrice = (price: number) => {
@@ -138,6 +140,10 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
               <Button 
                 className="w-full bg-primary hover:bg-primary-dark text-primary-foreground"
                 size="lg"
+                onClick={() => {
+                  onClose();
+                  navigate('/checkout');
+                }}
               >
                 Proceed to Checkout
               </Button>
