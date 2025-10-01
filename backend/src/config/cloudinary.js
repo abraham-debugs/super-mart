@@ -2,7 +2,8 @@ import { v2 as cloudinary } from "cloudinary";
 
 export function configureCloudinary({ cloudName, apiKey, apiSecret }) {
   if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error("Cloudinary credentials are not set");
+    console.warn("Cloudinary credentials are missing; image uploads will fail.");
+    return cloudinary;
   }
   cloudinary.config({
     cloud_name: cloudName,

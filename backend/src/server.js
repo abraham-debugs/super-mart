@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { connectToDatabase } from "./config/db.js";
 import { configureCloudinary } from "./config/cloudinary.js";
 import adminRoutes from "./routes/admin.js";
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 
@@ -22,12 +23,20 @@ app.get("/health", (_req, res) => {
 
 // Routes
 app.use("/api/admin", adminRoutes);
+app.use("/api/auth", authRoutes);
 
 const port = process.env.PORT || 5000;
 
 async function bootstrap() {
   try {
-    await connectToDatabase(process.env.MONGODB_URI);
+    const conn = await connectToDatabase(process.env.MONGODB_URI);
+    if (conn && conn.client && conn.client.s && conn.client.s.url) {
+      console.log("MongoDB connected:", conn.client.s.url);
+    } else if (conn && conn.host) {
+      console.log("MongoDB connected:", conn.host);
+    } else {
+      console.log("MongoDB connected");
+    }
     configureCloudinary({
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,

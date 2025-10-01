@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   Package, 
   ShoppingCart, 
@@ -22,6 +22,7 @@ import {
   DollarSign,
   Activity,
   Calendar,
+  Clock,
   Download,
   RefreshCw
 } from "lucide-react";
@@ -36,8 +37,84 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("add-product");
+  // Categories (backend-driven)
+  const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string }>>([]);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryFile, setNewCategoryFile] = useState<File | null>(null);
+  const [catSubmitting, setCatSubmitting] = useState(false);
+  const [catError, setCatError] = useState<string | null>(null);
+  const [editOpenForId, setEditOpenForId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editFile, setEditFile] = useState<File | null>(null);
+
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/categories`);
+      if (!res.ok) throw new Error("Failed to load categories");
+      const data = await res.json();
+      setCategoryRows(data);
+    } catch (err: any) {
+      console.error("Load categories error:", err);
+    }
+  }
+
+  function openEdit(category: { _id: string; name: string }) {
+    setEditOpenForId(category._id);
+    setEditName(category.name);
+    setEditFile(null);
+  }
+
+  async function handleEditCategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editOpenForId) return;
+    const form = new FormData();
+    if (editName) form.append("name", editName);
+    if (editFile) form.append("image", editFile);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/categories/${editOpenForId}`, { method: "PUT", body: form });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to update category");
+      setEditOpenForId(null);
+      await loadCategories();
+    } catch (err) {
+      console.error("Update category error:", err);
+    }
+  }
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  async function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault();
+    setCatError(null);
+    if (!newCategoryName || !newCategoryFile) {
+      setCatError("Name and image are required");
+      return;
+    }
+    setCatSubmitting(true);
+    try {
+      const form = new FormData();
+      form.append("name", newCategoryName);
+      form.append("image", newCategoryFile);
+      const res = await fetch(`${API_BASE}/api/admin/categories`, { method: "POST", body: form });
+      const data = await res.json().then(v => v).catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to add category");
+      setNewCategoryName("");
+      setNewCategoryFile(null);
+      setIsAddCategoryOpen(false);
+      await loadCategories();
+    } catch (err: any) {
+      setCatError(err.message || "Failed to add category");
+    } finally {
+      setCatSubmitting(false);
+    }
+  }
 
   // Sample data
   const categories = [
@@ -47,12 +124,22 @@ const Admin = () => {
     { id: 4, name: "Bakery", products: 15, status: "inactive" },
   ];
 
-  const products = [
-    { id: 1, name: "Fresh Apples", category: "Fruits & Vegetables", price: 2.99, stock: 50, status: "active" },
-    { id: 2, name: "Organic Milk", category: "Dairy & Eggs", price: 3.49, stock: 25, status: "active" },
-    { id: 3, name: "Chicken Breast", category: "Meat & Seafood", price: 8.99, stock: 0, status: "out_of_stock" },
-    { id: 4, name: "Whole Wheat Bread", category: "Bakery", price: 2.49, stock: 30, status: "active" },
-  ];
+  const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+
+  async function loadProducts() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/products`);
+      if (!res.ok) throw new Error("Failed to load products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Load products error:", err);
+    }
+  }
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   const orders = [
     { id: 1001, customer: "John Doe", total: 45.99, status: "pending", date: "2024-01-15", items: 5, delivery: "Not Assigned" },
@@ -244,109 +331,7 @@ const Admin = () => {
                 <CardTitle className="text-2xl font-bold text-gray-800">Add Product</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Product Name (English) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="product-name-en" className="text-sm font-medium text-gray-700">
-                      Product Name (English)
-                    </Label>
-                    <Input 
-                      id="product-name-en" 
-                      placeholder="Enter product name in English"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Product Name (Tamil) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="product-name-tamil" className="text-sm font-medium text-gray-700">
-                      Product Name (Tamil)
-                    </Label>
-                    <Input 
-                      id="product-name-tamil" 
-                      placeholder="Enter product name in Tamil"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Price */}
-                  <div className="space-y-2">
-                    <Label htmlFor="price" className="text-sm font-medium text-gray-700">
-                      Price (₹)
-                    </Label>
-                    <Input 
-                      id="price" 
-                      type="number"
-                      placeholder="0.00"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Original Price */}
-                  <div className="space-y-2">
-                    <Label htmlFor="original-price" className="text-sm font-medium text-gray-700">
-                      Original Price (₹)
-                    </Label>
-                    <Input 
-                      id="original-price" 
-                      type="number"
-                      placeholder="0.00"
-                      className="w-full"
-                    />
-                    <p className="text-xs text-gray-500">(Optional)</p>
-                  </div>
-
-                  {/* Category */}
-                  <div className="space-y-2">
-                    <Label htmlFor="category" className="text-sm font-medium text-gray-700">
-                      Category
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                        <ChevronDown className="h-4 w-4" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* YouTube Link */}
-                  <div className="space-y-2">
-                    <Label htmlFor="youtube-link" className="text-sm font-medium text-gray-700">
-                      YouTube Link (optional)
-                    </Label>
-                    <Input 
-                      id="youtube-link" 
-                      placeholder="https://youtube.com/..."
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                {/* Image Upload */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Image</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <Button variant="outline" className="mb-2">
-                      Choose File
-                    </Button>
-                    <p className="text-sm text-gray-500">No file chosen</p>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex justify-end">
-                  <Button className="px-8 py-2">
-                    Add Product
-                  </Button>
-                </div>
+                <ProductForm apiBase={API_BASE} categories={categoryRows} onCreated={loadCategories} />
               </CardContent>
             </Card>
           </div>
@@ -371,24 +356,23 @@ const Admin = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>{product.id}</TableCell>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.category}</TableCell>
+                      <TableRow key={product._id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover border" />
+                            <span>{product.nameEn}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{product.categoryName}</TableCell>
                         <TableCell>₹{product.price}</TableCell>
-                        <TableCell>{product.stock}</TableCell>
-                        <TableCell>{getStatusBadge(product.status)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="outline" size="sm">
@@ -413,10 +397,36 @@ const Admin = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Category
-              </Button>
+              <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Category
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Category</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAddCategory} className="space-y-4">
+                    {catError && (
+                      <div className="rounded-md bg-red-50 text-red-600 text-sm px-3 py-2">{catError}</div>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="cat-name">Name</Label>
+                      <Input id="cat-name" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="e.g. Fresh Produce" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cat-image">Image</Label>
+                      <input id="cat-image" type="file" accept="image/*" onChange={(e) => setNewCategoryFile(e.target.files?.[0] || null)} />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
+                      <Button type="submit" disabled={catSubmitting}>{catSubmitting ? "Adding..." : "Add"}</Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <Card>
@@ -424,25 +434,46 @@ const Admin = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
+                      <TableHead>Image</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead>Products</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell>{category.id}</TableCell>
+                    {categoryRows.map((category) => (
+                      <TableRow key={category._id}>
+                        <TableCell>
+                          <img src={category.imageUrl} alt={category.name} className="h-10 w-10 rounded-md object-cover border" />
+                        </TableCell>
                         <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell>{category.products}</TableCell>
-                        <TableCell>{getStatusBadge(category.status)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <Dialog open={editOpenForId === category._id} onOpenChange={(o) => !o && setEditOpenForId(null)}>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => openEdit(category)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Category</DialogTitle>
+                                </DialogHeader>
+                                <form onSubmit={handleEditCategory} className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-name">Name</Label>
+                                    <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-image">Image (optional)</Label>
+                                    <input id="edit-image" type="file" accept="image/*" onChange={(e) => setEditFile(e.target.files?.[0] || null)} />
+                                  </div>
+                                  <div className="flex justify-end gap-2">
+                                    <Button type="button" variant="outline" onClick={() => setEditOpenForId(null)}>Cancel</Button>
+                                    <Button type="submit">Save</Button>
+                                  </div>
+                                </form>
+                              </DialogContent>
+                            </Dialog>
                             <Button variant="outline" size="sm">
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -805,3 +836,96 @@ const Admin = () => {
 };
 
 export default Admin;
+
+// Inline ProductForm component to submit to backend and use real categories
+const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; name: string }>; onCreated: () => void }> = ({ apiBase, categories, onCreated }) => {
+  const [nameEn, setNameEn] = useState("");
+  const [nameTa, setNameTa] = useState("");
+  const [price, setPrice] = useState("");
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [youtubeLink, setYoutubeLink] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!nameEn || !price || !categoryId || !file) {
+      setError("Name, price, category and image are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const form = new FormData();
+      form.append("nameEn", nameEn);
+      if (nameTa) form.append("nameTa", nameTa);
+      form.append("price", price);
+      if (originalPrice) form.append("originalPrice", originalPrice);
+      if (youtubeLink) form.append("youtubeLink", youtubeLink);
+      form.append("categoryId", categoryId);
+      form.append("image", file);
+      const res = await fetch(`${apiBase}/api/admin/products`, { method: "POST", body: form });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to add product");
+      // reset
+      setNameEn(""); setNameTa(""); setPrice(""); setOriginalPrice(""); setYoutubeLink(""); setCategoryId(""); setFile(null);
+      onCreated();
+    } catch (err: any) {
+      setError(err.message || "Failed to add product");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-6">
+      {error && <div className="rounded-md bg-red-50 text-red-600 text-sm px-3 py-2">{error}</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="p-name-en" className="text-sm font-medium text-gray-700">Product Name (English)</Label>
+          <Input id="p-name-en" value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="Enter product name in English" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="p-name-ta" className="text-sm font-medium text-gray-700">Product Name (Tamil)</Label>
+          <Input id="p-name-ta" value={nameTa} onChange={(e) => setNameTa(e.target.value)} placeholder="Enter product name in Tamil" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="p-price" className="text-sm font-medium text-gray-700">Price (₹)</Label>
+          <Input id="p-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="p-original-price" className="text-sm font-medium text-gray-700">Original Price (₹)</Label>
+          <Input id="p-original-price" type="number" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" />
+          <p className="text-xs text-gray-500">(Optional)</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="p-category" className="text-sm font-medium text-gray-700">Category</Label>
+          <Select onValueChange={(val) => setCategoryId(val)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select category" />
+              <ChevronDown className="h-4 w-4" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => (
+                <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="p-youtube" className="text-sm font-medium text-gray-700">YouTube Link (optional)</Label>
+          <Input id="p-youtube" value={youtubeLink} onChange={(e) => setYoutubeLink(e.target.value)} placeholder="https://youtube.com/..." />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="p-image" className="text-sm font-medium text-gray-700">Image</Label>
+        <input id="p-image" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      </div>
+      <div className="flex justify-end">
+        <Button className="px-8 py-2" type="submit" disabled={submitting}>{submitting ? "Adding..." : "Add Product"}</Button>
+      </div>
+    </form>
+  );
+};

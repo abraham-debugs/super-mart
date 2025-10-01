@@ -1,87 +1,29 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  image: string;
-}
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
-const categories: Category[] = [
-  {
-    id: "fruits-vegetables",
-    name: "Fruits & Vegetables",
-    icon: "🥬",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "dairy-bread-eggs",
-    name: "Dairy, Bread & Eggs",
-    icon: "🥛",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "atta-rice-oil",
-    name: "Atta, Rice, Oil & Dals",
-    icon: "🌾",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "meat-fish-eggs",
-    name: "Meat, Fish & Eggs",
-    icon: "🐟",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "masala-dry-fruits",
-    name: "Masala & Dry Fruits",
-    icon: "🥜",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "breakfast-sauces",
-    name: "Breakfast & Sauces",
-    icon: "🍳",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "packaged-food",
-    name: "Packaged Food",
-    icon: "📦",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "zepto-cafe",
-    name: "Zepto Cafe",
-    icon: "☕",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "tea-coffee",
-    name: "Tea, Coffee & More",
-    icon: "🍵",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "ice-cream",
-    name: "Ice Creams & More",
-    icon: "🍦",
-    image: "/api/placeholder/80/80"
-  },
-  {
-    id: "frozen-food",
-    name: "Frozen Food",
-    icon: "🧊",
-    image: "/api/placeholder/80/80"
-  }
+type BackendCategory = { _id: string; name: string; imageUrl: string };
+
+const fallbackCategories: BackendCategory[] = [
+  { _id: "fruits-vegetables", name: "Fruits & Vegetables", imageUrl: "/api/placeholder/80/80" },
+  { _id: "dairy-bread-eggs", name: "Dairy, Bread & Eggs", imageUrl: "/api/placeholder/80/80" },
+  { _id: "atta-rice-oil", name: "Atta, Rice, Oil & Dals", imageUrl: "/api/placeholder/80/80" },
+  { _id: "meat-fish-eggs", name: "Meat, Fish & Eggs", imageUrl: "/api/placeholder/80/80" },
+  { _id: "masala-dry-fruits", name: "Masala & Dry Fruits", imageUrl: "/api/placeholder/80/80" },
+  { _id: "breakfast-sauces", name: "Breakfast & Sauces", imageUrl: "/api/placeholder/80/80" },
+  { _id: "packaged-food", name: "Packaged Food", imageUrl: "/api/placeholder/80/80" },
+  { _id: "tea-coffee", name: "Tea, Coffee & More", imageUrl: "/api/placeholder/80/80" },
+  { _id: "ice-cream", name: "Ice Creams & More", imageUrl: "/api/placeholder/80/80" },
+  { _id: "frozen-food", name: "Frozen Food", imageUrl: "/api/placeholder/80/80" }
 ];
 
 export const CategoryCarousel = () => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<BackendCategory[]>(fallbackCategories);
 
   const checkScrollButtons = () => {
     if (scrollContainerRef.current) {
@@ -103,6 +45,24 @@ export const CategoryCarousel = () => {
       });
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/categories`);
+        if (!res.ok) return;
+        const data: BackendCategory[] = await res.json();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setCategories(data);
+        }
+      } catch (_err) {
+        // keep fallbacks
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="relative bg-white border-b border-gray-100">
@@ -140,12 +100,12 @@ export const CategoryCarousel = () => {
           >
             {categories.map((category) => (
               <div
-                key={category.id}
+                key={category._id}
                 className="flex flex-col items-center space-y-2 min-w-[80px] cursor-pointer group hover:scale-105 transition-all duration-200 flex-shrink-0"
               >
                 {/* Category icon/image */}
-                <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-primary/10 transition-all duration-200 shadow-sm group-hover:shadow-md">
-                  <span className="text-2xl">{category.icon}</span>
+                <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center overflow-hidden group-hover:bg-primary/10 transition-all duration-200 shadow-sm group-hover:shadow-md">
+                  <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" />
                 </div>
                 
                 {/* Category name */}

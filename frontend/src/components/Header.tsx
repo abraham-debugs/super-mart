@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "./ThemeToggle";
@@ -11,6 +12,7 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { getCartCount } = useCart();
+  const { user, logout } = useAuth();
 
   const navigation = [
     { name: "Fruits & Vegetables", href: "#fresh" },
@@ -85,10 +87,46 @@ export const Header = () => {
                   )}
                 </Button>
 
-                {/* Profile */}
-                <Button variant="ghost" size="icon" className="hover:bg-primary/5 hover:scale-110 transition-all duration-200">
-                  <User className="h-4 w-4" />
-                </Button>
+                {/* Auth */}
+                {user ? (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="hover:bg-primary/5 hover:scale-110 transition-all duration-200"
+                      onClick={() => window.location.href = '/profile'}
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="hover:bg-primary/5 hover:scale-105 transition-all duration-200"
+                      onClick={() => { logout(); window.location.href = '/login'; }}
+                    >
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="hover:bg-primary/5 hover:scale-105 transition-all duration-200"
+                      onClick={() => window.location.href = '/login'}
+                    >
+                      Login
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="hover:bg-primary/5 hover:scale-105 transition-all duration-200"
+                      onClick={() => window.location.href = '/register'}
+                    >
+                      Register
+                    </Button>
+                  </>
+                )}
 
                 {/* Admin Link */}
                 <Button 
@@ -138,6 +176,13 @@ export const Header = () => {
                       {item.name}
                     </a>
                   ))}
+                  <a
+                    href="/profile"
+                    className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors py-3 px-3 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Profile
+                  </a>
                 </nav>
               </div>
             </div>
