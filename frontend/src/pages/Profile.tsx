@@ -1,14 +1,58 @@
 // src/pages/Profile.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const Profile: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth() as any;
   const navigate = useNavigate();
   if (!user) {
     navigate("/login");
     return null;
+  }
+  const [name, setName] = useState(user.name || "");
+  const [email] = useState(user.email || "");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const me = await res.json();
+        if (!cancelled) {
+          setName(me.name || "");
+          setPhone(me.phone || "");
+          setAddress(me.address || "");
+        }
+      } catch {}
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [token]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/me`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, phone, address, isProfileComplete: true })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to save profile");
+    } catch (err: any) {
+      setError(err.message || "Failed to save profile");
+    } finally {
+      setSaving(false);
+    }
   }
   return (
     <div className="min-h-screen bg-background">
@@ -37,7 +81,10 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="md:col-span-2">
-            <form className="rounded-lg border bg-card p-6">
+            <form className="rounded-lg border bg-card p-6" onSubmit={save}>
+              {error && (
+                <div className="mb-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium" htmlFor="name">Full Name</label>
@@ -46,6 +93,8 @@ const Profile: React.FC = () => {
                     type="text"
                     placeholder="John Doe"
                     className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
 
@@ -56,6 +105,8 @@ const Profile: React.FC = () => {
                     type="email"
                     placeholder="you@example.com"
                     className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    value={email}
+                    readOnly
                   />
                 </div>
 
@@ -66,6 +117,8 @@ const Profile: React.FC = () => {
                     type="tel"
                     placeholder="+1 555 000 1234"
                     className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                   />
                 </div>
 
@@ -76,6 +129,8 @@ const Profile: React.FC = () => {
                     rows={3}
                     placeholder="Street, City, State, ZIP"
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>
               </div>
@@ -83,10 +138,10 @@ const Profile: React.FC = () => {
               <div className="mt-6 flex justify-end">
                 <div className="flex items-center gap-3">
                   <button
-                    type="button"
+                    type="submit"
                     className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-primary to-accent px-6 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:from-primary/90 hover:to-accent/90 hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    Save Changes
+                    {saving ? "Saving..." : "Save Changes"}
                   </button>
                   <button
                     type="button"

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,26 +7,26 @@
 
 @layer base {
   :root {
-    /* Core Brand Colors - Soft & Modern */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* Classic & Royal Palette */
+    /* Ivory background, deep slate text */
+    --background: 45 100% 98%;
+    --foreground: 230 25% 15%;
     
-    /* Brand Primary - Soft Mint */
-    --primary: 158 64% 52%;
+    /* Royal Blue primary, Gold secondary */
+    --primary: 231 60% 38%;
     --primary-foreground: 0 0% 100%;
-    --primary-dark: 158 64% 42%;
-    --primary-light: 158 64% 95%;
+    --primary-dark: 231 60% 30%;
+    --primary-light: 231 60% 95%;
     
-    /* Brand Secondary - Lavender */
-    --secondary: 262 83% 58%;
-    --secondary-foreground: 0 0% 100%;
-    --secondary-dark: 262 83% 48%;
-    --secondary-light: 262 83% 95%;
+    --secondary: 43 85% 55%; /* Gold */
+    --secondary-foreground: 230 25% 15%;
+    --secondary-dark: 43 85% 45%;
+    --secondary-light: 43 85% 92%;
     
-    /* Accent Colors - Soft Pastels */
-    --accent: 280 100% 70%;
+    /* Accent: Burgundy (subtle) */
+    --accent: 350 55% 38%;
     --accent-foreground: 0 0% 100%;
-    --accent-light: 280 100% 95%;
+    --accent-light: 350 55% 94%;
     
     /* Success & Commerce - Soft Green */
     --success: 142 76% 36%;
@@ -37,37 +38,37 @@
     --warning-foreground: 0 0% 100%;
     --warning-light: 38 92% 95%;
     
-    /* Neutral System - Warmer Tones */
+    /* Neutrals tuned for classic look */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 230 25% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent-muted: 240 4.8% 95.9%;
-    --accent-muted-foreground: 240 5.9% 10%;
+    --popover-foreground: 230 25% 15%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 230 8% 40%;
+    --accent-muted: 43 20% 96%;
+    --accent-muted-foreground: 230 25% 20%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
+    --border: 230 15% 88%;
+    --input: 230 15% 88%;
+    --ring: 231 60% 38%;
     
-    /* E-commerce Specific - Soft Colors */
-    --price-color: 158 64% 42%;
-    --discount-color: 0 84.2% 60.2%;
-    --rating-color: 38 92% 50%;
+    /* E-commerce accents */
+    --price-color: 231 60% 30%;
+    --discount-color: 350 55% 38%;
+    --rating-color: 43 85% 45%;
     
-    /* Premium Gradients - Soft & Unique */
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%), hsl(262 83% 58%));
-    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 100% 70%));
-    --gradient-hero: linear-gradient(135deg, hsl(158 64% 52% / 0.08), hsl(262 83% 58% / 0.08));
-    --gradient-card: linear-gradient(135deg, hsl(158 64% 52% / 0.05), hsl(262 83% 58% / 0.05));
-    --gradient-accent: linear-gradient(135deg, hsl(280 100% 70% / 0.1), hsl(262 83% 58% / 0.1));
+    /* Premium Gradients - understated */
+    --gradient-primary: linear-gradient(135deg, hsl(231 60% 38%), hsl(43 85% 55% / 0.85));
+    --gradient-secondary: linear-gradient(135deg, hsl(43 85% 92%), hsl(231 60% 95%));
+    --gradient-hero: linear-gradient(135deg, hsl(231 60% 38% / 0.06), hsl(43 85% 55% / 0.06));
+    --gradient-card: linear-gradient(135deg, hsl(231 60% 38% / 0.04), hsl(43 85% 55% / 0.04));
+    --gradient-accent: linear-gradient(135deg, hsl(350 55% 38% / 0.06), hsl(43 85% 55% / 0.06));
     
     /* Soft Shadows */
-    --shadow-card: 0 2px 8px -2px hsl(158 64% 52% / 0.08);
-    --shadow-card-hover: 0 8px 25px -5px hsl(158 64% 52% / 0.15);
-    --shadow-primary: 0 4px 14px -2px hsl(158 64% 52% / 0.2);
+    --shadow-card: 0 2px 8px -2px hsl(231 60% 38% / 0.08);
+    --shadow-card-hover: 0 8px 25px -5px hsl(231 60% 38% / 0.14);
+    --shadow-primary: 0 4px 14px -2px hsl(231 60% 38% / 0.2);
     --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
 
     --radius: 0.5rem;
@@ -233,6 +234,11 @@
   
   .text-gradient {
     @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+
+  /* Display serif font utility for classic headings */
+  .font-display {
+    font-family: 'Playfair Display', ui-serif, Georgia, serif;
   }
   
   .bg-pattern {

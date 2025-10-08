@@ -1,10 +1,12 @@
-import { Star, Plus, Heart } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 interface ProductCardProps {
   product: Product;
@@ -12,12 +14,35 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
+  const { token } = useAuth() as any;
 
-  const handleAddToWishlist = () => {
-    toast({
-      title: "Added to Wishlist",
-      description: `${product.name} has been added to your wishlist`,
+  async function authedPost(path: string) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ productId: (product as any)._id || product.id })
     });
+    return res;
+  }
+
+  const handleAddToWishlist = async () => {
+    try {
+      const res = await authedPost(`/api/user/wishlist/add`);
+      if (!res.ok) throw new Error("Failed to add to wishlist");
+      toast({ title: "Added to Wishlist", description: `${product.name} was added to your wishlist` });
+    } catch (err: any) {
+      toast({ title: "Action failed", description: err.message || "Could not add to wishlist" });
+    }
+  };
+
+  const handleSaveForLater = async () => {
+    try {
+      const res = await authedPost(`/api/user/save-later/add`);
+      if (!res.ok) throw new Error("Failed to save for later");
+      toast({ title: "Saved for later", description: `${product.name} was saved for later` });
+    } catch (err: any) {
+      toast({ title: "Action failed", description: err.message || "Could not save for later" });
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -28,35 +53,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="group relative overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+    <Card className="group relative overflow-hidden bg-card border border-border rounded-xl shadow-soft hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300">
       {/* Badges */}
-      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-        {product.isNew && (
-          <Badge className="bg-green-500 text-white text-xs px-2 py-1 rounded">New</Badge>
-        )}
-        {product.isBestSeller && (
-          <Badge className="bg-blue-500 text-white text-xs px-2 py-1 rounded">Best</Badge>
-        )}
-        {product.discount && (
-          <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-            -{product.discount}%
-          </Badge>
-        )}
-      </div>
+      {/* Optional status badges could go here if needed */}
 
       {/* Wishlist Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-white/90 hover:bg-white border border-gray-200 hover:scale-110 h-8 w-8"
-        onClick={handleAddToWishlist}
-      >
-        <Heart className="h-4 w-4" />
-      </Button>
+      {/* Actions like wishlist/save are hidden to match the classic card */}
 
       <CardContent className="p-0">
         {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden bg-gray-100">
+        <div className="relative aspect-square overflow-hidden bg-muted rounded-t-xl">
           <img
             src={product.image}
             alt={product.name}
@@ -64,32 +70,30 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           />
           
           {!product.inStock && (
-            <div className="absolute inset-0 bg-white/90 flex items-center justify-center">
+            <div className="absolute inset-0 bg-background/90 flex items-center justify-center">
               <span className="text-gray-500 font-medium text-sm">Out of Stock</span>
             </div>
           )}
         </div>
 
         {/* Product Info */}
-        <div className="p-3 space-y-2">
+        <div className="p-4 space-y-2">
           <div className="space-y-1">
-            <h3 className="font-medium text-sm line-clamp-2 leading-tight text-gray-900">{product.name}</h3>
-            <p className="text-xs text-gray-500 line-clamp-1 leading-tight">{product.description}</p>
+            <h3 className="font-semibold text-[17px] leading-tight text-foreground line-clamp-2">{product.name}</h3>
+            <p className="text-[11px] text-muted-foreground line-clamp-1 leading-tight">
+              {product.category}{product.description ? " • " + product.description.split(" ").slice(0,2).join(" ") : ""}
+            </p>
           </div>
 
           {/* Rating */}
          
 
           {/* Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <span className="font-bold text-sm text-gray-900">
-                {formatPrice(product.price)}
-              </span>
+          <div className="flex items-center justify-start">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-base text-secondary-dark">Rs. {Number(product.price).toFixed(2)}</span>
               {product.originalPrice && (
-                <span className="text-xs text-gray-400 line-through">
-                  {formatPrice(product.originalPrice)}
-                </span>
+                <span className="text-xs text-muted-foreground line-through">Rs. {Number(product.originalPrice).toFixed(2)}</span>
               )}
             </div>
           </div>
@@ -98,11 +102,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             onClick={() => addToCart(product)}
             disabled={!product.inStock}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+            className="w-full rounded-md bg-secondary-light text-foreground hover:bg-secondary/20 border border-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             size="sm"
           >
-            <Plus className="h-4 w-4 mr-1" />
-            <span className="text-sm">Add to Cart</span>
+            Buy Now
           </Button>
         </div>
       </CardContent>

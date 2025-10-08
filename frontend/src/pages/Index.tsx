@@ -3,6 +3,7 @@ import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
 import { Footer } from "@/components/Footer";
+import { Features } from "@/components/Features";
 import { featuredProducts, bestSellers } from "@/data/products";
 
 const Index = () => {
@@ -16,9 +17,11 @@ const Index = () => {
       <main className="relative z-10">
         {/* Category Carousel */}
         <CategoryCarousel />
-        
+         
         {/* Hero Section */}
         <Hero />
+         {/* Features */}
+         <Features />
         
         {/* Featured Products */}
         <section className="py-12 lg:py-16 relative">
@@ -30,6 +33,8 @@ const Index = () => {
           />
         </section>
         
+       
+
         {/* Best Sellers */}
         <section className="py-12 lg:py-16 bg-gradient-to-br from-muted/30 to-muted/10 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5"></div>

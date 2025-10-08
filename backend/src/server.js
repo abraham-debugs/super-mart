@@ -6,6 +6,7 @@ import { connectToDatabase } from "./config/db.js";
 import { configureCloudinary } from "./config/cloudinary.js";
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
+import userListRoutes from "./routes/userLists.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.get("/health", (_req, res) => {
 // Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userListRoutes);
 
 const port = process.env.PORT || 5000;
 

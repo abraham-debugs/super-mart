@@ -13,6 +13,8 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Wishlist from "./pages/Wishlist";
+import Saved from "./pages/Saved";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/saved" element={<Saved />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

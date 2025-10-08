@@ -2,7 +2,7 @@ import React from "react";
 
 export function Footer(): JSX.Element {
 	return (
-		<footer className="w-full border-t bg-gradient-to-b from-primary/10 via-background to-secondary/10">
+		<footer className="w-full border-t bg-gradient-to-b from-primary/5 via-background to-secondary/5">
 			<div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 				{/* Top */}
 				<div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">

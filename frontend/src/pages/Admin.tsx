@@ -126,9 +126,10 @@ const Admin = () => {
 
   const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
 
-  async function loadProducts() {
+  async function loadProducts(categoryFilter?: string) {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/products`);
+      const qs = categoryFilter ? `?categoryId=${encodeURIComponent(categoryFilter)}` : "";
+      const res = await fetch(`${API_BASE}/api/admin/products${qs}`);
       if (!res.ok) throw new Error("Failed to load products");
       const data = await res.json();
       setProducts(data);
@@ -195,7 +196,7 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Navigation Bar */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-6 py-4">
@@ -326,7 +327,7 @@ const Admin = () => {
         {/* Add Product */}
         {activeTab === "add-product" && (
           <div className="max-w-4xl mx-auto">
-            <Card className="bg-white">
+            <Card className="bg-white shadow-sm rounded-xl border">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-gray-800">Add Product</CardTitle>
               </CardHeader>
@@ -342,12 +343,18 @@ const Admin = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-800">Product Management</h1>
-              <div className="flex gap-2">
-                <Input placeholder="Search products..." className="w-64" />
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
+              <div className="flex gap-3 items-center">
+                <Select onValueChange={(val) => loadProducts(val === "__all__" ? undefined : val)}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All Categories</SelectItem>
+                    {categoryRows.map((c) => (
+                      <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

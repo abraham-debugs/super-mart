@@ -73,9 +73,11 @@ router.get("/categories", async (_req, res) => {
 });
 
 // List products
-router.get("/products", async (_req, res) => {
+router.get("/products", async (req, res) => {
   try {
-    const products = await Product.find()
+    const { categoryId } = req.query;
+    const where = categoryId ? { categoryId } : {};
+    const products = await Product.find(where)
       .sort({ createdAt: -1 })
       .populate({ path: "categoryId", select: "name" });
     const mapped = products.map((p) => ({

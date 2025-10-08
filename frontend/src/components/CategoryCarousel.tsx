@@ -65,7 +65,7 @@ export const CategoryCarousel = () => {
   }, []);
 
   return (
-    <div className="relative bg-white border-b border-gray-100">
+    <div className="relative bg-background border-b border-border">
       <div className="container mx-auto px-4 py-4">
         <div className="relative">
           {/* Left scroll button */}
@@ -104,12 +104,12 @@ export const CategoryCarousel = () => {
                 className="flex flex-col items-center space-y-2 min-w-[80px] cursor-pointer group hover:scale-105 transition-all duration-200 flex-shrink-0"
               >
                 {/* Category icon/image */}
-                <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center overflow-hidden group-hover:bg-primary/10 transition-all duration-200 shadow-sm group-hover:shadow-md">
+                <div className="w-16 h-16 rounded-full bg-card flex items-center justify-center overflow-hidden group-hover:bg-primary/10 transition-all duration-200 shadow-sm group-hover:shadow-md border border-border">
                   <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" />
                 </div>
                 
                 {/* Category name */}
-                <span className="text-xs text-center text-gray-700 font-medium leading-tight group-hover:text-primary transition-colors duration-200 max-w-[80px]">
+                <span className="text-xs text-center text-foreground/80 font-medium leading-tight group-hover:text-primary transition-colors duration-200 max-w-[80px]">
                   {category.name}
                 </span>
               </div>

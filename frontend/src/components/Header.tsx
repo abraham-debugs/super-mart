@@ -24,32 +24,34 @@ export const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50">
+      <header className="sticky top-0 z-50 bg-transparent">
         <div className="container mx-auto px-4 py-2">
           <div className="glassmorphism-navbar dynamic-island rounded-2xl px-6 py-3">
             <div className="flex items-center justify-between h-14">
               {/* Logo */}
               <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-10 h-10 gradient-primary rounded-xl shadow-primary/20 border border-primary/20 hover:scale-110 transition-transform duration-300 pulse-glow">
-                  <span className="text-white font-bold text-lg">Z</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-primary/10 hover:scale-110 transition-transform duration-300">
+                  <span className="text-primary font-bold text-lg">Z</span>
                 </div>
-                <span className="text-xl font-bold text-gradient hover:scale-105 transition-transform duration-300">
+                <span className="text-xl font-bold hover:scale-105 transition-transform duration-300 text-foreground">
                   Zepto
                 </span>
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center space-x-6">
+              <nav className="hidden md:flex items-center space-x-6 text-foreground/80">
                 {navigation.map((item, index) => (
                   <a
                     key={item.name}
                     href={item.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105 slide-up"
+                    className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105 slide-up"
                     style={{animationDelay: `${index * 0.1}s`}}
                   >
                     {item.name}
                   </a>
                 ))}
+                <a href="/wishlist" className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105">Wishlist</a>
+                <a href="/saved" className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105">Saved</a>
               </nav>
 
               {/* Search Bar - Desktop */}
@@ -176,6 +178,20 @@ export const Header = () => {
                       {item.name}
                     </a>
                   ))}
+                  <a
+                    href="/wishlist"
+                    className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors py-3 px-3 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Wishlist
+                  </a>
+                  <a
+                    href="/saved"
+                    className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors py-3 px-3 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Saved
+                  </a>
                   <a
                     href="/profile"
                     className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors py-3 px-3 rounded-lg"
