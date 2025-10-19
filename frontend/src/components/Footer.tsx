@@ -47,16 +47,7 @@ export function Footer(): JSX.Element {
 					</div>
 
 					{/* Shop */}
-					<div>
-						<h3 className="text-sm font-semibold">Shop</h3>
-						<ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-							<li><a className="hover:text-foreground" href="#">All Products</a></li>
-							<li><a className="hover:text-foreground" href="#">Fresh Produce</a></li>
-							<li><a className="hover:text-foreground" href="#">Dairy & Eggs</a></li>
-							<li><a className="hover:text-foreground" href="#">Snacks</a></li>
-							<li><a className="hover:text-foreground" href="#">Beverages</a></li>
-						</ul>
-					</div>
+				
 
 					{/* Company */}
 					<div>
