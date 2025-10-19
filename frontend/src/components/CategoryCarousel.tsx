@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,7 @@ const fallbackCategories: BackendCategory[] = [
 ];
 
 export const CategoryCarousel = () => {
+  const navigate = useNavigate();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -102,6 +104,16 @@ export const CategoryCarousel = () => {
               <div
                 key={category._id}
                 className="flex flex-col items-center space-y-2 min-w-[80px] cursor-pointer group hover:scale-105 transition-all duration-200 flex-shrink-0"
+                  onClick={() => {
+                    const evt = new CustomEvent("category:selected", { detail: { id: category._id, name: category.name } });
+                    window.dispatchEvent(evt);
+                    // also navigate to category page
+                    try {
+                      navigate(`/category/${category._id}`);
+                    } catch (_err) {
+                      // navigate might not be available in some contexts; ignore
+                    }
+                  }}
               >
                 {/* Category icon/image */}
                 <div className="w-16 h-16 rounded-full bg-card flex items-center justify-center overflow-hidden group-hover:bg-primary/10 transition-all duration-200 shadow-sm group-hover:shadow-md border border-border">

@@ -25,14 +25,17 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { AddressBook, type Address } from "@/components/AddressBook";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items: cartItems, getCartCount, getCartTotal, removeFromCart, updateQuantity } = useCart();
+  const { items: cartItems, getCartCount, getCartTotal, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { token } = useAuth() as any;
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("upi");
-  const [saveAddress, setSaveAddress] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
 
   const steps = [
     { id: 1, title: "Delivery Details", description: "Add delivery information" },
@@ -50,10 +53,55 @@ const Checkout = () => {
   const deliveryFee = deliveryMethod === "express" ? 50 : 30;
   const totalAmount = getCartTotal() + deliveryFee;
 
-  const handlePlaceOrder = () => {
-    // Handle order placement logic here
-    console.log("Order placed successfully!");
-    navigate("/");
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      alert('Please select a delivery address');
+      setCurrentStep(1);
+      return;
+    }
+
+    // Collect order details
+    const items = cartItems.map(item => ({
+      productId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      imageUrl: item.image
+    }));
+    const total = totalAmount;
+    const customerDetails = {
+      fullName: selectedAddress.fullName,
+      mobile: selectedAddress.mobile,
+      address: `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? `, ${selectedAddress.addressLine2}` : ''}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`
+    };
+    const paymentInfo = { method: paymentMethod };
+    try {
+      if (!token) {
+        // Not authenticated - redirect to login
+        navigate("/login", { state: { from: "/checkout" } });
+        return;
+      }
+
+      const res = await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:5000"}/api/orders/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ items, total, customerDetails, paymentInfo })
+      });
+      if (res.status === 401) {
+        // token invalid or expired
+        navigate("/login", { state: { from: "/checkout" } });
+        return;
+      }
+      if (!res.ok) throw new Error("Order failed");
+  // Clear cart and navigate to order success page
+  clearCart();
+  navigate("/order-success");
+    } catch (err) {
+      alert("Order failed. Please try again.");
+    }
   };
 
   return (
@@ -133,52 +181,32 @@ const Checkout = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Contact Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input id="firstName" placeholder="Enter first name" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input id="lastName" placeholder="Enter last name" />
-                    </div>
-                  </div>
+                  {/* Address Selection */}
+                  <AddressBook
+                    onSelect={setSelectedAddress}
+                    selectedId={selectedAddress?._id}
+                  />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input id="phone" placeholder="+91 98765 43210" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" placeholder="your@email.com" />
-                  </div>
-
-                  {/* Address */}
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Delivery Address *</Label>
-                    <Textarea 
-                      id="address" 
-                      placeholder="Enter complete delivery address with landmark"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Input id="city" placeholder="Enter city" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state">State *</Label>
-                      <Input id="state" placeholder="Enter state" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pincode">Pincode *</Label>
-                      <Input id="pincode" placeholder="123456" />
-                    </div>
-                  </div>
+                  {/* Selected Address Summary */}
+                  {selectedAddress && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center">
+                          <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                          Selected Delivery Address
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm space-y-1">
+                          <p className="font-medium">{selectedAddress.fullName}</p>
+                          <p className="text-muted-foreground">{selectedAddress.mobile}</p>
+                          <p>{selectedAddress.addressLine1}</p>
+                          {selectedAddress.addressLine2 && <p>{selectedAddress.addressLine2}</p>}
+                          <p>{`${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Delivery Method */}
                   <div className="space-y-4">
@@ -205,15 +233,6 @@ const Checkout = () => {
                         </div>
                       </div>
                     </RadioGroup>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="saveAddress" 
-                      checked={saveAddress}
-                      onCheckedChange={(checked) => setSaveAddress(checked === true)}
-                    />
-                    <Label htmlFor="saveAddress">Save this address for future orders</Label>
                   </div>
 
                   <Button 

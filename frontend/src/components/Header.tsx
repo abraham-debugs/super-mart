@@ -7,12 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "./ThemeToggle";
 import { useCart } from "@/contexts/CartContext";
 import { CartSheet } from "./CartSheet";
+import { Link, useNavigate } from "react-router-dom";
+import VoiceSearch from "@/components/VoiceSearch";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: "Fruits & Vegetables", href: "#fresh" },
@@ -31,11 +34,11 @@ export const Header = () => {
               {/* Logo */}
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-primary/10 hover:scale-110 transition-transform duration-300">
-                  <span className="text-primary font-bold text-lg">Z</span>
+                 <Link to="/"> <span className="text-primary font-bold text-lg">Z</span> </Link>
                 </div>
-                <span className="text-xl font-bold hover:scale-105 transition-transform duration-300 text-foreground">
+              <Link to="/">  <span className="text-xl font-bold hover:scale-105 transition-transform duration-300 text-foreground">
                   Zepto
-                </span>
+                </span> </Link>
               </div>
 
               {/* Desktop Navigation */}
@@ -54,15 +57,28 @@ export const Header = () => {
                 <a href="/saved" className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105">Saved</a>
               </nav>
 
-              {/* Search Bar - Desktop */}
-              <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+              {/* Search Bar + Voice - Desktop */}
+              <div className="hidden lg:flex items-center flex-1 max-w-xl mx-8 gap-3">
                 <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search for groceries & essentials..."
                     className="pl-10 pr-4 w-full border-primary/20 focus:border-primary/40 focus:ring-primary/20 transition-all duration-200"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const target = e.target as HTMLInputElement;
+                        const qs = new URLSearchParams(window.location.search);
+                        qs.set('q', target.value);
+                        navigate('/?' + qs.toString());
+                      }
+                    }}
                   />
                 </div>
+                <VoiceSearch onSearch={(q) => {
+                  const qs = new URLSearchParams(window.location.search);
+                  qs.set('q', q);
+                  navigate('/?' + qs.toString());
+                }} />
               </div>
 
               {/* Actions */}
@@ -157,13 +173,28 @@ export const Header = () => {
           {isMenuOpen && (
             <div className="md:hidden mt-4 glassmorphism-navbar rounded-2xl py-4">
               <div className="flex flex-col space-y-4 px-6">
-                {/* Mobile Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                   <Input
-                    placeholder="Search for groceries & essentials..."
-                    className="pl-10 pr-4 w-full border-primary/20 focus:border-primary/40 focus:ring-primary/20"
-                  />
+                {/* Mobile Search + Voice */}
+                <div className="relative flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search for groceries & essentials..."
+                      className="pl-10 pr-4 w-full border-primary/20 focus:border-primary/40 focus:ring-primary/20"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const target = e.target as HTMLInputElement;
+                          const qs = new URLSearchParams(window.location.search);
+                          qs.set('q', target.value);
+                          navigate('/?' + qs.toString());
+                        }
+                      }}
+                    />
+                  </div>
+                  <VoiceSearch onSearch={(q) => {
+                    const qs = new URLSearchParams(window.location.search);
+                    qs.set('q', q);
+                    navigate('/?' + qs.toString());
+                  }} />
                 </div>
                 
                 {/* Mobile Navigation */}

@@ -62,6 +62,52 @@ const Admin = () => {
       console.error("Load categories error:", err);
     }
   }
+  const availableStatuses = ["placed", "shipped", "delivered", "cancelled"] as const;
+
+  async function handleOrderStatusUpdate(order: { id: string; status: string } & any, nextStatus: string) {
+    try {
+      if (!availableStatuses.includes(nextStatus as any)) return;
+      const orderKey = (order as any).orderId || order.id;
+      const res = await fetch(`${API_BASE}/api/admin/orders/${orderKey}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      const data = await res.json().catch(() => null);
+      // optimistic + server truth; update by id or orderId
+      setAdminOrders(prev => prev.map(o => {
+        const ok = (o as any).orderId ? ((o as any).orderId === ((order as any).orderId || data?.orderId)) : (o.id === order.id);
+        return ok ? { ...o, status: data?.status || nextStatus } : o;
+      }));
+      // refresh from server to ensure persisted value shows after reload
+      loadAdminOrders();
+    } catch (e) {
+      console.error("Order status update error:", e);
+    }
+  }
+
+  async function loadOrderDetail(id: string) {
+    try {
+      setOrderDetailLoading(true);
+      const res = await fetch(`${API_BASE}/api/admin/orders/${encodeURIComponent(id)}`);
+      if (!res.ok) throw new Error("Failed to load order detail");
+      const data = await res.json();
+      setOrderDetail({
+        id: String(data.id),
+        customerDetails: data.customerDetails || {},
+        status: String(data.status),
+        total: Number(data.total || 0),
+        createdAt: new Date(data.createdAt).toLocaleString(),
+        items: Array.isArray(data.items) ? data.items : []
+      });
+    } catch (err) {
+      console.error("Load order detail error:", err);
+      setOrderDetail(null);
+    } finally {
+      setOrderDetailLoading(false);
+    }
+  }
 
   function openEdit(category: { _id: string; name: string }) {
     setEditOpenForId(category._id);
@@ -125,6 +171,82 @@ const Admin = () => {
   ];
 
   const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
+  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; phone: string; orders: number; status: string; joinDate: string }>>([]);
+  const [loadingAdminOrders, setLoadingAdminOrders] = useState(false);
+  const [loadingAdminUsers, setLoadingAdminUsers] = useState(false);
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetailLoading, setOrderDetailLoading] = useState(false);
+  const [orderDetail, setOrderDetail] = useState<null | { id: string; customerDetails?: any; status: string; total: number; createdAt: string; items: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>(null);
+  const [searchDate, setSearchDate] = useState("");
+  const [searchOrderId, setSearchOrderId] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "placed" | "confirmed" | "payment_verified" | "booked" | "shipped" | "delivered" | "cancelled">("all");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "with_payment" | "pending_verification" | "verified">("all");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  // Delivery partners state
+  const [partners, setPartners] = useState<Array<{ id: string; name: string; phone: string; status: "active" | "inactive" }>>([]);
+  const [partnersLoading, setPartnersLoading] = useState(false);
+  const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
+  const [editPartner, setEditPartner] = useState<null | { id: string; name: string; phone: string; status: "active" | "inactive" }>(null);
+  const [pName, setPName] = useState("");
+  const [pPhone, setPPhone] = useState("");
+  const [pStatus, setPStatus] = useState<"active" | "inactive">("active");
+
+  async function loadPartners() {
+    try {
+      setPartnersLoading(true);
+      const res = await fetch(`${API_BASE}/api/admin/delivery-partners`);
+      if (!res.ok) throw new Error("Failed to load partners");
+      const data = await res.json();
+      setPartners(data);
+    } catch (e) {
+      console.error("Load partners error:", e);
+    } finally {
+      setPartnersLoading(false);
+    }
+  }
+
+  function openCreatePartner() {
+    setEditPartner(null);
+    setPName("");
+    setPPhone("");
+    setPStatus("active");
+    setPartnerDialogOpen(true);
+  }
+
+  function openEditPartner(p: { id: string; name: string; phone: string; status: "active" | "inactive" }) {
+    setEditPartner(p);
+    setPName(p.name);
+    setPPhone(p.phone);
+    setPStatus(p.status);
+    setPartnerDialogOpen(true);
+  }
+
+  async function submitPartner(e: React.FormEvent) {
+    e.preventDefault();
+    const payload = { name: pName, phone: pPhone, status: pStatus } as any;
+    const url = editPartner ? `${API_BASE}/api/admin/delivery-partners/${editPartner.id}` : `${API_BASE}/api/admin/delivery-partners`;
+    const method = editPartner ? "PUT" : "POST";
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.error("Partner save failed", data);
+      return;
+    }
+    setPartnerDialogOpen(false);
+    await loadPartners();
+  }
+
+  async function togglePartnerStatus(p: { id: string; name: string; phone: string; status: "active" | "inactive" }) {
+    const res = await fetch(`${API_BASE}/api/admin/delivery-partners/${p.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: p.status === "active" ? "inactive" : "active" })
+    });
+    if (res.ok) loadPartners();
+  }
 
   async function loadProducts(categoryFilter?: string) {
     try {
@@ -142,19 +264,98 @@ const Admin = () => {
     loadProducts();
   }, []);
 
-  const orders = [
-    { id: 1001, customer: "John Doe", total: 45.99, status: "pending", date: "2024-01-15", items: 5, delivery: "Not Assigned" },
-    { id: 1002, customer: "Jane Smith", total: 32.50, status: "shipped", date: "2024-01-14", items: 3, delivery: "Mike Wilson" },
-    { id: 1003, customer: "Bob Johnson", total: 67.25, status: "delivered", date: "2024-01-13", items: 7, delivery: "Sarah Davis" },
-    { id: 1004, customer: "Alice Brown", total: 23.75, status: "cancelled", date: "2024-01-12", items: 2, delivery: "N/A" },
-  ];
+  async function loadAdminOrders() {
+    try {
+      setLoadingAdminOrders(true);
+      const res = await fetch(`${API_BASE}/api/admin/orders?t=${Date.now()}`);
+      if (!res.ok) throw new Error("Failed to load orders");
+      const data = await res.json();
+      setAdminOrders(data);
+    } catch (err) {
+      console.error("Load admin orders error:", err);
+    } finally {
+      setLoadingAdminOrders(false);
+    }
+  }
 
-  const users = [
-    { id: 1, name: "John Doe", email: "john@example.com", phone: "+91 98765 43210", status: "active", orders: 15, joinDate: "2023-06-15" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", phone: "+91 98765 43211", status: "active", orders: 8, joinDate: "2023-08-20" },
-    { id: 3, name: "Bob Johnson", email: "bob@example.com", phone: "+91 98765 43212", status: "suspended", orders: 3, joinDate: "2023-09-10" },
-    { id: 4, name: "Alice Brown", email: "alice@example.com", phone: "+91 98765 43213", status: "banned", orders: 0, joinDate: "2023-10-05" },
-  ];
+  async function loadAdminUsers() {
+    try {
+      setLoadingAdminUsers(true);
+      const res = await fetch(`${API_BASE}/api/admin/users?t=${Date.now()}`);
+      if (!res.ok) throw new Error("Failed to load users");
+      const data = await res.json();
+      setAdminUsers(data);
+    } catch (err) {
+      console.error("Load admin users error:", err);
+    } finally {
+      setLoadingAdminUsers(false);
+    }
+  }
+
+  useEffect(() => {
+    // Preload some admin data for dashboard
+    loadAdminOrders();
+    loadAdminUsers();
+    loadPartners();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "delivery-partners") {
+      loadPartners();
+    }
+  }, [activeTab]);
+
+  // Derived order stats for Order Management
+  const pendingCount = adminOrders.filter(o => ["placed", "pending", "confirmed", "payment_verified"].includes(String(o.status))).length;
+  const inTransitCount = adminOrders.filter(o => ["booked", "shipped"].includes(String(o.status))).length;
+  const deliveredTodayCount = adminOrders.filter(o => {
+    if (String(o.status) !== "delivered") return false;
+    const d = new Date(o.date);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  }).length;
+  const cancelledCount = adminOrders.filter(o => String(o.status) === "cancelled").length;
+
+  const orderStatuses = [
+    { value: "all", label: "All" },
+    { value: "placed", label: "Placed" },
+    { value: "confirmed", label: "Confirmed" },
+    { value: "payment_verified", label: "Payment Verified" },
+    { value: "booked", label: "Booked" },
+    { value: "shipped", label: "Shipped" },
+    { value: "delivered", label: "Delivered" },
+    { value: "cancelled", label: "Cancelled" },
+  ] as const;
+  const paymentFilters = [
+    { value: "all", label: "All" },
+    { value: "with_payment", label: "With Payment" },
+    { value: "pending_verification", label: "Pending Verification" },
+    { value: "verified", label: "Verified" },
+  ] as const;
+
+  const filteredOrders = adminOrders.filter((o) => {
+    // date filter
+    const d = new Date(o.date);
+    const dateMatch = !searchDate || (
+      d.getFullYear() === Number(searchDate.slice(0, 4)) &&
+      (d.getMonth() + 1) === Number(searchDate.slice(5, 7)) &&
+      d.getDate() === Number(searchDate.slice(8, 10))
+    );
+    // id filter
+    const displayId = (o as any).orderId || o.id;
+    const idMatch = !searchOrderId || String(displayId).toLowerCase().includes(searchOrderId.toLowerCase());
+    // status filter
+    const statusMatch = orderStatusFilter === "all" || String(o.status) === orderStatusFilter;
+    // payment filter
+    let paymentMatch = true;
+    const ps = (o as any).paymentScreenshot || null;
+    if (paymentFilter === "with_payment") paymentMatch = !!ps;
+    else if (paymentFilter === "pending_verification") paymentMatch = !!ps && !ps.verified;
+    else if (paymentFilter === "verified") paymentMatch = !!ps && !!ps.verified;
+    return dateMatch && idMatch && statusMatch && paymentMatch;
+  });
+
+  // no dummy arrays; UI uses adminOrders/adminUsers
 
   const payments = [
     { id: 1, orderId: 1001, customer: "John Doe", amount: 45.99, method: "UPI", status: "completed", date: "2024-01-15", transactionId: "TXN123456" },
@@ -163,11 +364,7 @@ const Admin = () => {
     { id: 4, orderId: 1004, customer: "Alice Brown", amount: 23.75, method: "UPI", status: "failed", date: "2024-01-12", transactionId: "TXN123459" },
   ];
 
-  const deliveryPersons = [
-    { id: 1, name: "Mike Wilson", phone: "+91 98765 43220", status: "available", orders: 12 },
-    { id: 2, name: "Sarah Davis", phone: "+91 98765 43221", status: "busy", orders: 8 },
-    { id: 3, name: "Tom Brown", phone: "+91 98765 43222", status: "available", orders: 15 },
-  ];
+  // removed dummy delivery persons; using `partners` from backend instead
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -177,7 +374,7 @@ const Admin = () => {
     { id: "order-management", label: "Order Management", icon: ShoppingCart },
     { id: "user-management", label: "User Management", icon: Users },
     { id: "payment-reports", label: "Payment Reports", icon: CreditCard },
-    { id: "analytics", label: "Analytics", icon: TrendingUp },
+    { id: "delivery-partners", label: "Delivery Partners", icon: Truck },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -284,7 +481,7 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {orders.slice(0, 5).map((order) => (
+                    {adminOrders.slice(0, 5).map((order) => (
                       <div key={order.id} className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">#{order.id}</p>
@@ -324,6 +521,88 @@ const Admin = () => {
           </div>
         )}
 
+        {/* Delivery Partners */}
+        {activeTab === "delivery-partners" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-800">Delivery Partners</h1>
+              <Button onClick={openCreatePartner}><Plus className="h-4 w-4 mr-2" />Add Partner</Button>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {partnersLoading ? (
+                      <TableRow><TableCell colSpan={4} className="py-6 text-center">Loading...</TableCell></TableRow>
+                    ) : partners.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="py-6 text-center text-muted-foreground">No partners found</TableCell></TableRow>
+                    ) : (
+                      partners.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell>{p.phone}</TableCell>
+                          <TableCell>{getStatusBadge(p.status)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => openEditPartner(p)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => togglePartnerStatus(p)}>
+                                {p.status === "active" ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Dialog open={partnerDialogOpen} onOpenChange={setPartnerDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editPartner ? "Edit Partner" : "Add Partner"}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={submitPartner} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pname">Name</Label>
+                    <Input id="pname" value={pName} onChange={(e) => setPName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pphone">Phone</Label>
+                    <Input id="pphone" value={pPhone} onChange={(e) => setPPhone(e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={pStatus} onValueChange={(v) => setPStatus(v as any)}>
+                      <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setPartnerDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit">{editPartner ? "Save" : "Create"}</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
         {/* Add Product */}
         {activeTab === "add-product" && (
           <div className="max-w-4xl mx-auto">
@@ -343,19 +622,6 @@ const Admin = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-800">Product Management</h1>
-              <div className="flex gap-3 items-center">
-                <Select onValueChange={(val) => loadProducts(val === "__all__" ? undefined : val)}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue placeholder="Filter by category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All Categories</SelectItem>
-                    {categoryRows.map((c) => (
-                      <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <Card>
@@ -396,6 +662,51 @@ const Admin = () => {
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Order detail modal */}
+            <Dialog open={orderDetailOpen} onOpenChange={(o) => { setOrderDetailOpen(o); if (!o) { setSelectedOrderId(null); setOrderDetail(null); } }}>
+              <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Order Details {selectedOrderId ? `#${selectedOrderId}` : ""}</DialogTitle>
+                </DialogHeader>
+                {orderDetailLoading ? (
+                  <div className="py-8 text-center">Loading...</div>
+                ) : !orderDetail ? (
+                  <div className="py-8 text-center text-muted-foreground">No details available.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: ₹{orderDetail.total.toFixed(2)}</div>
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Item</TableHead>
+                            <TableHead>Qty</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Subtotal</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {orderDetail.items.map((it) => (
+                            <TableRow key={it.productId}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
+                                  <span>{it.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{it.quantity}</TableCell>
+                              <TableCell>₹{Number(it.price).toFixed(2)}</TableCell>
+                              <TableCell>₹{Number(it.price * it.quantity).toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
@@ -498,22 +809,57 @@ const Admin = () => {
         {/* Order Management */}
         {activeTab === "order-management" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-800">Order Management</h1>
-              <div className="flex gap-2">
-                <Input placeholder="Search orders..." className="w-64" />
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold text-gray-800">Order Management</h1>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={loadAdminOrders} disabled={loadingAdminOrders}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    {loadingAdminOrders ? "Refreshing..." : "Refresh"}
+                  </Button>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+
+              {/* Filters now in Order Management */}
+              <div className="mt-2">
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <div>
+                    <Label>Search by Date</Label>
+                    <Input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Search by Order ID</Label>
+                    <Input type="text" placeholder="Enter Order ID" value={searchOrderId} onChange={(e) => setSearchOrderId(e.target.value)} />
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <Button className="bg-primary hover:bg-primary/90" onClick={() => { /* filters are reactive */ loadAdminOrders(); }}>Apply Filter</Button>
+                    <Button variant="outline" onClick={() => { setSearchDate(""); setSearchOrderId(""); setOrderStatusFilter("all"); setPaymentFilter("all"); }}>Clear</Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  {orderStatuses.map((s) => (
+                    <button key={s.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${orderStatusFilter === s.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'}`} onClick={() => setOrderStatusFilter(s.value as any)}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  {paymentFilters.map((pf) => (
+                    <button key={pf.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${paymentFilter === pf.value ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50'}`} onClick={() => setPaymentFilter(pf.value as any)}>
+                      {pf.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Order Stats */}
+            {/* Order Stats (live) */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -521,7 +867,7 @@ const Admin = () => {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">12</div>
+                  <div className="text-2xl font-bold">{pendingCount}</div>
                   <p className="text-xs text-muted-foreground">Awaiting processing</p>
                 </CardContent>
               </Card>
@@ -532,7 +878,7 @@ const Admin = () => {
                   <Truck className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">8</div>
+                  <div className="text-2xl font-bold">{inTransitCount}</div>
                   <p className="text-xs text-muted-foreground">Out for delivery</p>
                 </CardContent>
               </Card>
@@ -543,7 +889,7 @@ const Admin = () => {
                   <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">45</div>
+                  <div className="text-2xl font-bold">{deliveredTodayCount}</div>
                   <p className="text-xs text-muted-foreground">Successfully delivered</p>
                 </CardContent>
               </Card>
@@ -554,7 +900,7 @@ const Admin = () => {
                   <XCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">3</div>
+                  <div className="text-2xl font-bold">{cancelledCount}</div>
                   <p className="text-xs text-muted-foreground">Cancelled orders</p>
                 </CardContent>
               </Card>
@@ -576,29 +922,69 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">#{order.id}</TableCell>
-                        <TableCell>{order.customer}</TableCell>
-                        <TableCell>{order.items}</TableCell>
-                        <TableCell>₹{order.total}</TableCell>
-                        <TableCell>{getStatusBadge(order.status)}</TableCell>
-                        <TableCell>
-                          <Select defaultValue={order.delivery}>
+                    {filteredOrders.map((order) => (
+                      <>
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted/30"
+                          onClick={() => {
+                          setSelectedOrderId(order.id);
+                          setOrderDetailOpen(false);
+                          setExpandedOrderId(expandedOrderId === order.id ? null : order.id);
+                          // optimistic: show brief items immediately if present
+                          if (order.itemsBrief && order.itemsBrief.length > 0) {
+                            setOrderDetail({
+                              id: order.id,
+                              customerDetails: {},
+                              status: String(order.status),
+                              total: Number(order.total || 0),
+                              createdAt: new Date(order.date).toLocaleString(),
+                              items: order.itemsBrief.map(it => ({
+                                productId: it.productId,
+                                name: it.name,
+                                price: it.price,
+                                quantity: it.quantity,
+                                imageUrl: it.imageUrl
+                              }))
+                            });
+                          } else {
+                            setOrderDetail(null);
+                          }
+                          // fetch full details in background
+                          loadOrderDetail(((order as any).orderId as string) || order.id);
+                         }}
+                        >
+                         <TableCell className="font-medium">#{(order as any).orderId || order.id}</TableCell>
+                         <TableCell>{order.customer}</TableCell>
+                         <TableCell>{order.items}</TableCell>
+                         <TableCell>₹{order.total}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Select value={String(order.status)} onValueChange={(val) => handleOrderStatusUpdate(order, val)}>
+                            <SelectTrigger className="w-40" onClick={(e) => e.stopPropagation()}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableStatuses.map(s => (
+                                <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                         <TableCell>
+                           <Select defaultValue={order.delivery}>
                             <SelectTrigger className="w-32">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Not Assigned">Not Assigned</SelectItem>
-                              {deliveryPersons.map((person) => (
-                                <SelectItem key={person.id} value={person.name}>
-                                  {person.name}
+                              {partners.filter(p => p.status === "active").map((p) => (
+                                <SelectItem key={p.id} value={p.name}>
+                                  {p.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>{order.date}</TableCell>
+                        <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="outline" size="sm">
@@ -612,7 +998,58 @@ const Admin = () => {
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
+                        </TableRow>
+                        {expandedOrderId === order.id && (
+                          <TableRow>
+                          <TableCell colSpan={8}>
+                            <div className="bg-blue-50 p-4 border-l-4 border-blue-400 rounded-md">
+                              <h4 className="font-semibold mb-2 text-blue-700">Ordered Products</h4>
+                              <div className="mb-3 text-sm text-blue-900">
+                                <div className="text-blue-700 font-medium">Delivery Address:</div>
+                                <div>{(order as any).customerDetails?.address || orderDetail?.customerDetails?.address || '-'}</div>
+                              </div>
+                              <div className="space-y-2">
+                                {orderDetail && orderDetail.id === order.id && orderDetail.items.length > 0 ? (
+                                  orderDetail.items.map((it) => (
+                                    <div key={it.productId} className="flex items-center justify-between border-b border-blue-100 pb-2 last:border-b-0">
+                                      <div className="flex items-center gap-3">
+                                        {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
+                                        <div>
+                                          <div className="font-medium text-blue-900">{it.name}</div>
+                                          <div className="text-xs text-blue-500">Product ID: {it.productId}</div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        <span className="text-sm text-blue-700">Qty: {it.quantity}</span>
+                                        <span className="text-sm text-blue-900 font-semibold">₹{Number(it.price).toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (order as any).itemsBrief && (order as any).itemsBrief.length > 0 ? (
+                                  (order as any).itemsBrief.map((it: any) => (
+                                    <div key={it.productId} className="flex items-center justify-between border-b border-blue-100 pb-2 last:border-b-0">
+                                      <div className="flex items-center gap-3">
+                                        {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
+                                        <div>
+                                          <div className="font-medium text-blue-900">{it.name}</div>
+                                          <div className="text-xs text-blue-500">Product ID: {it.productId}</div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        <span className="text-sm text-blue-700">Qty: {it.quantity}</span>
+                                        <span className="text-sm text-blue-900 font-semibold">₹{Number(it.price).toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-sm text-blue-400">No products found in this order.</div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     ))}
                   </TableBody>
                 </Table>
@@ -631,6 +1068,10 @@ const Admin = () => {
                 <Button variant="outline">
                   <Filter className="h-4 w-4 mr-2" />
                   Filter
+                </Button>
+                <Button variant="outline" onClick={loadAdminUsers} disabled={loadingAdminUsers}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {loadingAdminUsers ? "Refreshing..." : "Refresh"}
                 </Button>
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
@@ -655,7 +1096,7 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
+                    {adminUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>{user.id}</TableCell>
                         <TableCell className="font-medium">{user.name}</TableCell>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Filter, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -72,10 +72,15 @@ export const ProductGrid = ({
     setFilteredProducts(result);
   };
 
-  // Apply filters whenever dependencies change
-  useState(() => {
+  // Recalculate whenever inputs change
+  useEffect(() => {
     handleFilter();
-  });
+  }, [searchTerm, priceRange, sortBy, productsToShow]);
+
+  // Keep local list in sync when incoming products change
+  useEffect(() => {
+    setFilteredProducts(productsToShow);
+  }, [productsToShow]);
 
   return (
     <section className="py-12 lg:py-16">

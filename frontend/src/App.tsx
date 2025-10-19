@@ -15,6 +15,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Wishlist from "./pages/Wishlist";
 import Saved from "./pages/Saved";
+import Category from "./pages/Category";
+import OrderSuccess from "./pages/OrderSuccess";
+import TrackOrder from "./pages/TrackOrder";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +39,9 @@ const App = () => (
                 <Route path="/register" element={<Register />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/saved" element={<Saved />} />
+                <Route path="/category/:id" element={<Category />} />
+                <Route path="/order-success" element={<OrderSuccess />} />
+                <Route path="/track-order" element={<TrackOrder />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

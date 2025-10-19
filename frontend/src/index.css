@@ -240,6 +240,22 @@
   .font-display {
     font-family: 'Playfair Display', ui-serif, Georgia, serif;
   }
+
+  /* Ubuntu font utilities (global default) */
+  .ubuntu-light { font-family: 'Ubuntu', sans-serif; font-weight: 300; font-style: normal; }
+  .ubuntu-regular { font-family: 'Ubuntu', sans-serif; font-weight: 400; font-style: normal; }
+  .ubuntu-medium { font-family: 'Ubuntu', sans-serif; font-weight: 500; font-style: normal; }
+  .ubuntu-bold { font-family: 'Ubuntu', sans-serif; font-weight: 700; font-style: normal; }
+  .ubuntu-light-italic { font-family: 'Ubuntu', sans-serif; font-weight: 300; font-style: italic; }
+  .ubuntu-regular-italic { font-family: 'Ubuntu', sans-serif; font-weight: 400; font-style: italic; }
+  .ubuntu-medium-italic { font-family: 'Ubuntu', sans-serif; font-weight: 500; font-style: italic; }
+  .ubuntu-bold-italic { font-family: 'Ubuntu', sans-serif; font-weight: 700; font-style: italic; }
+
+  /* Make Ubuntu the site default font; specific components (like hero) can override using .font-display or other utilities */
+  body {
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 400;
+  }
   
   .bg-pattern {
     background-image: radial-gradient(circle at 1px 1px, hsl(var(--primary) / 0.08) 1px, transparent 0);

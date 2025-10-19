@@ -4,7 +4,7 @@ import heroImage from "@/assets/zepto-hero.jpg";
 
 export const Hero = () => {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden font-display">
       <div className="container mx-auto px-4 py-16 lg:py-24">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left copy */}
