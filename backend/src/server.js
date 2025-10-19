@@ -7,6 +7,9 @@ import { configureCloudinary } from "./config/cloudinary.js";
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
 import userListRoutes from "./routes/userLists.js";
+import orderRoutes from "./routes/orders.js";
+import addressRoutes from "./routes/addresses.js";
+import productsRoutes from "./routes/products.js";
 
 dotenv.config();
 
@@ -26,6 +29,9 @@ app.get("/health", (_req, res) => {
 app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userListRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/addresses", addressRoutes);
+app.use("/api/products", productsRoutes);
 
 const port = process.env.PORT || 5000;
 

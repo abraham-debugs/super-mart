@@ -13,7 +13,9 @@ const UserSchema = new mongoose.Schema(
     emailOtpCode: { type: String, default: null },
     emailOtpExpiresAt: { type: Date, default: null },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-    saveForLater: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }]
+    saveForLater: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+    isOnline: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: null }
   },
   { timestamps: true }
 );

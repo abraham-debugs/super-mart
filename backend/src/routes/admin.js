@@ -3,6 +3,9 @@ import { upload } from "../middleware/upload.js";
 import { Category } from "../models/Category.js";
 import { Product } from "../models/Product.js";
 import { v2 as cloudinary } from "cloudinary";
+import { User } from "../models/User.js";
+import { Order } from "../models/Order.js";
+import { DeliveryPartner } from "../models/DeliveryPartner.js";
 
 const router = express.Router();
 
@@ -62,6 +65,118 @@ router.post("/categories", upload.single("image"), async (req, res) => {
   }
 });
 
+// Get order detail
+router.get("/orders/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isHexId = /^[a-fA-F0-9]{24}$/.test(id);
+    const where = isHexId ? { _id: id } : { orderId: String(id) };
+    const order = await Order.findOne(where).populate({ path: "items.productId", select: "nameEn price imageUrl" });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    const items = (order.items || []).map((it) => ({
+      productId: String(it.productId?._id || it.productId || ""),
+      name: it.name || it.productId?.nameEn || "",
+      price: typeof it.price === "number" ? it.price : (it.productId?.price || 0),
+      quantity: it.quantity || 1,
+      imageUrl: it.imageUrl || it.productId?.imageUrl || ""
+    }));
+    res.json({
+      id: String(order._id),
+      orderId: order.orderId || null,
+      userId: String(order.userId || ""),
+      customerDetails: order.customerDetails || {},
+      status: order.status,
+      total: order.total,
+      createdAt: order.createdAt,
+      items
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch order", error: err?.message || String(err) });
+  }
+});
+
+// Update order status (id can be Mongo _id or custom orderId)
+router.put("/orders/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+    const allowed = ["placed", "shipped", "delivered", "cancelled", "confirmed", "payment_verified", "booked"]; // supports minimal and extended sets
+    if (!allowed.includes(String(status))) return res.status(400).json({ message: "Invalid status" });
+    const isHexId = /^[a-fA-F0-9]{24}$/.test(String(id));
+    const where = isHexId ? { _id: id } : { orderId: String(id) };
+    const order = await Order.findOneAndUpdate(where, { status: String(status) }, { new: true });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json({ id: String(order._id), orderId: order.orderId || null, status: order.status });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update status", error: err?.message || String(err) });
+  }
+});
+
+// List users with basic info and order counts
+router.get("/users", async (_req, res) => {
+  try {
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .select("name email phone createdAt isOnline lastSeen");
+
+    // Aggregate order counts per user
+    const counts = await Order.aggregate([
+      { $group: { _id: "$userId", count: { $sum: 1 } } }
+    ]);
+    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    const mapped = users.map((u) => ({
+      id: String(u._id),
+      name: u.name,
+      email: u.email,
+      phone: u.phone || "",
+      orders: countMap.get(String(u._id)) || 0,
+      status: u.isOnline ? "active" : "inactive",
+      joinDate: u.createdAt
+    }));
+    res.json(mapped);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch users", error: err?.message || String(err) });
+  }
+});
+
+// List recent orders for admin
+router.get("/orders", async (_req, res) => {
+  try {
+    const orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .populate({ path: "userId", select: "name email" });
+
+    const mapped = orders.map((o) => ({
+      id: String(o._id),
+      orderId: o.orderId || null,
+      customer: o.customerDetails?.fullName || o.userId?.name || "",
+      customerDetails: o.customerDetails || {},
+      total: o.total,
+      status: o.status,
+      date: o.createdAt,
+      items: Array.isArray(o.items) ? o.items.reduce((n, it) => n + (it.quantity || 1), 0) : 0,
+      itemsBrief: Array.isArray(o.items)
+        ? o.items.slice(0, 10).map((it) => ({
+            productId: String(it.productId || ""),
+            name: it.name || "",
+            price: typeof it.price === "number" ? it.price : 0,
+            quantity: it.quantity || 1,
+            imageUrl: it.imageUrl || ""
+          }))
+        : [],
+      paymentScreenshot: o.paymentScreenshot ? { verified: !!o.paymentScreenshot.verified } : null,
+      transportName: o.transportName || "",
+      lrNumber: o.lrNumber || "",
+      delivery: o.transportName || "Not Assigned"
+    }));
+    res.json(mapped);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch orders", error: err?.message || String(err) });
+  }
+});
+
 // List categories
 router.get("/categories", async (_req, res) => {
   try {
@@ -75,8 +190,13 @@ router.get("/categories", async (_req, res) => {
 // List products
 router.get("/products", async (req, res) => {
   try {
-    const { categoryId } = req.query;
-    const where = categoryId ? { categoryId } : {};
+    const { categoryId, q } = req.query;
+    const where = {};
+    if (categoryId) Object.assign(where, { categoryId });
+    if (q) {
+      const rx = new RegExp(String(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      Object.assign(where, { $or: [{ nameEn: rx }, { nameTa: rx }] });
+    }
     const products = await Product.find(where)
       .sort({ createdAt: -1 })
       .populate({ path: "categoryId", select: "name" });
@@ -217,6 +337,45 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
   } catch (err) {
     console.error("PUT /api/admin/categories/:id error:", err);
     res.status(500).json({ message: "Failed to update category", error: err?.message || String(err) });
+  }
+});
+
+// Delivery partners - list
+router.get("/delivery-partners", async (_req, res) => {
+  try {
+    const partners = await DeliveryPartner.find().sort({ createdAt: -1 });
+    res.json(partners.map(p => ({ id: String(p._id), name: p.name, phone: p.phone, status: p.status })));
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch delivery partners", error: err?.message || String(err) });
+  }
+});
+
+// Delivery partners - create
+router.post("/delivery-partners", async (req, res) => {
+  try {
+    const { name, phone, status } = req.body;
+    if (!name || !phone) return res.status(400).json({ message: "name and phone are required" });
+    const partner = await DeliveryPartner.create({ name, phone, status: status === "inactive" ? "inactive" : "active" });
+    res.status(201).json({ id: String(partner._id), name: partner.name, phone: partner.phone, status: partner.status });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create delivery partner", error: err?.message || String(err) });
+  }
+});
+
+// Delivery partners - update
+router.put("/delivery-partners/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, status } = req.body;
+    const update = {};
+    if (typeof name === "string") update.name = name;
+    if (typeof phone === "string") update.phone = phone;
+    if (status === "active" || status === "inactive") update.status = status;
+    const partner = await DeliveryPartner.findByIdAndUpdate(id, update, { new: true });
+    if (!partner) return res.status(404).json({ message: "Partner not found" });
+    res.json({ id: String(partner._id), name: partner.name, phone: partner.phone, status: partner.status });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update delivery partner", error: err?.message || String(err) });
   }
 });
 

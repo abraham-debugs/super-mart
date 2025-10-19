@@ -2,7 +2,9 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User.js";
+import { Personalization } from "../models/Personalization.js";
 import { createMailer } from "../config/mailer.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -22,6 +24,16 @@ router.post("/register", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     const user = await User.create({ name, email, passwordHash, preferredCategoryId, isProfileComplete: false, emailVerified: false, emailOtpCode: otp, emailOtpExpiresAt: otpExpires });
+
+    // create personalization record if preferredCategoryId provided
+    if (preferredCategoryId) {
+      try {
+        await Personalization.create({ userId: user._id, preferredCategoryId });
+      } catch (e) {
+        // non-fatal - personalization can be updated later
+        console.warn("Failed to create personalization record:", e?.message || e);
+      }
+    }
     // send OTP email
     const mailer = createMailer();
     if (mailer) {
@@ -82,6 +94,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Presence heartbeat: marks the current user online and updates lastSeen
+router.post("/heartbeat", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    await User.findByIdAndUpdate(userId, { isOnline: true, lastSeen: new Date() });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "Heartbeat failed", error: err?.message || String(err) });
+  }
+});
+
 // Get current user profile
 router.get("/me", async (req, res) => {
   try {
@@ -115,6 +138,19 @@ router.put("/me", async (req, res) => {
     if (typeof isProfileComplete === "boolean") update.isProfileComplete = isProfileComplete;
     const user = await User.findByIdAndUpdate(payload.uid, update, { new: true }).select("name email phone address preferredCategoryId isProfileComplete wishlist saveForLater");
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    // upsert personalization for this user
+    if (preferredCategoryId) {
+      try {
+        await Personalization.findOneAndUpdate(
+          { userId: payload.uid },
+          { preferredCategoryId },
+          { upsert: true, new: true }
+        );
+      } catch (e) {
+        console.warn("Failed to upsert personalization:", e?.message || e);
+      }
+    }
     res.json({ id: user._id, name: user.name, email: user.email, phone: user.phone || "", address: user.address || "", preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, wishlist: user.wishlist || [], saveForLater: user.saveForLater || [] });
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });
