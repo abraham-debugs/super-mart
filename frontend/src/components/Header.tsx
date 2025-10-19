@@ -34,10 +34,10 @@ export const Header = () => {
               {/* Logo */}
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-primary/10 hover:scale-110 transition-transform duration-300">
-                 <Link to="/"> <span className="text-primary font-bold text-lg">Z</span> </Link>
+                 <Link to="/"> <span className="text-primary font-bold text-lg">S</span> </Link>
                 </div>
               <Link to="/">  <span className="text-xl font-bold hover:scale-105 transition-transform duration-300 text-foreground">
-                  Zepto
+                  SuperMart
                 </span> </Link>
               </div>
 
