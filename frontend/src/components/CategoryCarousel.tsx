@@ -4,20 +4,21 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const PLACEHOLDER_IMG = "https://placehold.co/80x80";
 
 type BackendCategory = { _id: string; name: string; imageUrl: string };
 
 const fallbackCategories: BackendCategory[] = [
-  { _id: "fruits-vegetables", name: "Fruits & Vegetables", imageUrl: "/api/placeholder/80/80" },
-  { _id: "dairy-bread-eggs", name: "Dairy, Bread & Eggs", imageUrl: "/api/placeholder/80/80" },
-  { _id: "atta-rice-oil", name: "Atta, Rice, Oil & Dals", imageUrl: "/api/placeholder/80/80" },
-  { _id: "meat-fish-eggs", name: "Meat, Fish & Eggs", imageUrl: "/api/placeholder/80/80" },
-  { _id: "masala-dry-fruits", name: "Masala & Dry Fruits", imageUrl: "/api/placeholder/80/80" },
-  { _id: "breakfast-sauces", name: "Breakfast & Sauces", imageUrl: "/api/placeholder/80/80" },
-  { _id: "packaged-food", name: "Packaged Food", imageUrl: "/api/placeholder/80/80" },
-  { _id: "tea-coffee", name: "Tea, Coffee & More", imageUrl: "/api/placeholder/80/80" },
-  { _id: "ice-cream", name: "Ice Creams & More", imageUrl: "/api/placeholder/80/80" },
-  { _id: "frozen-food", name: "Frozen Food", imageUrl: "/api/placeholder/80/80" }
+  { _id: "fruits-vegetables", name: "Fruits & Vegetables", imageUrl: PLACEHOLDER_IMG },
+  { _id: "dairy-bread-eggs", name: "Dairy, Bread & Eggs", imageUrl: PLACEHOLDER_IMG },
+  { _id: "atta-rice-oil", name: "Atta, Rice, Oil & Dals", imageUrl: PLACEHOLDER_IMG },
+  { _id: "meat-fish-eggs", name: "Meat, Fish & Eggs", imageUrl: PLACEHOLDER_IMG },
+  { _id: "masala-dry-fruits", name: "Masala & Dry Fruits", imageUrl: PLACEHOLDER_IMG },
+  { _id: "breakfast-sauces", name: "Breakfast & Sauces", imageUrl: PLACEHOLDER_IMG },
+  { _id: "packaged-food", name: "Packaged Food", imageUrl: PLACEHOLDER_IMG },
+  { _id: "tea-coffee", name: "Tea, Coffee & More", imageUrl: PLACEHOLDER_IMG },
+  { _id: "ice-cream", name: "Ice Creams & More", imageUrl: PLACEHOLDER_IMG },
+  { _id: "frozen-food", name: "Frozen Food", imageUrl: PLACEHOLDER_IMG }
 ];
 
 export const CategoryCarousel = () => {
