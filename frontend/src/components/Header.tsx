@@ -28,42 +28,54 @@ export const Header = () => {
   return (
     <>
       <header className="sticky top-0 z-50 bg-transparent">
-        <div className="container mx-auto px-4 py-2">
-          <div className="glassmorphism-navbar dynamic-island rounded-2xl px-6 py-3">
-            <div className="flex items-center justify-between h-14">
+        <div className="container mx-auto px-4 py-3">
+          <div className="glassmorphism-navbar dynamic-island rounded-3xl px-8 py-4 shadow-2xl border border-white/20">
+            <div className="flex items-center justify-between h-16">
               {/* Logo */}
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-primary/10 hover:scale-110 transition-transform duration-300">
-                 <Link to="/"> <span className="text-primary font-bold text-lg">Z</span> </Link>
-                </div>
-              <Link to="/">  <span className="text-xl font-bold hover:scale-105 transition-transform duration-300 text-foreground">
-                  Zepto
-                </span> </Link>
+              <div className="flex items-center space-x-4">
+                <Link to="/" className="flex items-center space-x-3 group">
+                  <div className="relative">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 shadow-lg group-hover:scale-110 transition-all duration-300">
+                      <span className="text-white font-bold text-xl">Z</span>
+                    </div>
+                    <div className="absolute inset-0 rounded-2xl bg-blue-600 opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-300"></div>
+                  </div>
+                  <span className="text-2xl font-bold text-blue-600 group-hover:scale-105 transition-transform duration-300">
+                    Zepto
+                  </span>
+                </Link>
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center space-x-6 text-foreground/80">
+              <nav className="hidden md:flex items-center space-x-2 text-foreground/80">
                 {navigation.map((item, index) => (
                   <a
                     key={item.name}
                     href={item.href}
-                    className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105 slide-up"
+                    className="relative text-sm font-medium hover:text-primary transition-all duration-300 hover:bg-primary/10 px-4 py-2 rounded-xl hover:scale-105 group"
                     style={{animationDelay: `${index * 0.1}s`}}
                   >
-                    {item.name}
+                    <span className="relative z-10">{item.name}</span>
+                    <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </a>
                 ))}
-                <a href="/wishlist" className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105">Wishlist</a>
-                <a href="/saved" className="text-sm font-medium hover:text-primary transition-all duration-200 hover:bg-primary/5 px-3 py-2 rounded-lg hover:scale-105">Saved</a>
+                <a href="/wishlist" className="relative text-sm font-medium hover:text-primary transition-all duration-300 hover:bg-primary/10 px-4 py-2 rounded-xl hover:scale-105 group">
+                  <span className="relative z-10">Wishlist</span>
+                  <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </a>
+                <a href="/saved" className="relative text-sm font-medium hover:text-primary transition-all duration-300 hover:bg-primary/10 px-4 py-2 rounded-xl hover:scale-105 group">
+                  <span className="relative z-10">Saved</span>
+                  <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </a>
               </nav>
 
               {/* Search Bar + Voice - Desktop */}
-              <div className="hidden lg:flex items-center flex-1 max-w-xl mx-8 gap-3">
-                <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="hidden lg:flex items-center flex-1 max-w-2xl mx-8 gap-4">
+                <div className="relative w-full group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
                   <Input
                     placeholder="Search for groceries & essentials..."
-                    className="pl-10 pr-4 w-full border-primary/20 focus:border-primary/40 focus:ring-primary/20 transition-all duration-200"
+                    className="pl-12 pr-4 w-full h-12 rounded-2xl border-2 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const target = e.target as HTMLInputElement;
@@ -73,6 +85,7 @@ export const Header = () => {
                       }
                     }}
                   />
+                  <div className="absolute inset-0 rounded-2xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                 </div>
                 <VoiceSearch onSearch={(q) => {
                   const qs = new URLSearchParams(window.location.search);
