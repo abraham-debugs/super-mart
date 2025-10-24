@@ -276,6 +276,108 @@ router.post("/products", upload.single("image"), async (req, res) => {
   }
 });
 
+// Update product
+router.put("/products/:id", upload.single("image"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId } = req.body;
+    const product = await Product.findById(id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const hasCloudinary = Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
+
+    // Update fields if provided
+    if (nameEn) product.nameEn = nameEn;
+    if (nameTa) product.nameTa = nameTa;
+    if (price) product.price = Number(price);
+    if (originalPrice) product.originalPrice = Number(originalPrice);
+    if (youtubeLink) product.youtubeLink = youtubeLink;
+    if (categoryId) {
+      const category = await Category.findById(categoryId);
+      if (!category) return res.status(404).json({ message: "Category not found" });
+      product.categoryId = categoryId;
+    }
+
+    // Handle image update if new image provided
+    if (req.file) {
+      if (hasCloudinary) {
+        try {
+          // Remove old image if it was stored in Cloudinary
+          if (product.publicId && product.publicId !== "local") {
+            await cloudinary.uploader.destroy(product.publicId, { resource_type: "image" });
+          }
+        } catch (e) {
+          console.warn("Cloudinary destroy failed:", e?.message || e);
+        }
+
+        // Upload new image
+        const result = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "supermart/products",
+              resource_type: "image",
+              transformation: [{ width: 800, height: 800, crop: "fill", gravity: "auto" }]
+            },
+            (error, uploadResult) => {
+              if (error) reject(error);
+              else resolve(uploadResult);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+
+        product.imageUrl = result.secure_url;
+        product.publicId = result.public_id;
+      } else {
+        const mime = req.file.mimetype || "image/png";
+        const base64 = req.file.buffer.toString("base64");
+        product.imageUrl = `data:${mime};base64,${base64}`;
+        product.publicId = "local";
+      }
+    }
+
+    await product.save();
+    res.json(product);
+  } catch (err) {
+    console.error("PUT /api/admin/products/:id error:", err);
+    res.status(500).json({ message: "Failed to update product", error: err?.message || String(err) });
+  }
+});
+
+// Delete product
+router.delete("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    // Remove image from Cloudinary if it exists
+    const hasCloudinary = Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
+
+    if (hasCloudinary && product.publicId && product.publicId !== "local") {
+      try {
+        await cloudinary.uploader.destroy(product.publicId, { resource_type: "image" });
+      } catch (e) {
+        console.warn("Cloudinary destroy failed:", e?.message || e);
+      }
+    }
+
+    await Product.findByIdAndDelete(id);
+    res.json({ message: "Product deleted successfully" });
+  } catch (err) {
+    console.error("DELETE /api/admin/products/:id error:", err);
+    res.status(500).json({ message: "Failed to delete product", error: err?.message || String(err) });
+  }
+});
+
 // Update category (name and/or image)
 router.put("/categories/:id", upload.single("image"), async (req, res) => {
   try {
