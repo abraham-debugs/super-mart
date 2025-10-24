@@ -82,10 +82,11 @@ const Index = () => {
       
       <main className="relative z-10">
         {/* Category Carousel */}
-        <CategoryCarousel />
          
         {/* Hero Section */}
         <Hero />
+        <CategoryCarousel />
+
          {/* Features */}
          <Features />
         

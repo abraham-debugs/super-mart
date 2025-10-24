@@ -1,12 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { BalancingLoader } from "@/components/BalancingLoader";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const PLACEHOLDER_IMG = "https://placehold.co/80x80";
 
-type BackendCategory = { _id: string; name: string; imageUrl: string };
+type BackendCategory = { 
+  _id: string; 
+  name: string; 
+  imageUrl: string; 
+  parentCategory?: { _id: string; name: string } | null;
+};
+
+type CategoryGroup = {
+  parent: BackendCategory;
+  children: BackendCategory[];
+};
 
 const fallbackCategories: BackendCategory[] = [
   { _id: "fruits-vegetables", name: "Fruits & Vegetables", imageUrl: PLACEHOLDER_IMG },
@@ -21,33 +33,40 @@ const fallbackCategories: BackendCategory[] = [
   { _id: "frozen-food", name: "Frozen Food", imageUrl: PLACEHOLDER_IMG }
 ];
 
+// Gradient color schemes for each category
+const categoryGradients = [
+  "from-emerald-500 to-green-600",
+  "from-blue-500 to-cyan-600",
+  "from-amber-500 to-orange-600",
+  "from-red-500 to-pink-600",
+  "from-purple-500 to-violet-600",
+  "from-yellow-500 to-amber-600",
+  "from-indigo-500 to-blue-600",
+  "from-teal-500 to-emerald-600",
+  "from-pink-500 to-rose-600",
+  "from-cyan-500 to-blue-600",
+];
+
 export const CategoryCarousel = () => {
   const navigate = useNavigate();
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [categories, setCategories] = useState<BackendCategory[]>(fallbackCategories);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const checkScrollButtons = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+  // Group categories by parent
+  const categoryGroups: CategoryGroup[] = [];
+  const standaloneParents: BackendCategory[] = [];
+  const parentCategories = categories.filter(c => !c.parentCategory);
+  
+  parentCategories.forEach(parent => {
+    const children = categories.filter(c => c.parentCategory?._id === parent._id);
+    if (children.length > 0) {
+      categoryGroups.push({ parent, children });
+    } else {
+      // Parent category without children - show as standalone
+      standaloneParents.push(parent);
     }
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 200;
-      const newScrollLeft = scrollContainerRef.current.scrollLeft + 
-        (direction === 'left' ? -scrollAmount : scrollAmount);
-      
-      scrollContainerRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth'
-      });
-    }
-  };
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -61,74 +80,164 @@ export const CategoryCarousel = () => {
         }
       } catch (_err) {
         // keep fallbacks
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
     load();
     return () => { cancelled = true; };
   }, []);
 
+  const handleCategoryClick = (category: BackendCategory) => {
+    setSelectedCategory(category._id);
+    const evt = new CustomEvent("category:selected", { detail: { id: category._id, name: category.name } });
+    window.dispatchEvent(evt);
+    try {
+      navigate(`/category/${category._id}`);
+    } catch (_err) {
+      // navigate might not be available in some contexts; ignore
+    }
+  };
+
   return (
-    <div className="relative bg-background border-b border-border">
-      <div className="container mx-auto px-4 py-4">
-        <div className="relative">
-          {/* Left scroll button */}
-          {canScrollLeft && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg border-gray-200 hover:bg-gray-50 rounded-full"
-              onClick={() => scroll('left')}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          )}
-
-          {/* Right scroll button */}
-          {canScrollRight && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg border-gray-200 hover:bg-gray-50 rounded-full"
-              onClick={() => scroll('right')}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-
-          {/* Categories container */}
-          <div
-            ref={scrollContainerRef}
-            className="flex space-x-4 overflow-x-auto scrollbar-hide scroll-smooth px-4"
-            onScroll={checkScrollButtons}
-          >
-            {categories.map((category) => (
-              <div
-                key={category._id}
-                className="flex flex-col items-center space-y-2 min-w-[80px] cursor-pointer group hover:scale-105 transition-all duration-200 flex-shrink-0"
-                  onClick={() => {
-                    const evt = new CustomEvent("category:selected", { detail: { id: category._id, name: category.name } });
-                    window.dispatchEvent(evt);
-                    // also navigate to category page
-                    try {
-                      navigate(`/category/${category._id}`);
-                    } catch (_err) {
-                      // navigate might not be available in some contexts; ignore
-                    }
-                  }}
-              >
-                {/* Category icon/image */}
-                <div className="w-16 h-16 rounded-full bg-card flex items-center justify-center overflow-hidden group-hover:bg-primary/10 transition-all duration-200 shadow-sm group-hover:shadow-md border border-border">
-                  <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" />
+    <div className="relative bg-transparent border-b border-gray-200/30">
+      <div className="container mx-auto px-3 py-3">
+        {loading ? (
+          <div className="w-full flex justify-center py-6">
+            <BalancingLoader />
+          </div>
+        ) : categoryGroups.length === 0 ? (
+          <div className="text-center py-6 text-gray-500 text-sm">
+            No categories available
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Parent Categories with Subcategories */}
+            {categoryGroups.map((group, groupIdx) => (
+              <div key={group.parent._id} className="space-y-1.5">
+                {/* Parent Category Header */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold text-gray-900">
+                    {group.parent.name}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCategoryClick(group.parent)}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 text-xs px-2"
+                  >
+                    See all <ChevronRight className="h-3 w-3 ml-0.5" />
+                  </Button>
                 </div>
-                
-                {/* Category name */}
-                <span className="text-xs text-center text-foreground/80 font-medium leading-tight group-hover:text-primary transition-colors duration-200 max-w-[80px]">
-                  {category.name}
-                </span>
+
+                {/* Subcategories Grid */}
+                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20 gap-1">
+                  {group.children.map((category, index) => {
+                    const isSelected = selectedCategory === category._id;
+                    const gradient = categoryGradients[(groupIdx * 10 + index) % categoryGradients.length];
+                    
+                    return (
+                      <div
+                        key={category._id}
+                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${
+                          isSelected ? 'scale-105' : 'hover:scale-105'
+                        }`}
+                        onClick={() => handleCategoryClick(category)}
+                      >
+                        {/* Category Card */}
+                        <div className="relative w-full">
+                          {/* Gradient background container */}
+                          <div className={`aspect-square rounded bg-gradient-to-br ${gradient} p-[0.5px] shadow-xs group-hover:shadow-sm transition-all duration-100 ${
+                            isSelected ? 'ring-1 ring-blue-400' : ''
+                          }`}>
+                            {/* Transparent inner container for image */}
+                            <div className="w-full h-full rounded-sm bg-gray-50/80 p-[1px] overflow-hidden">
+                              <div className="relative w-full h-full rounded-[2px] overflow-hidden">
+                                <img 
+                                  src={category.imageUrl} 
+                                  alt={category.name} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150" 
+                                />
+                                {/* Overlay gradient on hover */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-100`}></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Category name */}
+                        <div className="text-center w-full">
+                          <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
+                            isSelected 
+                              ? 'text-blue-600' 
+                              : 'text-gray-700 group-hover:text-blue-600'
+                          }`}>
+                            {category.name}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ))}
+            
+            {/* Standalone Parent Categories (without children) */}
+            {standaloneParents.length > 0 && (
+              <div className="space-y-1.5">
+                <h2 className="text-base font-bold text-gray-900">Other Categories</h2>
+                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20 gap-1">
+                  {standaloneParents.map((category, index) => {
+                    const isSelected = selectedCategory === category._id;
+                    const gradient = categoryGradients[index % categoryGradients.length];
+                    
+                    return (
+                      <div
+                        key={category._id}
+                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${
+                          isSelected ? 'scale-105' : 'hover:scale-105'
+                        }`}
+                        onClick={() => handleCategoryClick(category)}
+                      >
+                        {/* Category Card */}
+                        <div className="relative w-full">
+                          {/* Gradient background container */}
+                          <div className={`aspect-square rounded bg-gradient-to-br ${gradient} p-[0.5px] shadow-xs group-hover:shadow-sm transition-all duration-100 ${
+                            isSelected ? 'ring-1 ring-blue-400' : ''
+                          }`}>
+                            {/* Transparent inner container for image */}
+                            <div className="w-full h-full rounded-sm bg-gray-50/80 p-[1px] overflow-hidden">
+                              <div className="relative w-full h-full rounded-[2px] overflow-hidden">
+                                <img 
+                                  src={category.imageUrl} 
+                                  alt={category.name} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150" 
+                                />
+                                {/* Overlay gradient on hover */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-100`}></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Category name */}
+                        <div className="text-center w-full">
+                          <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
+                            isSelected 
+                              ? 'text-blue-600' 
+                              : 'text-gray-700 group-hover:text-blue-600'
+                          }`}>
+                            {category.name}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

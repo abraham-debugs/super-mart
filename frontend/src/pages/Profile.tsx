@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp } from "lucide-react";
 import { AddressBook } from "@/components/AddressBook";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -86,77 +93,284 @@ const Profile: React.FC = () => {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Your Profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your personal information and preferences.</p>
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "delivered": return "bg-green-100 text-green-700 border-green-300";
+      case "shipped": return "bg-blue-100 text-blue-700 border-blue-300";
+      case "cancelled": return "bg-red-100 text-red-700 border-red-300";
+      default: return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    }
+  };
 
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          <div className="md:col-span-1">
-            <div className="rounded-lg border bg-card p-6">
-              <div className="flex flex-col items-center">
-                <div className="h-24 w-24 overflow-hidden rounded-full border">
-                  <img alt="Avatar" className="h-full w-full object-cover" src="https://api.dicebear.com/7.x/initials/svg?seed=U" />
+  const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const deliveredOrders = orders.filter(o => o.status === "delivered").length;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+              <p className="mt-2 text-blue-100">Manage your account and view your orders</p>
+            </div>
+            <Button
+              variant="outline"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              onClick={() => { logout(); navigate("/login"); }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mt-16 mb-8">
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{orders.length}</p>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">Update your personal details on the right.</p>
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <ShoppingBag className="h-6 w-6 text-white" />
+                </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Delivered</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{deliveredOrders}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                  <Package className="h-6 w-6 text-white" />
             </div>
           </div>
+            </CardContent>
+          </Card>
 
-          <div className="md:col-span-2">
-            <div className="rounded-lg border bg-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex space-x-2">
-                  <button type="button" onClick={() => setActiveTab("account")} className={`px-3 py-2 rounded ${activeTab === "account" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Account</button>
-                  <button type="button" onClick={() => setActiveTab("orders")} className={`px-3 py-2 rounded ${activeTab === "orders" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>My Orders</button>
-                  <button type="button" onClick={() => setActiveTab("addresses")} className={`px-3 py-2 rounded ${activeTab === "addresses" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Addresses</button>
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Spent</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">₹{totalSpent.toFixed(0)}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
-
-              {activeTab === "account" ? (
-                <form onSubmit={save}>
-                  {error && <div className="mb-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium" htmlFor="name">Full Name</label>
-                      <input id="name" type="text" placeholder="John Doe" className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" value={name} onChange={(e) => setName(e.target.value)} />
+            </CardContent>
+          </Card>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium" htmlFor="email">Email</label>
-                      <input id="email" type="email" placeholder="you@example.com" className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" value={email} readOnly />
+        <div className="grid gap-8 lg:grid-cols-4">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm sticky top-8">
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center">
+                  <div className="relative">
+                    <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                      <span className="text-3xl font-bold text-white">
+                        {name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium" htmlFor="phone">Phone</label>
-                      <input id="phone" type="tel" placeholder="+1 555 000 1234" className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                    </div>
-
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-sm font-medium" htmlFor="address">Address</label>
-                      <textarea id="address" rows={3} placeholder="Street, City, State, ZIP" className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" value={address} onChange={(e) => setAddress(e.target.value)} />
-                    </div>
+                    <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-green-500 border-2 border-white"></div>
                   </div>
-
-                  <div className="mt-6 flex justify-end">
-                    <div className="flex items-center gap-3">
-                      <button type="submit" className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-primary to-accent px-6 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:from-primary/90 hover:to-accent/90 hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{saving ? "Saving..." : "Save Changes"}</button>
-                      <button type="button" className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors hover:bg-primary/10" onClick={() => { logout(); navigate("/login"); }}>Logout</button>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">{name || user?.name || "User"}</h3>
+                  <p className="text-sm text-gray-500">{email}</p>
+                  <Badge className="mt-3 bg-gradient-to-r from-blue-500 to-purple-500">Premium Member</Badge>
                     </div>
+
+                <div className="mt-6 space-y-2">
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Mail className="h-4 w-4" />
+                    <span className="truncate">{email}</span>
                   </div>
-                </form>
-              ) : activeTab === "orders" ? (
-                <div>
+                  {phone && (
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <Phone className="h-4 w-4" />
+                      <span>{phone}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {new Date().toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="account" className="space-y-6" onValueChange={(val) => setActiveTab(val as any)}>
+              <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1">
+                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                  <User className="h-4 w-4 mr-2" />
+                  Account
+                </TabsTrigger>
+                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                  <Package className="h-4 w-4 mr-2" />
+                  Orders
+                </TabsTrigger>
+                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Addresses
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="account" className="space-y-6">
+                {/* Personal Information */}
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <User className="h-5 w-5 text-blue-600" />
+                      Personal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={save} className="space-y-4">
+                      {error && (
+                        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                          {error}
+                        </div>
+                      )}
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="name" className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-500" />
+                            Full Name
+                          </Label>
+                          <Input
+                            id="name"
+                            type="text"
+                            placeholder="John Doe"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="border-gray-300"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="email" className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-gray-500" />
+                            Email Address
+                          </Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            readOnly
+                            className="bg-gray-50 border-gray-300"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="phone" className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-gray-500" />
+                            Phone Number
+                          </Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="+1 555 000 1234"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="border-gray-300"
+                          />
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="address" className="flex items-center gap-2">
+                            <Home className="h-4 w-4 text-gray-500" />
+                            Address
+                          </Label>
+                          <Textarea
+                            id="address"
+                            rows={3}
+                            placeholder="Street, City, State, ZIP"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="border-gray-300"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-4">
+                        <Button
+                          type="submit"
+                          disabled={saving}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                        >
+                          {saving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                {/* Security */}
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <Lock className="h-5 w-5 text-blue-600" />
+                      Security Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">New Password</Label>
+                        <Input id="password" type="password" className="border-gray-300" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm">Confirm Password</Label>
+                        <Input id="confirm" type="password" className="border-gray-300" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                      <Button variant="outline">Update Password</Button>
+                  </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="orders">
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <Package className="h-5 w-5 text-blue-600" />
+                      My Orders
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
                   {ordersLoading ? (
-                    <div className="py-8 text-center">Loading orders...</div>
+                      <div className="py-12 text-center">
+                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+                        <p className="mt-4 text-gray-600">Loading orders...</p>
+                      </div>
                   ) : orders.length === 0 ? (
-                    <div className="py-8 text-center">You have no orders yet.</div>
+                      <div className="py-12 text-center">
+                        <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-600 font-medium">No orders yet</p>
+                        <p className="text-sm text-gray-500 mt-1">Your orders will appear here</p>
+                      </div>
                   ) : (
                     <div className="space-y-4">
                       {orders.map((order) => {
                         const steps = ["placed", "shipped", "delivered"];
-                        // determine the current step index
                         let currentIndex = steps.indexOf(order.status);
                         if (currentIndex === -1) {
                           if (order.status === "paid") currentIndex = 0;
@@ -165,84 +379,93 @@ const Profile: React.FC = () => {
                         }
 
                         return (
-                          <div key={order._id} className="p-4 border rounded">
-                            <div className="flex items-center justify-between">
+                            <div key={order._id} className="border rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
+                              <div className="flex items-start justify-between mb-4">
                               <div>
-                                <div className="text-sm text-muted-foreground">Order ID: {order._id}</div>
-                                <div className="font-medium capitalize">{order.status}</div>
+                                  <p className="text-sm text-gray-500">Order ID: {order._id?.slice(-8)}</p>
+                                  <Badge className={`mt-2 ${getStatusColor(order.status)}`}>
+                                    {order.status?.toUpperCase()}
+                                  </Badge>
                               </div>
                               <div className="text-right">
-                                <div className="font-semibold">₹{Number(order.total).toFixed(2)}</div>
-                                <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</div>
-                              </div>
+                                  <p className="text-2xl font-bold text-gray-900">₹{Number(order.total).toFixed(2)}</p>
+                                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(order.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
                             </div>
 
-                            {/* Status tracker */}
-                            <div className="mt-4">
-                              <div className="flex items-center">
+                              {/* Progress Tracker */}
+                              {order.status !== "cancelled" && (
+                                <div className="my-6">
+                                  <div className="flex items-center justify-between">
                                 {steps.map((s, idx) => {
                                   const done = currentIndex >= idx;
+                                      const isLast = idx === steps.length - 1;
                                   return (
-                                    <div key={s} className="flex items-center">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${done ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}`}>
-                                        {done ? <Check size={16} /> : <span className="text-xs">{idx + 1}</span>}
+                                        <React.Fragment key={s}>
+                                          <div className="flex flex-col items-center">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                              done ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg" : "bg-gray-200 text-gray-500"
+                                            }`}>
+                                              {done ? <Check className="h-5 w-5" /> : <span className="text-sm font-medium">{idx + 1}</span>}
+                                            </div>
+                                            <p className={`mt-2 text-xs font-medium ${done ? "text-green-600" : "text-gray-500"}`}>
+                                              {s.charAt(0).toUpperCase() + s.slice(1)}
+                                            </p>
                                       </div>
-                                      <div className="ml-3 text-sm">{s.charAt(0).toUpperCase() + s.slice(1)}</div>
-                                      {idx < steps.length - 1 && (
-                                        <div className={`h-1 flex-1 mx-4 ${currentIndex > idx ? "bg-green-500" : "bg-gray-200"}`} />
+                                          {!isLast && (
+                                            <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${currentIndex > idx ? "bg-green-500" : "bg-gray-200"}`} />
                                       )}
-                                    </div>
+                                        </React.Fragment>
                                   );
                                 })}
                               </div>
                             </div>
+                              )}
 
-                            <div className="mt-3">
-                              <div className="text-sm font-medium">Items:</div>
-                              <ul className="mt-2 space-y-1">
-                                {order.items.map((it: any) => (
-                                  <li key={String(it.productId)} className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                      <img src={it.imageUrl} alt={it.name} className="w-10 h-10 object-cover rounded" />
+                              {/* Items */}
+                              <div className="mt-4">
+                                <p className="text-sm font-semibold text-gray-700 mb-3">Order Items:</p>
+                                <div className="space-y-3">
+                                  {order.items?.map((it: any, idx: number) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                      <div className="flex items-center gap-3">
+                                        <img src={it.imageUrl} alt={it.name} className="w-12 h-12 object-cover rounded-md shadow-sm" />
                                       <div>
-                                        <div className="text-sm">{it.name}</div>
-                                        <div className="text-xs text-muted-foreground">Qty: {it.quantity}</div>
+                                          <p className="text-sm font-medium text-gray-900">{it.name}</p>
+                                          <p className="text-xs text-gray-500">Quantity: {it.quantity}</p>
+                                        </div>
                                       </div>
+                                      <p className="text-sm font-semibold text-gray-900">₹{Number(it.price * it.quantity).toFixed(2)}</p>
                                     </div>
-                                    <div className="text-sm">₹{Number(it.price * it.quantity).toFixed(2)}</div>
-                                  </li>
                                 ))}
-                              </ul>
-                            </div>
+                                </div>
+                              </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                </div>
-              ) : (
-                <div>
-                  <AddressBook showActions />
-                </div>
-              )}
-            </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <div className="mt-6 rounded-lg border bg-card p-6">
-              <h2 className="text-sm font-semibold">Security</h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="password">New Password</label>
-                  <input id="password" type="password" className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="confirm">Confirm Password</label>
-                  <input id="confirm" type="password" className="flex h-10 w-full rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button type="button" className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors hover:bg-primary/10">Update Password</button>
-              </div>
-            </div>
+              <TabsContent value="addresses">
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                      Saved Addresses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                  <AddressBook showActions />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

@@ -20,6 +20,20 @@ const OrderSchema = new mongoose.Schema(
     ],
     total: { type: Number, required: true },
     status: { type: String, default: "placed" }, // placed, confirmed, payment_verified, booked, shipped, delivered, cancelled
+    paymentMode: {
+      type: String,
+      enum: ["COD", "Online Payment", "UPI", "Card", "Wallet"],
+      default: "COD"
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid", "Failed", "Refunded"],
+      default: "Pending"
+    },
+    transactionId: {
+      type: String,
+      default: null
+    },
     address: { type: String },
     paymentInfo: { type: Object },
     paymentScreenshot: {
@@ -29,6 +43,11 @@ const OrderSchema = new mongoose.Schema(
     },
     transportName: String,
     lrNumber: String,
+    assignedDeliveryPartner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'DeliveryPartner',
+      default: null
+    },
     placedAt: { type: Date, default: Date.now }
   },
   { timestamps: true }

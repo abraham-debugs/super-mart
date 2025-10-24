@@ -9,12 +9,35 @@ import { DeliveryPartner } from "../models/DeliveryPartner.js";
 
 const router = express.Router();
 
-// Create category with image upload
+// Create category with image upload (image optional for parent categories)
 router.post("/categories", upload.single("image"), async (req, res) => {
   try {
-    const { name } = req.body;
-    if (!name || !req.file) {
-      return res.status(400).json({ message: "name and image are required" });
+    const { name, parentCategory } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "name is required" });
+    }
+
+    // If no image provided and it's a parent category (no parentCategory), use placeholder
+    if (!req.file && !parentCategory) {
+      // Parent category without image - use placeholder
+      const placeholderUrl = "https://placehold.co/600x600/e5e7eb/6b7280?text=" + encodeURIComponent(name.charAt(0).toUpperCase());
+      const category = await Category.create({ 
+        name, 
+        imageUrl: placeholderUrl, 
+        publicId: "placeholder",
+        parentCategory: null
+      });
+      return res.status(201).json(category);
+    }
+
+    // Subcategories must have an image
+    if (!req.file && parentCategory) {
+      return res.status(400).json({ message: "Image is required for subcategories" });
+    }
+
+    // If no file at this point, shouldn't happen but handle it
+    if (!req.file) {
+      return res.status(400).json({ message: "Image is required" });
     }
 
     const hasCloudinary = Boolean(
@@ -28,7 +51,12 @@ router.post("/categories", upload.single("image"), async (req, res) => {
       const mime = req.file.mimetype || "image/png";
       const base64 = req.file.buffer.toString("base64");
       const dataUrl = `data:${mime};base64,${base64}`;
-      const category = await Category.create({ name, imageUrl: dataUrl, publicId: "local" });
+      const category = await Category.create({ 
+        name, 
+        imageUrl: dataUrl, 
+        publicId: "local",
+        parentCategory: parentCategory || null
+      });
       return res.status(201).json(category);
     }
 
@@ -47,7 +75,8 @@ router.post("/categories", upload.single("image"), async (req, res) => {
             const category = await Category.create({
               name,
               imageUrl: result.secure_url,
-              publicId: result.public_id
+              publicId: result.public_id,
+              parentCategory: parentCategory || null
             });
             res.status(201).json(category);
           } catch (dbErr) {
@@ -86,12 +115,36 @@ router.get("/orders/:id", async (req, res) => {
       userId: String(order.userId || ""),
       customerDetails: order.customerDetails || {},
       status: order.status,
+      paymentMode: order.paymentMode || "COD",
+      paymentStatus: order.paymentStatus || "Pending",
+      transactionId: order.transactionId || null,
       total: order.total,
       createdAt: order.createdAt,
       items
     });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch order", error: err?.message || String(err) });
+  }
+});
+
+// Assign delivery partner to order
+router.put("/orders/:id/assign-partner", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { partnerId } = req.body;
+
+    const isHexId = /^[a-fA-F0-9]{24}$/.test(id);
+    const where = isHexId ? { _id: id } : { orderId: String(id) };
+    const order = await Order.findOne(where);
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.assignedDeliveryPartner = partnerId || null;
+    await order.save();
+
+    res.json({ success: true, message: "Delivery partner assigned successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to assign partner", error: err?.message || String(err) });
   }
 });
 
@@ -146,7 +199,8 @@ router.get("/orders", async (_req, res) => {
     const orders = await Order.find()
       .sort({ createdAt: -1 })
       .limit(200)
-      .populate({ path: "userId", select: "name email" });
+      .populate({ path: "userId", select: "name email" })
+      .populate({ path: "assignedDeliveryPartner", select: "name phone" });
 
     const mapped = orders.map((o) => ({
       id: String(o._id),
@@ -169,7 +223,9 @@ router.get("/orders", async (_req, res) => {
       paymentScreenshot: o.paymentScreenshot ? { verified: !!o.paymentScreenshot.verified } : null,
       transportName: o.transportName || "",
       lrNumber: o.lrNumber || "",
-      delivery: o.transportName || "Not Assigned"
+      delivery: o.transportName || "Not Assigned",
+      assignedDeliveryPartner: o.assignedDeliveryPartner ? String(o.assignedDeliveryPartner._id) : null,
+      assignedPartnerName: o.assignedDeliveryPartner?.name || null
     }));
     res.json(mapped);
   } catch (err) {
@@ -180,7 +236,9 @@ router.get("/orders", async (_req, res) => {
 // List categories
 router.get("/categories", async (_req, res) => {
   try {
-    const categories = await Category.find().sort({ createdAt: -1 });
+    const categories = await Category.find()
+      .populate('parentCategory', 'name')
+      .sort({ createdAt: -1 });
     res.json(categories);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch categories", error: err.message });
@@ -378,11 +436,11 @@ router.delete("/products/:id", async (req, res) => {
   }
 });
 
-// Update category (name and/or image)
+// Update category (name and/or image and/or parentCategory)
 router.put("/categories/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, parentCategory } = req.body;
     const category = await Category.findById(id);
     if (!category) return res.status(404).json({ message: "Category not found" });
 
@@ -394,6 +452,11 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
 
     // Update name if provided
     if (name) category.name = name;
+    
+    // Update parent category if provided (including setting to null)
+    if (parentCategory !== undefined) {
+      category.parentCategory = parentCategory || null;
+    }
 
     if (req.file) {
       // If new image provided

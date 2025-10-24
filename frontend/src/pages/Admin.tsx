@@ -48,6 +48,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BalancingLoader } from "@/components/BalancingLoader";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -55,15 +56,17 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
-  const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string }>>([]);
+  const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string; parentCategory?: { _id: string; name: string } | null }>>([]);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryFile, setNewCategoryFile] = useState<File | null>(null);
+  const [newParentCategory, setNewParentCategory] = useState<string>("");
   const [catSubmitting, setCatSubmitting] = useState(false);
   const [catError, setCatError] = useState<string | null>(null);
   const [editOpenForId, setEditOpenForId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editFile, setEditFile] = useState<File | null>(null);
+  const [editParentCategory, setEditParentCategory] = useState<string>("");
 
   async function loadCategories() {
     try {
@@ -100,6 +103,27 @@ const Admin = () => {
     }
   }
 
+  async function handleAssignPartner(order: { id: string } & any, partnerId: string) {
+    try {
+      const orderKey = (order as any).orderId || order.id;
+      const actualPartnerId = partnerId === "not-assigned" ? null : partnerId;
+      
+      const res = await fetch(`${API_BASE}/api/admin/orders/${orderKey}/assign-partner`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerId: actualPartnerId })
+      });
+      
+      if (!res.ok) throw new Error("Failed to assign partner");
+      
+      // Refresh orders to show updated assignment
+      loadAdminOrders();
+    } catch (e) {
+      console.error("Assign partner error:", e);
+      alert("Failed to assign delivery partner");
+    }
+  }
+
   async function loadOrderDetail(id: string) {
     try {
       setOrderDetailLoading(true);
@@ -110,6 +134,9 @@ const Admin = () => {
         id: String(data.id),
         customerDetails: data.customerDetails || {},
         status: String(data.status),
+        paymentMode: data.paymentMode || "COD",
+        paymentStatus: data.paymentStatus || "Pending",
+        transactionId: data.transactionId || null,
         total: Number(data.total || 0),
         createdAt: new Date(data.createdAt).toLocaleString(),
         items: Array.isArray(data.items) ? data.items : []
@@ -122,10 +149,11 @@ const Admin = () => {
     }
   }
 
-  function openEdit(category: { _id: string; name: string }) {
+  function openEdit(category: { _id: string; name: string; parentCategory?: { _id: string; name: string } | null }) {
     setEditOpenForId(category._id);
     setEditName(category.name);
     setEditFile(null);
+    setEditParentCategory(category.parentCategory?._id || "");
   }
 
   async function handleEditCategory(e: React.FormEvent) {
@@ -134,6 +162,7 @@ const Admin = () => {
     const form = new FormData();
     if (editName) form.append("name", editName);
     if (editFile) form.append("image", editFile);
+    form.append("parentCategory", editParentCategory || "");
     try {
       const res = await fetch(`${API_BASE}/api/admin/categories/${editOpenForId}`, { method: "PUT", body: form });
       const data = await res.json().catch(() => null);
@@ -152,20 +181,31 @@ const Admin = () => {
   async function handleAddCategory(e: React.FormEvent) {
     e.preventDefault();
     setCatError(null);
-    if (!newCategoryName || !newCategoryFile) {
-      setCatError("Name and image are required");
+    if (!newCategoryName) {
+      setCatError("Category name is required");
+      return;
+    }
+    // Image is required for subcategories, optional for parent categories
+    if (newParentCategory && !newCategoryFile) {
+      setCatError("Image is required for subcategories");
       return;
     }
     setCatSubmitting(true);
     try {
       const form = new FormData();
       form.append("name", newCategoryName);
+      if (newCategoryFile) {
       form.append("image", newCategoryFile);
+      }
+      if (newParentCategory) {
+        form.append("parentCategory", newParentCategory);
+      }
       const res = await fetch(`${API_BASE}/api/admin/categories`, { method: "POST", body: form });
       const data = await res.json().then(v => v).catch(() => null);
       if (!res.ok) throw new Error(data?.message || "Failed to add category");
       setNewCategoryName("");
       setNewCategoryFile(null);
+      setNewParentCategory("");
       setIsAddCategoryOpen(false);
       await loadCategories();
     } catch (err: any) {
@@ -174,14 +214,6 @@ const Admin = () => {
       setCatSubmitting(false);
     }
   }
-
-  // Sample data
-  const categories = [
-    { id: 1, name: "Fruits & Vegetables", products: 45, status: "active" },
-    { id: 2, name: "Dairy & Eggs", products: 32, status: "active" },
-    { id: 3, name: "Meat & Seafood", products: 28, status: "active" },
-    { id: 4, name: "Bakery", products: 15, status: "inactive" },
-  ];
 
   const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
   const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
@@ -208,11 +240,10 @@ const Admin = () => {
   const [orderDetailOpen, setOrderDetailOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderDetailLoading, setOrderDetailLoading] = useState(false);
-  const [orderDetail, setOrderDetail] = useState<null | { id: string; customerDetails?: any; status: string; total: number; createdAt: string; items: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>(null);
+  const [orderDetail, setOrderDetail] = useState<null | { id: string; customerDetails?: any; status: string; paymentMode?: string; paymentStatus?: string; transactionId?: string; total: number; createdAt: string; items: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>(null);
   const [searchDate, setSearchDate] = useState("");
   const [searchOrderId, setSearchOrderId] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "placed" | "confirmed" | "payment_verified" | "booked" | "shipped" | "delivered" | "cancelled">("all");
-  const [paymentFilter, setPaymentFilter] = useState<"all" | "with_payment" | "pending_verification" | "verified">("all");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   // Delivery partners state
@@ -223,6 +254,9 @@ const Admin = () => {
   const [pName, setPName] = useState("");
   const [pPhone, setPPhone] = useState("");
   const [pStatus, setPStatus] = useState<"active" | "inactive">("active");
+
+  // Product filter state
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
   async function loadPartners() {
     try {
@@ -415,6 +449,37 @@ const Admin = () => {
     }
   }
 
+  // Calculate dashboard statistics
+  const totalRevenue = adminOrders.reduce((sum, order) => {
+    if (order.status !== 'cancelled') {
+      return sum + Number(order.total || 0);
+    }
+    return sum;
+  }, 0);
+
+  const deliveredOrdersCount = adminOrders.filter(o => o.status === 'delivered').length;
+  const totalOrdersCount = adminOrders.length;
+  const activeUsersCount = adminUsers.filter(u => u.status === 'active').length;
+
+  // Top categories with product counts
+  const topCategories = categoryRows.map(cat => ({
+    _id: cat._id,
+    name: cat.name,
+    productCount: products.filter(p => p.categoryName === cat.name).length,
+    status: 'active'
+  })).sort((a, b) => b.productCount - a.productCount).slice(0, 4);
+
+  // Refresh dashboard data
+  const refreshDashboard = async () => {
+    await Promise.all([
+      loadAdminOrders(),
+      loadAdminUsers(),
+      loadProducts(),
+      loadCategories(),
+      loadPartners()
+    ]);
+  };
+
   useEffect(() => {
     // Preload some admin data for dashboard
     loadAdminOrders();
@@ -449,12 +514,6 @@ const Admin = () => {
     { value: "delivered", label: "Delivered" },
     { value: "cancelled", label: "Cancelled" },
   ] as const;
-  const paymentFilters = [
-    { value: "all", label: "All" },
-    { value: "with_payment", label: "With Payment" },
-    { value: "pending_verification", label: "Pending Verification" },
-    { value: "verified", label: "Verified" },
-  ] as const;
 
   const filteredOrders = adminOrders.filter((o) => {
     // date filter
@@ -469,25 +528,12 @@ const Admin = () => {
     const idMatch = !searchOrderId || String(displayId).toLowerCase().includes(searchOrderId.toLowerCase());
     // status filter
     const statusMatch = orderStatusFilter === "all" || String(o.status) === orderStatusFilter;
-    // payment filter
-    let paymentMatch = true;
-    const ps = (o as any).paymentScreenshot || null;
-    if (paymentFilter === "with_payment") paymentMatch = !!ps;
-    else if (paymentFilter === "pending_verification") paymentMatch = !!ps && !ps.verified;
-    else if (paymentFilter === "verified") paymentMatch = !!ps && !!ps.verified;
-    return dateMatch && idMatch && statusMatch && paymentMatch;
+    return dateMatch && idMatch && statusMatch;
   });
 
   // no dummy arrays; UI uses adminOrders/adminUsers
 
-  const payments = [
-    { id: 1, orderId: 1001, customer: "John Doe", amount: 45.99, method: "UPI", status: "completed", date: "2024-01-15", transactionId: "TXN123456" },
-    { id: 2, orderId: 1002, customer: "Jane Smith", amount: 32.50, method: "Card", status: "completed", date: "2024-01-14", transactionId: "TXN123457" },
-    { id: 3, orderId: 1003, customer: "Bob Johnson", amount: 67.25, method: "Wallet", status: "pending", date: "2024-01-13", transactionId: "TXN123458" },
-    { id: 4, orderId: 1004, customer: "Alice Brown", amount: 23.75, method: "UPI", status: "failed", date: "2024-01-12", transactionId: "TXN123459" },
-  ];
-
-  // removed dummy delivery persons; using `partners` from backend instead
+  // removed dummy payments and delivery persons; using real data from backend
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-blue-600", bgColor: "bg-blue-50" },
@@ -496,7 +542,6 @@ const Admin = () => {
     { id: "categories", label: "Categories", icon: Tag, color: "text-orange-600", bgColor: "bg-orange-50" },
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "user-management", label: "Users", icon: Users, color: "text-pink-600", bgColor: "bg-pink-50" },
-    { id: "payment-reports", label: "Payments", icon: CreditCard, color: "text-emerald-600", bgColor: "bg-emerald-50" },
     { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-cyan-600", bgColor: "bg-cyan-50" },
   ];
 
@@ -633,7 +678,7 @@ const Admin = () => {
                   <Download className="h-4 w-4 mr-2" />
                   Export Report
                 </Button>
-                <Button size="sm">
+                <Button size="sm" onClick={refreshDashboard}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
                 </Button>
@@ -650,10 +695,10 @@ const Admin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">₹1,45,231.89</div>
+                  <div className="text-3xl font-bold text-blue-900">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-600" />
-                    <p className="text-xs text-green-600 font-medium">+20.1% from last month</p>
+                    <ShoppingCart className="h-3 w-3 text-blue-600" />
+                    <p className="text-xs text-blue-600 font-medium">{deliveredOrdersCount} delivered orders</p>
                   </div>
                 </CardContent>
               </Card>
@@ -666,26 +711,26 @@ const Admin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-900">2,350</div>
+                  <div className="text-3xl font-bold text-green-900">{totalOrdersCount}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-600" />
-                    <p className="text-xs text-green-600 font-medium">+180.1% from last month</p>
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    <p className="text-xs text-green-600 font-medium">{deliveredOrdersCount} completed</p>
                   </div>
                 </CardContent>
               </Card>
               
               <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-700">Active Products</CardTitle>
+                  <CardTitle className="text-sm font-medium text-purple-700">Total Products</CardTitle>
                   <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
                     <Package className="h-4 w-4 text-purple-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-900">1,234</div>
+                  <div className="text-3xl font-bold text-purple-900">{products.length}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-600" />
-                    <p className="text-xs text-green-600 font-medium">+19% from last month</p>
+                    <Tag className="h-3 w-3 text-purple-600" />
+                    <p className="text-xs text-purple-600 font-medium">{categoryRows.length} categories</p>
                   </div>
                 </CardContent>
               </Card>
@@ -698,10 +743,10 @@ const Admin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-900">573</div>
+                  <div className="text-3xl font-bold text-orange-900">{activeUsersCount}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-600" />
-                    <p className="text-xs text-green-600 font-medium">+201 since last hour</p>
+                    <Users className="h-3 w-3 text-orange-600" />
+                    <p className="text-xs text-orange-600 font-medium">{adminUsers.length} total users</p>
                   </div>
                 </CardContent>
               </Card>
@@ -713,32 +758,44 @@ const Admin = () => {
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-semibold text-gray-900">Recent Orders</CardTitle>
-                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-blue-600 hover:text-blue-700"
+                      onClick={() => setActiveTab("order-management")}
+                    >
                       View All
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {adminOrders.slice(0, 5).map((order, index) => (
+                    {adminOrders.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <ShoppingCart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No orders yet</p>
+                      </div>
+                    ) : (
+                      adminOrders.slice(0, 5).map((order, index) => (
                       <div key={order.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                            #{order.id.slice(-2)}
+                              #{((order as any).orderId || order.id).slice(-2)}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">Order #{order.id}</p>
+                              <p className="font-medium text-gray-900">Order #{(order as any).orderId || order.id}</p>
                             <p className="text-sm text-gray-500">{order.customer}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">₹{order.total}</p>
+                            <p className="font-semibold text-gray-900">₹{order.total.toLocaleString('en-IN')}</p>
                           <div className="mt-1">
                             {getStatusBadge(order.status)}
                           </div>
                         </div>
                       </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -747,29 +804,41 @@ const Admin = () => {
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-semibold text-gray-900">Top Categories</CardTitle>
-                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-blue-600 hover:text-blue-700"
+                      onClick={() => setActiveTab("categories")}
+                    >
                       Manage
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {categories.map((category, index) => (
-                      <div key={category.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
+                    {topCategories.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Tag className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No categories yet</p>
+                      </div>
+                    ) : (
+                      topCategories.map((category, index) => (
+                        <div key={category._id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-sm font-semibold">
                             {index + 1}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{category.name}</p>
-                            <p className="text-sm text-gray-500">{category.products} products</p>
+                              <p className="text-sm text-gray-500">{category.productCount} products</p>
                           </div>
                         </div>
                         <div className="text-right">
                           {getStatusBadge(category.status)}
                         </div>
                       </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -782,21 +851,37 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-20 flex-col gap-2 hover:bg-blue-50 hover:border-blue-200">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col gap-2 hover:bg-blue-50 hover:border-blue-200"
+                    onClick={() => setActiveTab("add-product")}
+                  >
                     <Plus className="h-5 w-5 text-blue-600" />
                     <span className="text-sm font-medium">Add Product</span>
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2 hover:bg-green-50 hover:border-green-200">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col gap-2 hover:bg-green-50 hover:border-green-200"
+                    onClick={() => setActiveTab("order-management")}
+                  >
                     <ShoppingCart className="h-5 w-5 text-green-600" />
                     <span className="text-sm font-medium">View Orders</span>
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2 hover:bg-purple-50 hover:border-purple-200">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col gap-2 hover:bg-purple-50 hover:border-purple-200"
+                    onClick={() => setActiveTab("user-management")}
+                  >
                     <Users className="h-5 w-5 text-purple-600" />
                     <span className="text-sm font-medium">Manage Users</span>
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2 hover:bg-orange-50 hover:border-orange-200">
-                    <BarChart3 className="h-5 w-5 text-orange-600" />
-                    <span className="text-sm font-medium">Analytics</span>
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col gap-2 hover:bg-orange-50 hover:border-orange-200"
+                    onClick={() => setActiveTab("categories")}
+                  >
+                    <Tag className="h-5 w-5 text-orange-600" />
+                    <span className="text-sm font-medium">Categories</span>
                   </Button>
                 </div>
               </CardContent>
@@ -833,10 +918,7 @@ const Admin = () => {
                     {partnersLoading ? (
                       <TableRow>
                         <TableCell colSpan={4} className="py-12 text-center">
-                          <div className="flex items-center justify-center gap-3">
-                            <RefreshCw className="h-5 w-5 animate-spin text-blue-600" />
-                            <span className="text-gray-600">Loading partners...</span>
-                          </div>
+                          <BalancingLoader />
                         </TableCell>
                       </TableRow>
                     ) : partners.length === 0 ? (
@@ -966,6 +1048,51 @@ const Admin = () => {
               </div>
             </div>
 
+            {/* Filter Section */}
+            <Card className="border-0 shadow-md bg-gradient-to-r from-purple-50 to-blue-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-purple-600" />
+                    <Label className="text-sm font-semibold text-gray-700">Filter by Category:</Label>
+                  </div>
+                  <Select 
+                    value={selectedCategoryFilter} 
+                    onValueChange={(value) => {
+                      setSelectedCategoryFilter(value);
+                      if (value === "all") {
+                        loadProducts();
+                      } else {
+                        loadProducts(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-64 bg-white">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          All Categories
+                        </div>
+                      </SelectItem>
+                      {categoryRows.map((cat) => (
+                        <SelectItem key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedCategoryFilter !== "all" && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                      {products.length} {products.length === 1 ? 'product' : 'products'}
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardContent className="p-0">
                 <Table>
@@ -984,8 +1111,12 @@ const Admin = () => {
                           <div className="flex flex-col items-center gap-3">
                             <Package className="h-12 w-12 text-gray-300" />
                             <div>
-                              <p className="text-gray-600 font-medium">No products found</p>
-                              <p className="text-sm text-gray-500">Add your first product to get started</p>
+                              <p className="text-gray-600 font-medium">
+                                {selectedCategoryFilter !== "all" ? "No products in this category" : "No products found"}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {selectedCategoryFilter !== "all" ? "Try selecting a different category" : "Add your first product to get started"}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
@@ -1275,88 +1406,345 @@ const Admin = () => {
 
         {/* Categories */}
         {activeTab === "categories" && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
-              <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+          <div className="space-y-8">
+            {/* Enhanced Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Category Management</h1>
+                <p className="text-gray-600 mt-1">Create parent categories (e.g., Grocery & Kitchen) and their subcategories (e.g., Atta, Rice & Dal)</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" className="hover:bg-orange-50">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              <Dialog open={isAddCategoryOpen} onOpenChange={(open) => {
+                setIsAddCategoryOpen(open);
+                if (open) {
+                  setNewParentCategory(""); // Reset parent category
+                  setNewCategoryName("");
+                  setNewCategoryFile(null);
+                  setCatError(null);
+                }
+              }}>
                 <DialogTrigger asChild>
-                  <Button>
+                    <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Category
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Add Category</DialogTitle>
+                      <DialogTitle className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                          <Plus className="h-4 w-4 text-white" />
+                        </div>
+                        Add New Category
+                      </DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleAddCategory} className="space-y-4">
                     {catError && (
-                      <div className="rounded-md bg-red-50 text-red-600 text-sm px-3 py-2">{catError}</div>
+                        <div className="rounded-lg bg-red-50 text-red-600 text-sm px-4 py-3 border border-red-200 flex items-center gap-2">
+                          <XCircle className="h-4 w-4" />
+                          {catError}
+                        </div>
                     )}
                     <div className="space-y-2">
-                      <Label htmlFor="cat-name">Name</Label>
-                      <Input id="cat-name" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="e.g. Fresh Produce" />
+                        <Label htmlFor="cat-name" className="text-sm font-medium text-gray-700">Category Name</Label>
+                        <Input 
+                          id="cat-name" 
+                          value={newCategoryName} 
+                          onChange={(e) => setNewCategoryName(e.target.value)} 
+                          placeholder="e.g. Fresh Produce, Electronics, Beverages" 
+                          className="focus:ring-2 focus:ring-orange-500"
+                        />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="cat-image">Image</Label>
-                      <input id="cat-image" type="file" accept="image/*" onChange={(e) => setNewCategoryFile(e.target.files?.[0] || null)} />
+                        <Label htmlFor="parent-cat" className="text-sm font-medium text-gray-700">Parent Category (Optional)</Label>
+                        <Select value={newParentCategory || "none"} onValueChange={(val) => setNewParentCategory(val === "none" ? "" : val)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select parent category (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None (Top-level category)</SelectItem>
+                            {categoryRows.filter(c => !c.parentCategory).map((cat) => (
+                              <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">Select a parent to create a subcategory</p>
                     </div>
-                    <div className="flex justify-end gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="cat-image" className="text-sm font-medium text-gray-700">
+                          Category Image {!newParentCategory && <span className="text-xs font-normal text-gray-500">(Optional for parent categories)</span>}
+                        </Label>
+                        <div className="relative">
+                          <input 
+                            id="cat-image" 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => setNewCategoryFile(e.target.files?.[0] || null)} 
+                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {newParentCategory 
+                            ? "Image required for subcategories. Upload a high-quality image (PNG, JPG, WEBP)" 
+                            : "Optional for parent categories. A placeholder will be used if not provided."}
+                        </p>
+                      </div>
+                      <div className="flex justify-end gap-3 pt-4">
                       <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
-                      <Button type="submit" disabled={catSubmitting}>{catSubmitting ? "Adding..." : "Add"}</Button>
+                        <Button type="submit" disabled={catSubmitting} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
+                          {catSubmitting ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Adding...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Category
+                            </>
+                          )}
+                        </Button>
                     </div>
                   </form>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
-            <Card>
+            {/* Category Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-red-100/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-orange-700">Total Categories</CardTitle>
+                  <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+                    <Tag className="h-4 w-4 text-orange-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-900">{categoryRows.length}</div>
+                  <p className="text-xs text-orange-600 font-medium">Active categories</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-indigo-100/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-blue-700">Total Products</CardTitle>
+                  <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                    <Package className="h-4 w-4 text-blue-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-900">{products.length}</div>
+                  <p className="text-xs text-blue-600 font-medium">Across all categories</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-100/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-green-700">Most Popular</CardTitle>
+                  <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold text-green-900 truncate">{categoryRows[0]?.name || "N/A"}</div>
+                  <p className="text-xs text-green-600 font-medium">Top selling category</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-pink-100/50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-purple-700">Avg Products</CardTitle>
+                  <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                    <Target className="h-4 w-4 text-purple-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-purple-900">{categoryRows.length > 0 ? Math.round(products.length / categoryRows.length) : 0}</div>
+                  <p className="text-xs text-purple-600 font-medium">Per category</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Enhanced Category Grid */}
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardHeader className="border-b border-gray-200/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                      <Tag className="h-5 w-5 text-orange-600" />
+                      All Categories
+                    </CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">Manage and organize your product categories</p>
+                  </div>
+                  <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                    {categoryRows.length} {categoryRows.length === 1 ? 'Category' : 'Categories'}
+                  </Badge>
+                </div>
+              </CardHeader>
               <CardContent className="p-0">
+                {categoryRows.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+                        <Tag className="h-10 w-10 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-gray-900 font-semibold text-lg">No categories yet</p>
+                        <p className="text-sm text-gray-500 mt-1">Get started by creating your first product category</p>
+                      </div>
+                      <Button 
+                        onClick={() => setIsAddCategoryOpen(true)} 
+                        className="mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Your First Category
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Image</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableRow className="border-b border-gray-200/50">
+                        <TableHead className="font-semibold text-gray-900">#</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Category Name</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Products</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {categoryRows.map((category) => (
-                      <TableRow key={category._id}>
+                      {categoryRows.map((category, index) => (
+                        <TableRow key={category._id} className="hover:bg-gray-50/50 transition-colors">
+                          <TableCell className="font-medium">
+                            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+                              #{index + 1}
+                            </Badge>
+                          </TableCell>
                         <TableCell>
-                          <img src={category.imageUrl} alt={category.name} className="h-10 w-10 rounded-md object-cover border" />
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                {category.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900">{category.name}</p>
+                                {category.parentCategory ? (
+                                  <p className="text-xs text-gray-500">
+                                    <span className="text-blue-600">↳ {category.parentCategory.name}</span> • ID: {category._id.slice(-6)}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-gray-500">ID: {category._id.slice(-6)}</p>
+                                )}
+                              </div>
+                            </div>
                         </TableCell>
-                        <TableCell className="font-medium">{category.name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-gray-400" />
+                              <span className="text-gray-700 font-medium">
+                                {products.filter(p => p.categoryName === category.name).length} products
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-green-100 text-green-700 border-green-200">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Active
+                            </Badge>
+                          </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Dialog open={editOpenForId === category._id} onOpenChange={(o) => !o && setEditOpenForId(null)}>
                               <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" onClick={() => openEdit(category)}>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
+                                    onClick={() => openEdit(category)}
+                                  >
                                   <Edit className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
-                                  <DialogTitle>Edit Category</DialogTitle>
+                                    <DialogTitle className="flex items-center gap-3">
+                                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                        <Edit className="h-4 w-4 text-white" />
+                                      </div>
+                                      Edit Category
+                                    </DialogTitle>
                                 </DialogHeader>
                                 <form onSubmit={handleEditCategory} className="space-y-4">
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-name">Name</Label>
-                                    <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                                    <Label htmlFor="edit-name" className="text-sm font-medium text-gray-700">Category Name</Label>
+                                    <Input 
+                                      id="edit-name" 
+                                      value={editName} 
+                                      onChange={(e) => setEditName(e.target.value)}
+                                      className="focus:ring-2 focus:ring-blue-500" 
+                                    />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-image">Image (optional)</Label>
-                                    <input id="edit-image" type="file" accept="image/*" onChange={(e) => setEditFile(e.target.files?.[0] || null)} />
+                                    <Label htmlFor="edit-parent-cat" className="text-sm font-medium text-gray-700">Parent Category (Optional)</Label>
+                                    <Select value={editParentCategory || "none"} onValueChange={(val) => setEditParentCategory(val === "none" ? "" : val)}>
+                                      <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select parent category (optional)" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">None (Top-level category)</SelectItem>
+                                        {categoryRows.filter(c => !c.parentCategory && c._id !== editOpenForId).map((cat) => (
+                                          <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-gray-500">Select a parent to make this a subcategory</p>
                                   </div>
-                                  <div className="flex justify-end gap-2">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-image" className="text-sm font-medium text-gray-700">New Image (optional)</Label>
+                                      <input 
+                                        id="edit-image" 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                                      />
+                                      <p className="text-xs text-gray-500">Leave empty to keep current image</p>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-4">
                                     <Button type="button" variant="outline" onClick={() => setEditOpenForId(null)}>Cancel</Button>
-                                    <Button type="submit">Save</Button>
+                                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Save Changes
+                                      </Button>
                                   </div>
                                 </form>
                               </DialogContent>
                             </Dialog>
-                            <Button variant="outline" size="sm">
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-all"
+                              >
                               <Trash2 className="h-4 w-4" />
+                            </Button>
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700 transition-all"
+                                title="View products"
+                                onClick={() => {
+                                  setSelectedCategoryFilter(category._id);
+                                  setActiveTab("product-management");
+                                  loadProducts(category._id);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1364,6 +1752,7 @@ const Admin = () => {
                     ))}
                   </TableBody>
                 </Table>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1402,7 +1791,7 @@ const Admin = () => {
                   </div>
                   <div className="flex items-end gap-2">
                     <Button className="bg-primary hover:bg-primary/90" onClick={() => { /* filters are reactive */ loadAdminOrders(); }}>Apply Filter</Button>
-                    <Button variant="outline" onClick={() => { setSearchDate(""); setSearchOrderId(""); setOrderStatusFilter("all"); setPaymentFilter("all"); }}>Clear</Button>
+                    <Button variant="outline" onClick={() => { setSearchDate(""); setSearchOrderId(""); setOrderStatusFilter("all"); }}>Clear</Button>
                   </div>
                 </div>
 
@@ -1410,14 +1799,6 @@ const Admin = () => {
                   {orderStatuses.map((s) => (
                     <button key={s.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${orderStatusFilter === s.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'}`} onClick={() => setOrderStatusFilter(s.value as any)}>
                       {s.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 mb-4 flex-wrap">
-                  {paymentFilters.map((pf) => (
-                    <button key={pf.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${paymentFilter === pf.value ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50'}`} onClick={() => setPaymentFilter(pf.value as any)}>
-                      {pf.label}
                     </button>
                   ))}
                 </div>
@@ -1490,7 +1871,6 @@ const Admin = () => {
                       <TableHead className="font-semibold text-gray-900">Status</TableHead>
                       <TableHead className="font-semibold text-gray-900">Delivery Person</TableHead>
                       <TableHead className="font-semibold text-gray-900">Date</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1530,50 +1910,50 @@ const Admin = () => {
                          <TableCell>{order.items}</TableCell>
                          <TableCell>₹{order.total}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Select value={String(order.status)} onValueChange={(val) => handleOrderStatusUpdate(order, val)}>
-                            <SelectTrigger className="w-40" onClick={(e) => e.stopPropagation()}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableStatuses.map(s => (
-                                <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {order.status === "delivered" || order.status === "cancelled" ? (
+                            getStatusBadge(order.status)
+                          ) : (
+                            <Select value={String(order.status)} onValueChange={(val) => handleOrderStatusUpdate(order, val)}>
+                              <SelectTrigger className="w-40" onClick={(e) => e.stopPropagation()}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableStatuses.map(s => (
+                                  <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </TableCell>
-                         <TableCell>
-                           <Select defaultValue={order.delivery}>
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Not Assigned">Not Assigned</SelectItem>
-                              {partners.filter(p => p.status === "active").map((p) => (
-                                <SelectItem key={p.id} value={p.name}>
-                                  {p.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                         <TableCell onClick={(e) => e.stopPropagation()}>
+                           {order.status === "delivered" || order.status === "cancelled" ? (
+                             <Badge variant="outline" className="text-xs">
+                               {(order as any).assignedPartnerName || "Not Assigned"}
+                             </Badge>
+                           ) : (
+                             <Select 
+                               value={(order as any).assignedDeliveryPartner || "not-assigned"}
+                               onValueChange={(partnerId) => handleAssignPartner(order, partnerId)}
+                             >
+                              <SelectTrigger className="w-32" onClick={(e) => e.stopPropagation()}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="not-assigned">Not Assigned</SelectItem>
+                                {partners.filter(p => p.status === "active").map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                           )}
                         </TableCell>
                         <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-200">
-                              <Eye className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="hover:bg-green-50 hover:border-green-200">
-                              <Edit className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="hover:bg-purple-50 hover:border-purple-200">
-                              <Truck className="h-4 w-4 text-purple-600" />
-                            </Button>
-                          </div>
-                        </TableCell>
                         </TableRow>
                         {expandedOrderId === order.id && (
                           <TableRow>
-                          <TableCell colSpan={8}>
+                          <TableCell colSpan={7}>
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-l-4 border-blue-400 rounded-lg shadow-sm">
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
@@ -1581,9 +1961,24 @@ const Admin = () => {
                                 </div>
                                 <h4 className="font-semibold text-blue-900 text-lg">Ordered Products</h4>
                               </div>
-                              <div className="mb-3 text-sm text-blue-900">
-                                <div className="text-blue-700 font-medium">Delivery Address:</div>
-                                <div>{(order as any).customerDetails?.address || orderDetail?.customerDetails?.address || '-'}</div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm">
+                                <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
+                                  <div className="text-blue-700 font-medium mb-1">Delivery Address</div>
+                                  <div className="text-blue-900">{(order as any).customerDetails?.address || orderDetail?.customerDetails?.address || '-'}</div>
+                                </div>
+                                <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
+                                  <div className="text-blue-700 font-medium mb-1">Payment Mode</div>
+                                  <div className="text-blue-900 font-semibold">{orderDetail?.paymentMode || 'COD'}</div>
+                                </div>
+                                <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
+                                  <div className="text-blue-700 font-medium mb-1">Payment Status</div>
+                                  <div className={`font-semibold ${orderDetail?.paymentStatus === 'Paid' ? 'text-green-600' : orderDetail?.paymentStatus === 'Failed' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                    {orderDetail?.paymentStatus || 'Pending'}
+                                  </div>
+                                  {orderDetail?.transactionId && (
+                                    <div className="text-xs text-blue-600 mt-1">TXN: {orderDetail.transactionId}</div>
+                                  )}
+                                </div>
                               </div>
                               <div className="space-y-2">
                                 {orderDetail && orderDetail.id === order.id && orderDetail.items.length > 0 ? (
@@ -1718,100 +2113,6 @@ const Admin = () => {
                                 <CheckCircle className="h-4 w-4" />
                               </Button>
                             )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Payment Reports */}
-        {activeTab === "payment-reports" && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-800">Payment & Transaction Reports</h1>
-              <div className="flex gap-2">
-                <Input placeholder="Search transactions..." className="w-64" />
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">₹1,69,456.49</div>
-                  <p className="text-xs text-muted-foreground">+15.2% from last month</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Successful Payments</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">2,847</div>
-                  <p className="text-xs text-muted-foreground">98.5% success rate</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Failed Payments</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">43</div>
-                  <p className="text-xs text-muted-foreground">1.5% failure rate</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Transaction ID</TableHead>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="font-medium">{payment.transactionId}</TableCell>
-                        <TableCell>#{payment.orderId}</TableCell>
-                        <TableCell>{payment.customer}</TableCell>
-                        <TableCell>₹{payment.amount}</TableCell>
-                        <TableCell>{payment.method}</TableCell>
-                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                        <TableCell>{payment.date}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <RefreshCw className="h-4 w-4" />
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

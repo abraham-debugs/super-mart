@@ -1,4 +1,4 @@
-import { Plus, Heart, Star, ShoppingCart, Eye } from "lucide-react";
+import { Heart, ShoppingCart, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +62,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Card 
-      className="group relative overflow-hidden bg-card border border-border/50 rounded-2xl shadow-soft hover:shadow-card-hover hover:-translate-y-2 transition-all duration-500 hover:border-primary/20"
+      className="group relative overflow-hidden bg-card border border-border/50 rounded-xl shadow-soft hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 hover:border-primary/20"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -97,11 +97,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
       <CardContent className="p-0">
         {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30 rounded-t-2xl">
+        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30 rounded-t-xl">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           
           {/* Image Overlay */}
@@ -120,47 +120,31 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         {/* Product Info */}
-        <div className="p-5 space-y-3">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
+        <div className="p-3 space-y-2">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-base leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
               {product.name}
             </h3>
-            <p className="text-sm text-muted-foreground line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-1">
               {product.category}
-              {product.description && (
-                <span className="text-muted-foreground/70">
-                  {" • " + product.description.split(" ").slice(0, 3).join(" ")}
-                </span>
-              )}
             </p>
-          </div>
-
-          {/* Rating */}
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star 
-                key={i} 
-                className="w-4 h-4 fill-yellow-400 text-yellow-400" 
-              />
-            ))}
-            <span className="text-sm text-muted-foreground ml-1">(4.8)</span>
           </div>
 
           {/* Price */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-foreground">
+              <span className="text-lg font-bold text-foreground">
                 ₹{Number(product.price).toFixed(0)}
               </span>
               {product.originalPrice && (
-                <span className="text-sm text-muted-foreground line-through">
+                <span className="text-xs text-muted-foreground line-through">
                   ₹{Number(product.originalPrice).toFixed(0)}
                 </span>
               )}
             </div>
             
             {product.originalPrice && (
-              <div className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full">
+              <div className="text-xs text-green-600 font-semibold bg-green-50 px-1.5 py-0.5 rounded-full">
                 Save ₹{Number(product.originalPrice - product.price).toFixed(0)}
               </div>
             )}
@@ -170,10 +154,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             onClick={() => addToCart(product)}
             disabled={!product.inStock}
-            className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-            size="lg"
+            className="w-full rounded-lg bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white font-medium py-2 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            size="sm"
           >
-            <ShoppingCart className="w-4 h-4 mr-2" />
+            <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
             {product.inStock ? 'Add to Cart' : 'Out of Stock'}
           </Button>
         </div>

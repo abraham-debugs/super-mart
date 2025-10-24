@@ -18,6 +18,8 @@ import Saved from "./pages/Saved";
 import Category from "./pages/Category";
 import OrderSuccess from "./pages/OrderSuccess";
 import TrackOrder from "./pages/TrackOrder";
+import { DeliveryLogin } from "./pages/DeliveryLogin";
+import { DeliveryDashboard } from "./pages/DeliveryDashboard";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,8 @@ const App = () => (
                 <Route path="/category/:id" element={<Category />} />
                 <Route path="/order-success" element={<OrderSuccess />} />
                 <Route path="/track-order" element={<TrackOrder />} />
+                <Route path="/delivery/login" element={<DeliveryLogin />} />
+                <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -10,6 +10,7 @@ import userListRoutes from "./routes/userLists.js";
 import orderRoutes from "./routes/orders.js";
 import addressRoutes from "./routes/addresses.js";
 import productsRoutes from "./routes/products.js";
+import deliveryRoutes from "./routes/delivery.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/api/user", userListRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/products", productsRoutes);
+app.use("/api/delivery", deliveryRoutes);
 
 const port = process.env.PORT || 5000;
 
