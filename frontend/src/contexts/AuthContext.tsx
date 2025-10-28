@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type User = { id: string; name: string; email: string; isProfileComplete?: boolean } | null;
+type User = { id: string; name: string; email: string; isProfileComplete?: boolean; role?: string } | null;
 
 type AuthContextValue = {
   user: User;
@@ -16,15 +16,23 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("auth_token"));
+  const [token, setToken] = useState<string | null>(() => {
+    // Check both 'token' and 'auth_token' for backwards compatibility
+    return localStorage.getItem("token") || localStorage.getItem("auth_token");
+  });
   const [user, setUser] = useState<User>(() => {
     const raw = localStorage.getItem("auth_user");
     return raw ? JSON.parse(raw) : null;
   });
 
   useEffect(() => {
-    if (token) localStorage.setItem("auth_token", token);
-    else localStorage.removeItem("auth_token");
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("auth_token", token); // Keep both for compatibility
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+    }
   }, [token]);
 
   useEffect(() => {
@@ -65,6 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   function logout() {
     setToken(null);
     setUser(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
   }
 
   async function refreshMe() {

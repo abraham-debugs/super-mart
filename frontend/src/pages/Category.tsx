@@ -40,15 +40,30 @@ const Category = () => {
       setLoading(true);
       setError(null);
       try {
+        // Fetch category details first
+        const categoryRes = await fetch(`${API_BASE}/api/admin/categories`);
+        if (categoryRes.ok) {
+          const categories = await categoryRes.json();
+          const currentCategory = Array.isArray(categories) 
+            ? categories.find((cat: any) => cat._id === id)
+            : null;
+          
+          if (currentCategory) {
+            setCategoryName(currentCategory.nameEn || currentCategory.name || id);
+          }
+        }
+
+        // Then fetch products for this category
         const res = await fetch(`${API_BASE}/api/admin/products?categoryId=${encodeURIComponent(id)}`);
         if (!res.ok) throw new Error(`Failed to fetch products (${res.status})`);
         const data = await res.json();
         const mapped: Product[] = Array.isArray(data) ? data.map(mapBackendToProduct) : [];
         setCategoryProducts(mapped);
 
-        // derive category name if possible
-        if (mapped.length > 0) setCategoryName(mapped[0].category);
-        else setCategoryName(id.replace(/[-_]/g, " "));
+        // Fallback: derive category name from products if not already set
+        if (!categoryName && mapped.length > 0) {
+          setCategoryName(mapped[0].category);
+        }
       } catch (err: any) {
         setError(err.message || String(err));
         setCategoryProducts([]);
@@ -89,7 +104,7 @@ const Category = () => {
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                  {loading ? "Loading..." : (categoryName || id?.replace(/[-_]/g, " "))}
+                  {loading ? "Loading..." : (categoryName || "Category")}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   {loading ? "Please wait..." : `${categoryProducts.length} ${categoryProducts.length === 1 ? 'product' : 'products'} available`}
@@ -153,7 +168,7 @@ const Category = () => {
 
             {!loading && !error && categoryProducts.length > 0 && (
               <ProductGrid
-                title={categoryName ? `${categoryName}` : `${id}`}
+                title={categoryName || "Products"}
                 productsToShow={categoryProducts}
                 showFilters={false}
               />

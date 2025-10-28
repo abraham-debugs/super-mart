@@ -15,7 +15,10 @@ const UserSchema = new mongoose.Schema(
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
     saveForLater: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
     isOnline: { type: Boolean, default: false },
-    lastSeen: { type: Date, default: null }
+    lastSeen: { type: Date, default: null },
+    role: { type: String, enum: ["user", "admin", "superadmin"], default: "user" },
+    subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },
+    subscriptionPlan: { type: String, enum: ["free", "basic", "professional", "enterprise"], default: "free" }
   },
   { timestamps: true }
 );

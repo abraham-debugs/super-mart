@@ -8,7 +8,8 @@ const router = express.Router();
 router.get("/search", async (req, res) => {
   try {
     const q = String(req.query.q || "").trim();
-    if (!q) return res.json([]);
+    if (!q) return res.json({ products: [], categories: [] });
+    
     // tokenize by words, ignore punctuation; require all words to appear across nameEn/nameTa
     const words = q
       .toLowerCase()
@@ -20,11 +21,13 @@ router.get("/search", async (req, res) => {
       return { $or: [{ nameEn: rx }, { nameTa: rx }] };
     });
 
+    // Search for products
     const products = await Product.find(andConds.length ? { $and: andConds } : {})
       .sort({ createdAt: -1 })
+      .limit(50)
       .populate({ path: "categoryId", select: "name" });
 
-    const mapped = products.map((p) => ({
+    const mappedProducts = products.map((p) => ({
       id: String(p._id),
       name: p.nameEn || "",
       description: "",
@@ -38,9 +41,35 @@ router.get("/search", async (req, res) => {
       isNew: false,
       isBestSeller: false,
     }));
-    res.json(mapped);
+
+    // Search for categories
+    const categoryAndConds = words.map((w) => {
+      const rx = new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      return { name: rx };
+    });
+
+    const categories = await Category.find(categoryAndConds.length ? { $and: categoryAndConds } : {})
+      .populate('parentCategory', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    const mappedCategories = categories.map((c) => ({
+      id: String(c._id),
+      name: c.name,
+      imageUrl: c.imageUrl,
+      parentCategory: c.parentCategory ? {
+        id: String(c.parentCategory._id),
+        name: c.parentCategory.name
+      } : null
+    }));
+
+    res.json({
+      products: mappedProducts,
+      categories: mappedCategories,
+      query: q
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to search products", error: err?.message || String(err) });
+    res.status(500).json({ message: "Failed to search", error: err?.message || String(err) });
   }
 });
 

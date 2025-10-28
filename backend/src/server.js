@@ -4,6 +4,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import { connectToDatabase } from "./config/db.js";
 import { configureCloudinary } from "./config/cloudinary.js";
+import { configureVision } from "./config/vision.js";
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
 import userListRoutes from "./routes/userLists.js";
@@ -11,6 +12,10 @@ import orderRoutes from "./routes/orders.js";
 import addressRoutes from "./routes/addresses.js";
 import productsRoutes from "./routes/products.js";
 import deliveryRoutes from "./routes/delivery.js";
+import subscriptionRoutes from "./routes/subscriptions.js";
+import imageSearchRoutes from "./routes/imageSearch.js";
+import recommendationRoutes from "./routes/recommendations.js";
+import promoCodeRoutes from "./routes/promoCodes.js";
 
 dotenv.config();
 
@@ -34,6 +39,10 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/delivery", deliveryRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/image-search", imageSearchRoutes);
+app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/promo-codes", promoCodeRoutes);
 
 const port = process.env.PORT || 5000;
 
@@ -52,6 +61,13 @@ async function bootstrap() {
       apiKey: process.env.CLOUDINARY_API_KEY,
       apiSecret: process.env.CLOUDINARY_API_SECRET
     });
+
+    // Configure Google Cloud Vision API (optional)
+    if (process.env.GOOGLE_CLOUD_VISION_CREDENTIALS) {
+      configureVision(process.env.GOOGLE_CLOUD_VISION_CREDENTIALS);
+    } else {
+      console.warn('Google Cloud Vision API credentials not provided. Image search will be disabled.');
+    }
 
     app.listen(port, () => {
       console.log(`API listening on http://localhost:${port}`);

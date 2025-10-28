@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,13 @@ import { useCart } from "@/contexts/CartContext";
 import { CartSheet } from "./CartSheet";
 import { Link, useNavigate } from "react-router-dom";
 import VoiceSearch from "@/components/VoiceSearch";
+import ImageSearch from "@/components/ImageSearch";
+import { SearchBar } from "@/components/SearchBar";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -67,31 +70,30 @@ export const Header = () => {
                   <span className="relative z-10">Saved</span>
                   <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </a>
+                <a href="/subscription-plans" className="relative text-sm font-medium hover:text-primary transition-all duration-300 hover:bg-primary/10 px-4 py-2 rounded-xl hover:scale-105 group">
+                  <span className="relative z-10">Plans</span>
+                  <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </a>
               </nav>
 
               {/* Search Bar + Voice - Desktop */}
               <div className="hidden lg:flex items-center flex-1 max-w-2xl mx-8 gap-4">
-                <div className="relative w-full group">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
-                  <Input
-                    placeholder="Search for groceries & essentials..."
-                    className="pl-12 pr-4 w-full h-12 rounded-2xl border-2 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const target = e.target as HTMLInputElement;
-                        const qs = new URLSearchParams(window.location.search);
-                        qs.set('q', target.value);
-                        navigate('/?' + qs.toString());
-                      }
-                    }}
-                  />
-                  <div className="absolute inset-0 rounded-2xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                </div>
+                <SearchBar />
                 <VoiceSearch onSearch={(q) => {
-                  const qs = new URLSearchParams(window.location.search);
-                  qs.set('q', q);
-                  navigate('/?' + qs.toString());
+                  if (q.trim()) {
+                    window.location.href = `/?q=${encodeURIComponent(q.trim())}`;
+                  }
                 }} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsImageSearchOpen(true)}
+                  className="hover:bg-primary/10 hover:scale-110 transition-all duration-200 relative group"
+                  title="Search by image"
+                >
+                  <Camera className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
+                  <div className="absolute inset-0 rounded-2xl bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </Button>
               </div>
 
               {/* Actions */}
@@ -188,25 +190,13 @@ export const Header = () => {
               <div className="flex flex-col space-y-4 px-6">
                 {/* Mobile Search + Voice */}
                 <div className="relative flex items-center gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search for groceries & essentials..."
-                      className="pl-10 pr-4 w-full border-primary/20 focus:border-primary/40 focus:ring-primary/20"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const target = e.target as HTMLInputElement;
-                          const qs = new URLSearchParams(window.location.search);
-                          qs.set('q', target.value);
-                          navigate('/?' + qs.toString());
-                        }
-                      }}
-                    />
+                  <div className="flex-1">
+                    <SearchBar />
                   </div>
                   <VoiceSearch onSearch={(q) => {
-                    const qs = new URLSearchParams(window.location.search);
-                    qs.set('q', q);
-                    navigate('/?' + qs.toString());
+                    if (q.trim()) {
+                      window.location.href = `/?q=${encodeURIComponent(q.trim())}`;
+                    }
                   }} />
                 </div>
                 
@@ -251,6 +241,7 @@ export const Header = () => {
       </header>
 
       <CartSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <ImageSearch open={isImageSearchOpen} onOpenChange={setIsImageSearchOpen} />
     </>
   );
 };

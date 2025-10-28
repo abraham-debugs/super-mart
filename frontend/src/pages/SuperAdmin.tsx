@@ -53,9 +53,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
-const Admin = () => {
-  const { user, token } = useAuth();
-  const isSuperAdmin = user?.role === "superadmin";
+const SuperAdmin = () => {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
@@ -71,27 +70,6 @@ const Admin = () => {
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editParentCategory, setEditParentCategory] = useState<string>("");
 
-  // Promo Codes state
-  const [promoCodes, setPromoCodes] = useState<Array<{
-    id: string;
-    code: string;
-    discountPercent: number;
-    expiryDate: string;
-    isActive: boolean;
-    usedCount: number;
-    usageLimit: number | null;
-    minOrderAmount: number;
-    isValid: boolean;
-  }>>([]);
-  const [isAddPromoOpen, setIsAddPromoOpen] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoDiscount, setPromoDiscount] = useState("");
-  const [promoExpiry, setPromoExpiry] = useState("");
-  const [promoUsageLimit, setPromoUsageLimit] = useState("");
-  const [promoMinAmount, setPromoMinAmount] = useState("");
-  const [promoSubmitting, setPromoSubmitting] = useState(false);
-  const [promoError, setPromoError] = useState<string | null>(null);
-
   async function loadCategories() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/categories`);
@@ -100,84 +78,6 @@ const Admin = () => {
       setCategoryRows(data);
     } catch (err: any) {
       console.error("Load categories error:", err);
-    }
-  }
-
-  async function loadPromoCodes() {
-    try {
-      const res = await fetch(`${API_BASE}/api/promo-codes`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to load promo codes");
-      const data = await res.json();
-      setPromoCodes(data);
-    } catch (err: any) {
-      console.error("Load promo codes error:", err);
-    }
-  }
-
-  async function handleCreatePromoCode() {
-    setPromoError(null);
-    setPromoSubmitting(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/promo-codes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          code: promoCode,
-          discountPercent: Number(promoDiscount),
-          expiryDate: promoExpiry,
-          usageLimit: promoUsageLimit ? Number(promoUsageLimit) : null,
-          minOrderAmount: promoMinAmount ? Number(promoMinAmount) : 0
-        })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Failed to create promo code");
-      }
-      await loadPromoCodes();
-      setIsAddPromoOpen(false);
-      setPromoCode("");
-      setPromoDiscount("");
-      setPromoExpiry("");
-      setPromoUsageLimit("");
-      setPromoMinAmount("");
-    } catch (err: any) {
-      setPromoError(err.message);
-    } finally {
-      setPromoSubmitting(false);
-    }
-  }
-
-  async function handleDeletePromoCode(id: string) {
-    if (!confirm("Are you sure you want to delete this promo code?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/api/promo-codes/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to delete promo code");
-      await loadPromoCodes();
-    } catch (err: any) {
-      console.error("Delete promo code error:", err);
-      alert("Failed to delete promo code");
-    }
-  }
-
-  async function handleTogglePromoCode(id: string) {
-    try {
-      const res = await fetch(`${API_BASE}/api/promo-codes/${id}/toggle`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to toggle promo code");
-      await loadPromoCodes();
-    } catch (err: any) {
-      console.error("Toggle promo code error:", err);
-      alert("Failed to toggle promo code");
     }
   }
   const availableStatuses = ["placed", "shipped", "delivered", "cancelled"] as const;
@@ -599,9 +499,6 @@ const Admin = () => {
     if (activeTab === "delivery-partners") {
       loadPartners();
     }
-    if (activeTab === "promo-codes") {
-      loadPromoCodes();
-    }
   }, [activeTab]);
 
   // Derived order stats for Order Management
@@ -654,7 +551,6 @@ const Admin = () => {
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "user-management", label: "Users", icon: Users, color: "text-pink-600", bgColor: "bg-pink-50" },
     { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-cyan-600", bgColor: "bg-cyan-50" },
-    { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-yellow-600", bgColor: "bg-yellow-50" },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -1267,17 +1163,15 @@ const Admin = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              {isSuperAdmin && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="hover:bg-red-50 hover:border-red-200"
-                                  onClick={() => openDeleteProduct(product)}
-                                  title="Delete Product"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
-                              )}
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="hover:bg-red-50 hover:border-red-200"
+                                onClick={() => openDeleteProduct(product)}
+                                title="Delete Product"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -2238,255 +2132,6 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Promo Codes */}
-        {activeTab === "promo-codes" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Promo Codes</h1>
-                <p className="text-gray-600 mt-1">Create and manage discount codes for your customers</p>
-              </div>
-              <Dialog open={isAddPromoOpen} onOpenChange={setIsAddPromoOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Promo Code
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Create New Promo Code</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {promoError && (
-                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
-                        {promoError}
-                      </div>
-                    )}
-                    <div>
-                      <Label htmlFor="promoCode">Code *</Label>
-                      <Input
-                        id="promoCode"
-                        placeholder="e.g., SUMMER2025"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                        className="uppercase"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoDiscount">Discount Percent (%) *</Label>
-                      <Input
-                        id="promoDiscount"
-                        type="number"
-                        min="1"
-                        max="100"
-                        placeholder="e.g., 10"
-                        value={promoDiscount}
-                        onChange={(e) => setPromoDiscount(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoExpiry">Expiry Date *</Label>
-                      <Input
-                        id="promoExpiry"
-                        type="datetime-local"
-                        value={promoExpiry}
-                        onChange={(e) => setPromoExpiry(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoUsageLimit">Usage Limit (optional)</Label>
-                      <Input
-                        id="promoUsageLimit"
-                        type="number"
-                        min="1"
-                        placeholder="Leave empty for unlimited"
-                        value={promoUsageLimit}
-                        onChange={(e) => setPromoUsageLimit(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoMinAmount">Minimum Order Amount (₹)</Label>
-                      <Input
-                        id="promoMinAmount"
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={promoMinAmount}
-                        onChange={(e) => setPromoMinAmount(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCreatePromoCode}
-                      disabled={promoSubmitting || !promoCode || !promoDiscount || !promoExpiry}
-                      className="w-full"
-                    >
-                      {promoSubmitting ? "Creating..." : "Create Promo Code"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            {/* Promo Codes Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Total Codes</CardTitle>
-                  <Tag className="h-4 w-4 text-yellow-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{promoCodes.length}</div>
-                  <p className="text-xs text-gray-600 mt-1">All promo codes</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Active Codes</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {promoCodes.filter(c => c.isActive && c.isValid).length}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Currently active</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Expired</CardTitle>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {promoCodes.filter(c => !c.isValid).length}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">No longer valid</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Total Uses</CardTitle>
-                  <Activity className="h-4 w-4 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {promoCodes.reduce((sum, c) => sum + c.usedCount, 0)}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Times redeemed</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Promo Codes Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>All Promo Codes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {promoCodes.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Promo Codes Yet</h3>
-                    <p className="text-gray-600 mb-4">Create your first promo code to start offering discounts</p>
-                    <Button onClick={() => setIsAddPromoOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Promo Code
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Discount</TableHead>
-                        <TableHead>Expiry Date</TableHead>
-                        <TableHead>Usage</TableHead>
-                        <TableHead>Min Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {promoCodes.map((promo) => (
-                        <TableRow key={promo.id}>
-                          <TableCell className="font-semibold text-gray-900">
-                            <div className="flex items-center gap-2">
-                              <Tag className="h-4 w-4 text-yellow-600" />
-                              {promo.code}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className="bg-green-100 text-green-800">
-                              {promo.discountPercent}% OFF
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              {new Date(promo.expiryDate).toLocaleDateString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <span className="font-semibold">{promo.usedCount}</span>
-                              {promo.usageLimit ? ` / ${promo.usageLimit}` : ' / ∞'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            ₹{promo.minOrderAmount}
-                          </TableCell>
-                          <TableCell>
-                            {promo.isValid && promo.isActive ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Active
-                              </Badge>
-                            ) : !promo.isValid ? (
-                              <Badge className="bg-red-100 text-red-800">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Expired
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">
-                                <Ban className="h-3 w-3 mr-1" />
-                                Inactive
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleTogglePromoCode(promo.id)}
-                                className={promo.isActive ? "text-orange-600 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}
-                              >
-                                {promo.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeletePromoCode(promo.id)}
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {/* Analytics */}
         {activeTab === "analytics" && (
           <div className="space-y-6">
@@ -2545,7 +2190,7 @@ const Admin = () => {
   );
 };
 
-export default Admin;
+export default SuperAdmin;
 
 // Inline ProductForm component to submit to backend and use real categories
 const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; name: string }>; onCreated: () => void }> = ({ apiBase, categories, onCreated }) => {

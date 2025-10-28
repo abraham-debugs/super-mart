@@ -5,15 +5,26 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
 import { Footer } from "@/components/Footer";
 import { Features } from "@/components/Features";
+
+import RecommendedProducts from "@/components/RecommendedProducts";
 import { featuredProducts, bestSellers, products } from "@/data/products";
 import type { Product } from "@/types/product";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+
+interface SearchCategory {
+  id: string;
+  name: string;
+  imageUrl: string;
+  parentCategory: { id: string; name: string } | null;
+}
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>(products);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchCategories, setSearchCategories] = useState<SearchCategory[]>([]);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Normalize strings to improve matching between category names/ids and product.category
@@ -58,10 +69,22 @@ const Index = () => {
           const res = await fetch(`${API_BASE}/api/products/search?q=${encodeURIComponent(q)}`);
           if (!res.ok) throw new Error("Search failed");
           const data = await res.json();
-          setAllProducts(Array.isArray(data) ? data : []);
+          
+          // Handle new response format with products and categories
+          if (data && typeof data === 'object') {
+            const prods = Array.isArray(data.products) ? data.products : (Array.isArray(data) ? data : []);
+            const cats = Array.isArray(data.categories) ? data.categories : [];
+            
+            setAllProducts(prods);
+            setSearchCategories(cats);
+          } else {
+            setAllProducts([]);
+            setSearchCategories([]);
+          }
         } catch (e) {
           console.warn("Search error:", e);
           setAllProducts([]);
+          setSearchCategories([]);
         }
       })();
     } else {
@@ -70,6 +93,7 @@ const Index = () => {
         setAllProducts(products);
       }
       setSearchQuery("");
+      setSearchCategories([]);
     }
   }, [location.search]);
 
@@ -89,6 +113,9 @@ const Index = () => {
 
          {/* Features */}
          <Features />
+
+        {/* Personalized Recommendations */}
+        <RecommendedProducts limit={10} />
         
         {/* Featured Products */}
         <section className="py-12 lg:py-16 relative">
@@ -112,11 +139,60 @@ const Index = () => {
           />
         </section>
         
+        {/* Search Results - Categories */}
+        {searchQuery && searchCategories.length > 0 && (
+          <section className="py-8 lg:py-12 relative">
+            <div className="container mx-auto px-4">
+              <div className="mb-6">
+                <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                  Categories matching "{searchQuery}"
+                </h2>
+                <p className="text-muted-foreground">Found {searchCategories.length} matching categories</p>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {searchCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    onClick={() => {
+                      // Navigate to category page
+                      navigate(`/category/${category.id}`);
+                    }}
+                    className="group cursor-pointer bg-white rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3">
+                      <img
+                        src={category.imageUrl}
+                        alt={category.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-semibold text-sm text-gray-900 line-clamp-2">
+                        {category.name}
+                      </h3>
+                      {category.parentCategory && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          in {category.parentCategory.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* All Products (filtered by selected category or search) */}
         <section className="py-12 lg:py-16 relative">
           <div className="absolute inset-0 bg-gradient-to-b from-secondary/5 via-transparent to-accent/5"></div>
           <ProductGrid 
-            title={searchQuery ? `Search: ${searchQuery}` : (selectedCategory ? `Category: ${selectedCategory}` : "All Groceries & Essentials")}
+            title={
+              searchQuery 
+                ? `Products matching "${searchQuery}"` + (allProducts.length > 0 ? ` (${allProducts.length})` : '')
+                : (selectedCategory ? `Category: ${selectedCategory}` : "All Groceries & Essentials")
+            }
             productsToShow={allProducts}
           />
         </section>

@@ -10,7 +10,7 @@ const router = express.Router();
 
 function signToken(user) {
   const secret = process.env.JWT_SECRET || "dev_secret_change_me";
-  return jwt.sign({ uid: user._id, email: user.email, name: user.name }, secret, { expiresIn: "7d" });
+  return jwt.sign({ uid: user._id, email: user.email, name: user.name, role: user.role || "user" }, secret, { expiresIn: "7d" });
 }
 
 router.post("/register", async (req, res) => {
@@ -49,7 +49,7 @@ router.post("/register", async (req, res) => {
       }
     }
     const token = signToken(user);
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete } });
+    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, role: user.role || "user" } });
   } catch (err) {
     if (err && err.code === 11000) {
       return res.status(409).json({ message: "Email already registered" });
@@ -88,7 +88,7 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
     const token = signToken(user);
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete } });
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email, preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, role: user.role || "user" } });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
@@ -113,9 +113,9 @@ router.get("/me", async (req, res) => {
     if (!token) return res.status(401).json({ message: "Missing token" });
     const secret = process.env.JWT_SECRET || "dev_secret_change_me";
     const payload = jwt.verify(token, secret);
-    const user = await User.findById(payload.uid).select("name email phone address preferredCategoryId isProfileComplete wishlist saveForLater");
+    const user = await User.findById(payload.uid).select("name email phone address preferredCategoryId isProfileComplete wishlist saveForLater role");
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ id: user._id, name: user.name, email: user.email, phone: user.phone || "", address: user.address || "", preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, wishlist: user.wishlist || [], saveForLater: user.saveForLater || [] });
+    res.json({ id: user._id, name: user.name, email: user.email, phone: user.phone || "", address: user.address || "", preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, wishlist: user.wishlist || [], saveForLater: user.saveForLater || [], role: user.role || "user" });
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });
   }
@@ -136,7 +136,7 @@ router.put("/me", async (req, res) => {
     if (typeof address === "string") update.address = address;
     if (preferredCategoryId) update.preferredCategoryId = preferredCategoryId;
     if (typeof isProfileComplete === "boolean") update.isProfileComplete = isProfileComplete;
-    const user = await User.findByIdAndUpdate(payload.uid, update, { new: true }).select("name email phone address preferredCategoryId isProfileComplete wishlist saveForLater");
+    const user = await User.findByIdAndUpdate(payload.uid, update, { new: true }).select("name email phone address preferredCategoryId isProfileComplete wishlist saveForLater role");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // upsert personalization for this user
@@ -151,7 +151,7 @@ router.put("/me", async (req, res) => {
         console.warn("Failed to upsert personalization:", e?.message || e);
       }
     }
-    res.json({ id: user._id, name: user.name, email: user.email, phone: user.phone || "", address: user.address || "", preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, wishlist: user.wishlist || [], saveForLater: user.saveForLater || [] });
+    res.json({ id: user._id, name: user.name, email: user.email, phone: user.phone || "", address: user.address || "", preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, wishlist: user.wishlist || [], saveForLater: user.saveForLater || [], role: user.role || "user" });
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });
   }

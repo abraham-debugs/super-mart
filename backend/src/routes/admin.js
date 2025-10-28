@@ -6,6 +6,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { User } from "../models/User.js";
 import { Order } from "../models/Order.js";
 import { DeliveryPartner } from "../models/DeliveryPartner.js";
+import { requireAuth, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -239,8 +240,10 @@ router.get("/categories", async (_req, res) => {
     const categories = await Category.find()
       .populate('parentCategory', 'name')
       .sort({ createdAt: -1 });
+    
     res.json(categories);
   } catch (err) {
+    console.error("Failed to fetch categories:", err);
     res.status(500).json({ message: "Failed to fetch categories", error: err.message });
   }
 });
@@ -406,8 +409,8 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-// Delete product
-router.delete("/products/:id", async (req, res) => {
+// Delete product (superadmin only)
+router.delete("/products/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const product = await Product.findById(id);

@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import SuperAdmin from "./pages/SuperAdmin";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
@@ -20,6 +21,7 @@ import OrderSuccess from "./pages/OrderSuccess";
 import TrackOrder from "./pages/TrackOrder";
 import { DeliveryLogin } from "./pages/DeliveryLogin";
 import { DeliveryDashboard } from "./pages/DeliveryDashboard";
+import SubscriptionPlans from "./pages/SubscriptionPlans";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/superadmin" element={<SuperAdmin />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/login" element={<Login />} />
@@ -46,6 +49,7 @@ const App = () => (
                 <Route path="/track-order" element={<TrackOrder />} />
                 <Route path="/delivery/login" element={<DeliveryLogin />} />
                 <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+                <Route path="/subscription-plans" element={<SubscriptionPlans />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

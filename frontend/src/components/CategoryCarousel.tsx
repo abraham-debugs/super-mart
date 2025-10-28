@@ -52,6 +52,7 @@ export const CategoryCarousel = () => {
   const [categories, setCategories] = useState<BackendCategory[]>(fallbackCategories);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Group categories by parent
   const categoryGroups: CategoryGroup[] = [];
@@ -113,7 +114,7 @@ export const CategoryCarousel = () => {
         ) : (
           <div className="space-y-4">
             {/* Parent Categories with Subcategories */}
-            {categoryGroups.map((group, groupIdx) => (
+            {(showAllCategories ? categoryGroups : categoryGroups.slice(0, 3)).map((group, groupIdx) => (
               <div key={group.parent._id} className="space-y-1.5">
                 {/* Parent Category Header */}
                 <div className="flex items-center justify-between">
@@ -146,21 +147,17 @@ export const CategoryCarousel = () => {
                       >
                         {/* Category Card */}
                         <div className="relative w-full">
-                          {/* Gradient background container */}
-                          <div className={`aspect-square rounded bg-gradient-to-br ${gradient} p-[0.5px] shadow-xs group-hover:shadow-sm transition-all duration-100 ${
-                            isSelected ? 'ring-1 ring-blue-400' : ''
+                          <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
+                            isSelected ? 'ring-2 ring-blue-500' : ''
                           }`}>
-                            {/* Transparent inner container for image */}
-                            <div className="w-full h-full rounded-sm bg-gray-50/80 p-[1px] overflow-hidden">
-                              <div className="relative w-full h-full rounded-[2px] overflow-hidden">
-                                <img 
-                                  src={category.imageUrl} 
-                                  alt={category.name} 
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150" 
-                                />
-                                {/* Overlay gradient on hover */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-100`}></div>
-                              </div>
+                            <div className="relative w-full h-full">
+                              <img 
+                                src={category.imageUrl} 
+                                alt={category.name} 
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                              />
+                              {/* Overlay gradient on hover */}
+                              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
                             </div>
                           </div>
                         </div>
@@ -182,8 +179,36 @@ export const CategoryCarousel = () => {
               </div>
             ))}
             
+            {/* View More Button */}
+            {!showAllCategories && categoryGroups.length > 3 && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  onClick={() => setShowAllCategories(true)}
+                  variant="outline"
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400"
+                >
+                  View More Categories
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
+
+            {/* View Less Button */}
+            {showAllCategories && categoryGroups.length > 3 && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  onClick={() => setShowAllCategories(false)}
+                  variant="outline"
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400"
+                >
+                  View Less
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                </Button>
+              </div>
+            )}
+
             {/* Standalone Parent Categories (without children) */}
-            {standaloneParents.length > 0 && (
+            {showAllCategories && standaloneParents.length > 0 && (
               <div className="space-y-1.5">
                 <h2 className="text-base font-bold text-gray-900">Other Categories</h2>
                 <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20 gap-1">
@@ -201,21 +226,17 @@ export const CategoryCarousel = () => {
                       >
                         {/* Category Card */}
                         <div className="relative w-full">
-                          {/* Gradient background container */}
-                          <div className={`aspect-square rounded bg-gradient-to-br ${gradient} p-[0.5px] shadow-xs group-hover:shadow-sm transition-all duration-100 ${
-                            isSelected ? 'ring-1 ring-blue-400' : ''
+                          <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
+                            isSelected ? 'ring-2 ring-blue-500' : ''
                           }`}>
-                            {/* Transparent inner container for image */}
-                            <div className="w-full h-full rounded-sm bg-gray-50/80 p-[1px] overflow-hidden">
-                              <div className="relative w-full h-full rounded-[2px] overflow-hidden">
-                                <img 
-                                  src={category.imageUrl} 
-                                  alt={category.name} 
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150" 
-                                />
-                                {/* Overlay gradient on hover */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-100`}></div>
-                              </div>
+                            <div className="relative w-full h-full">
+                              <img 
+                                src={category.imageUrl} 
+                                alt={category.name} 
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                              />
+                              {/* Overlay gradient on hover */}
+                              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
                             </div>
                           </div>
                         </div>

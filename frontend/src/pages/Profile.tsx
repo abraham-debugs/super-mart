@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp } from "lucide-react";
+import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp, Crown, CreditCard } from "lucide-react";
 import { AddressBook } from "@/components/AddressBook";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,9 +29,11 @@ const Profile: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"account" | "orders" | "addresses">("account");
+  const [activeTab, setActiveTab] = useState<"account" | "orders" | "addresses" | "subscription">("account");
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +73,26 @@ const Profile: React.FC = () => {
       }
     }
     loadOrders();
+    return () => { cancelled = true; };
+  }, [activeTab, token]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSubscription() {
+      if (activeTab !== "subscription") return;
+      setSubscriptionLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/subscriptions/my-subscription`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error("Failed to fetch subscription");
+        const data = await res.json();
+        if (!cancelled) setSubscription(data);
+      } catch (e) {
+        console.warn("Load subscription error:", e);
+      } finally {
+        if (!cancelled) setSubscriptionLoading(false);
+      }
+    }
+    loadSubscription();
     return () => { cancelled = true; };
   }, [activeTab, token]);
 
@@ -215,7 +237,7 @@ const Profile: React.FC = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="account" className="space-y-6" onValueChange={(val) => setActiveTab(val as any)}>
-              <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1">
+              <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1">
                 <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
                   <User className="h-4 w-4 mr-2" />
                   Account
@@ -227,6 +249,10 @@ const Profile: React.FC = () => {
                 <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
                   <MapPin className="h-4 w-4 mr-2" />
                   Addresses
+                </TabsTrigger>
+                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Subscription
                 </TabsTrigger>
               </TabsList>
 
@@ -462,6 +488,184 @@ const Profile: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                   <AddressBook showActions />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="subscription">
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <Crown className="h-5 w-5 text-blue-600" />
+                      Subscription Plan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {subscriptionLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      </div>
+                    ) : subscription ? (
+                      <div className="space-y-6">
+                        {/* Current Plan Card */}
+                        <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                <Crown className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <p className="text-sm opacity-90">Current Plan</p>
+                                <h3 className="text-2xl font-bold capitalize">{subscription.planType}</h3>
+                              </div>
+                            </div>
+                            <Badge className={`${
+                              subscription.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                            } text-white border-0`}>
+                              {subscription.status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 mt-6">
+                            <div>
+                              <p className="text-sm opacity-90">Start Date</p>
+                              <p className="font-semibold">{new Date(subscription.startDate).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm opacity-90">End Date</p>
+                              <p className="font-semibold">{new Date(subscription.endDate).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+
+                          {subscription.planType !== 'free' && (
+                            <div className="mt-4 pt-4 border-t border-white/20">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm">Auto Renew</span>
+                                <Badge className="bg-white/20 text-white border-0">
+                                  {subscription.autoRenew ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Plan Features */}
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3">Your Plan Features</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                              <Check className="h-5 w-5 text-green-600" />
+                              <span className="text-sm">
+                                {subscription.features.maxOrders === -1 ? 'Unlimited' : subscription.features.maxOrders} orders per month
+                              </span>
+                            </div>
+                            {subscription.features.freeDelivery && (
+                              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                                <Check className="h-5 w-5 text-green-600" />
+                                <span className="text-sm">Free Delivery</span>
+                              </div>
+                            )}
+                            {subscription.features.prioritySupport && (
+                              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                                <Check className="h-5 w-5 text-green-600" />
+                                <span className="text-sm">Priority Support</span>
+                              </div>
+                            )}
+                            {subscription.features.exclusiveDeals && (
+                              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                                <Check className="h-5 w-5 text-green-600" />
+                                <span className="text-sm">Exclusive Deals</span>
+                              </div>
+                            )}
+                            {subscription.features.cashbackPercentage > 0 && (
+                              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                                <Check className="h-5 w-5 text-green-600" />
+                                <span className="text-sm">{subscription.features.cashbackPercentage}% Cashback</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Billing History */}
+                        {subscription.billingHistory && subscription.billingHistory.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              <CreditCard className="h-5 w-5 text-blue-600" />
+                              Recent Billing History
+                            </h4>
+                            <div className="space-y-2">
+                              {subscription.billingHistory.slice(-5).reverse().map((bill: any, idx: number) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <CreditCard className="h-5 w-5 text-gray-400" />
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">
+                                        Payment - {new Date(bill.date).toLocaleDateString()}
+                                      </p>
+                                      <p className="text-xs text-gray-500">Transaction: {bill.transactionId}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-semibold text-gray-900">₹{bill.amount}</p>
+                                    <Badge className={`text-xs ${
+                                      bill.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                      {bill.status}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-3">
+                          <Button 
+                            onClick={() => navigate('/subscription-plans')}
+                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                          >
+                            <Crown className="h-4 w-4 mr-2" />
+                            {subscription.planType === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                          </Button>
+                          {subscription.planType !== 'free' && (
+                            <Button 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to cancel your subscription?')) {
+                                  try {
+                                    const res = await fetch(`${API_BASE}/api/subscriptions/cancel`, {
+                                      method: 'POST',
+                                      headers: { Authorization: `Bearer ${token}` }
+                                    });
+                                    if (res.ok) {
+                                      alert('Subscription cancelled successfully');
+                                      setActiveTab('subscription');
+                                    }
+                                  } catch (e) {
+                                    alert('Failed to cancel subscription');
+                                  }
+                                }
+                              }}
+                            >
+                              Cancel Subscription
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Crown className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                        <p className="text-gray-600 mb-4">You don't have an active subscription</p>
+                        <Button 
+                          onClick={() => navigate('/subscription-plans')}
+                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                        >
+                          View Plans
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
