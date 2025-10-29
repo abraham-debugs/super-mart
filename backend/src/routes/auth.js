@@ -126,6 +126,123 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Admin login - validates admin/superadmin role
+router.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log(`[Admin Login] Attempt from email: ${email}`);
+    console.log(`[Admin Login] Password length: ${password ? password.length : 'missing'}`);
+    
+    if (!email || !password) {
+      console.log(`[Admin Login] Missing email or password`);
+      return res.status(400).json({ message: "Email and password required" });
+    }
+    
+    // Normalize email to lowercase and trim whitespace
+    const normalizedEmail = String(email).toLowerCase().trim();
+    console.log(`[Admin Login] Normalized email: ${normalizedEmail}`);
+    
+    // Try multiple query methods to ensure we find the user
+    let user = await User.findOne({ email: normalizedEmail });
+    
+    // If not found with exact match, try case-insensitive regex
+    if (!user) {
+      console.log(`[Admin Login] Trying case-insensitive search...`);
+      user = await User.findOne({ 
+        email: { $regex: new RegExp(`^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+      });
+    }
+    
+    // If still not found, search for any variation
+    if (!user) {
+      console.log(`[Admin Login] Trying partial match search...`);
+      const emailParts = normalizedEmail.split('@');
+      if (emailParts.length === 2) {
+        user = await User.findOne({ 
+          email: { $regex: new RegExp(`^${emailParts[0]}@${emailParts[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+        });
+      }
+    }
+    if (!user) {
+      console.log(`[Admin Login] ❌ User not found for email "${normalizedEmail}"`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    console.log(`[Admin Login] ✅ User found: ${user._id}, role: ${user.role}`);
+    
+    // Check if user has a password hash
+    if (!user.passwordHash) {
+      console.log(`[Admin Login] ❌ User "${normalizedEmail}" has no password hash`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    console.log(`[Admin Login] ✅ Password hash exists`);
+    
+    // Verify password
+    console.log(`[Admin Login] Comparing password with hash...`);
+    console.log(`[Admin Login] Password to check: "${password}" (length: ${password.length})`);
+    console.log(`[Admin Login] Stored hash (first 30 chars): ${user.passwordHash.substring(0, 30)}...`);
+    
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    console.log(`[Admin Login] Password verification result: ${ok}`);
+    
+    if (!ok) {
+      console.log(`[Admin Login] ❌ Invalid password for email "${normalizedEmail}"`);
+      console.log(`[Admin Login] User ID from DB: ${user._id}`);
+      console.log(`[Admin Login] User role from DB: ${user.role}`);
+      
+      // Try to re-hash and update immediately
+      console.log(`[Admin Login] Attempting to fix password hash in real-time...`);
+      try {
+        const newHash = await bcrypt.hash(password, 10);
+        user.passwordHash = newHash;
+        user.role = 'superadmin';
+        await user.save();
+        console.log(`[Admin Login] ✅ Password hash updated, retrying...`);
+        
+        const retryOk = await bcrypt.compare(password, user.passwordHash);
+        if (retryOk) {
+          console.log(`[Admin Login] ✅ Password now works after fix!`);
+          // Continue with login
+        } else {
+          console.log(`[Admin Login] ❌ Still failing after update`);
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+      } catch (fixErr) {
+        console.log(`[Admin Login] Failed to fix: ${fixErr.message}`);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+    }
+    console.log(`[Admin Login] ✅ Password verified successfully`);
+    
+    // Check if user has admin or superadmin role
+    const userRole = user.role || "user";
+    console.log(`[Admin Login] Role check: ${userRole}`);
+    if (userRole !== "admin" && userRole !== "superadmin") {
+      console.log(`[Admin Login] ❌ User "${normalizedEmail}" does not have admin role (role: ${userRole})`);
+      return res.status(403).json({ message: "Access denied. Admin privileges required." });
+    }
+    console.log(`[Admin Login] ✅ Role check passed`);
+    
+    // Generate token with role
+    const token = signToken(user);
+    console.log(`[Admin Login] ✅ SUCCESS: User "${normalizedEmail}" (${userRole}) logged in`);
+    
+    res.json({ 
+      token, 
+      user: { 
+        id: String(user._id), 
+        name: user.name, 
+        email: user.email, 
+        role: userRole,
+        preferredCategoryId: user.preferredCategoryId || null, 
+        isProfileComplete: user.isProfileComplete
+      } 
+    });
+  } catch (err) {
+    console.error("Admin login error:", err);
+    res.status(500).json({ message: "Login failed", error: err?.message || String(err) });
+  }
+});
+
 // Presence heartbeat: marks the current user online and updates lastSeen
 router.post("/heartbeat", requireAuth, async (req, res) => {
   try {

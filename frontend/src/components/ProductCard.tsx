@@ -108,10 +108,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
+    return `Rs. ${price.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const discountPercentage = product.originalPrice 
@@ -192,18 +189,18 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-foreground">
-                ₹{Number(product.price).toFixed(0)}
+                Rs.{Number(product.price).toFixed(0)}
               </span>
               {product.originalPrice && (
                 <span className="text-xs text-muted-foreground line-through">
-                  ₹{Number(product.originalPrice).toFixed(0)}
+                  Rs.{Number(product.originalPrice).toFixed(0)}
                 </span>
               )}
             </div>
             
             {product.originalPrice && (
               <div className="text-xs text-green-600 font-semibold bg-green-50 px-1.5 py-0.5 rounded-full">
-                Save ₹{Number(product.originalPrice - product.price).toFixed(0)}
+                Save Rs.{Number(product.originalPrice - product.price).toFixed(0)}
               </div>
             )}
           </div>

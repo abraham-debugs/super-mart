@@ -1,4 +1,5 @@
 import express from "express";
+import bcrypt from "bcryptjs";
 import { upload } from "../middleware/upload.js";
 import { Category } from "../models/Category.js";
 import { Product } from "../models/Product.js";
@@ -324,6 +325,10 @@ router.post("/products", upload.single("image"), async (req, res) => {
       publicId = result.public_id;
     }
 
+    // Ensure Fresh Picks and Most Loved are mutually exclusive
+    const shouldBeFreshPick = isFreshPick === "true" || isFreshPick === true;
+    const shouldBeMostLoved = isMostLoved === "true" || isMostLoved === true;
+    
     const product = await Product.create({
       nameEn,
       nameTa,
@@ -333,8 +338,8 @@ router.post("/products", upload.single("image"), async (req, res) => {
       publicId,
       youtubeLink,
       categoryId,
-      isFreshPick: isFreshPick === "true" || isFreshPick === true,
-      isMostLoved: isMostLoved === "true" || isMostLoved === true
+      isFreshPick: shouldBeFreshPick,
+      isMostLoved: shouldBeMostLoved && !shouldBeFreshPick // Only set isMostLoved if not Fresh Pick
     });
 
     res.status(201).json(product);
@@ -370,11 +375,22 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
       product.categoryId = categoryId;
     }
     // Update home page section flags
+    // Ensure Fresh Picks and Most Loved are mutually exclusive
     if (isFreshPick !== undefined) {
-      product.isFreshPick = isFreshPick === "true" || isFreshPick === true;
+      const shouldBeFreshPick = isFreshPick === "true" || isFreshPick === true;
+      product.isFreshPick = shouldBeFreshPick;
+      // If adding to Fresh Picks, remove from Most Loved
+      if (shouldBeFreshPick) {
+        product.isMostLoved = false;
+      }
     }
     if (isMostLoved !== undefined) {
-      product.isMostLoved = isMostLoved === "true" || isMostLoved === true;
+      const shouldBeMostLoved = isMostLoved === "true" || isMostLoved === true;
+      product.isMostLoved = shouldBeMostLoved;
+      // If adding to Most Loved, remove from Fresh Picks
+      if (shouldBeMostLoved) {
+        product.isFreshPick = false;
+      }
     }
 
     // Handle image update if new image provided
@@ -563,6 +579,82 @@ router.put("/delivery-partners/:id", async (req, res) => {
     res.json({ id: String(partner._id), name: partner.name, phone: partner.phone, status: partner.status });
   } catch (err) {
     res.status(500).json({ message: "Failed to update delivery partner", error: err?.message || String(err) });
+  }
+});
+
+// Create admin user (SuperAdmin only)
+router.post("/create-admin", requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+    
+    // Normalize email
+    const normalizedEmail = String(email).toLowerCase().trim();
+    
+    // Check if user already exists
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+    
+    // Validate password strength (minimum 6 characters)
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+    
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // Create admin user
+    const adminUser = await User.create({
+      name,
+      email: normalizedEmail,
+      passwordHash,
+      role: "admin",
+      isProfileComplete: true,
+      emailVerified: true, // Admin accounts don't need email verification
+      isOnline: false,
+      lastSeen: new Date()
+    });
+    
+    res.status(201).json({
+      id: String(adminUser._id),
+      name: adminUser.name,
+      email: adminUser.email,
+      role: adminUser.role,
+      createdAt: adminUser.createdAt
+    });
+  } catch (err) {
+    console.error("Create admin error:", err);
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+    res.status(500).json({ message: "Failed to create admin user", error: err?.message || String(err) });
+  }
+});
+
+// Get all admin users (SuperAdmin only)
+router.get("/admins", requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const admins = await User.find({ role: { $in: ["admin", "superadmin"] } })
+      .select("name email role createdAt isOnline lastSeen")
+      .sort({ createdAt: -1 });
+    
+    res.json(admins.map(admin => ({
+      id: String(admin._id),
+      name: admin.name,
+      email: admin.email,
+      role: admin.role || "user",
+      createdAt: admin.createdAt,
+      isOnline: admin.isOnline || false,
+      lastSeen: admin.lastSeen || null
+    })));
+  } catch (err) {
+    console.error("Get admins error:", err);
+    res.status(500).json({ message: "Failed to fetch admins", error: err?.message || String(err) });
   }
 });
 

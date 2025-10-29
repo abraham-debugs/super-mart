@@ -23,7 +23,7 @@ export const Features = () => {
     { 
       icon: Truck, 
       title: "Free Delivery", 
-      desc: "No delivery charges on orders above ₹299",
+      desc: "No delivery charges on orders above Rs.299",
       color: "from-indigo-500 to-blue-600",
       bgColor: "bg-indigo-50",
       iconColor: "text-indigo-600"

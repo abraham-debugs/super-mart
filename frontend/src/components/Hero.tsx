@@ -64,7 +64,7 @@ export const Hero = () => {
             <div className="flex flex-wrap gap-6 pt-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Truck className="w-4 h-4 text-primary" />
-                <span>Free delivery on orders over ₹299</span>
+                <span>Free delivery on orders over Rs.299</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4 text-primary" />

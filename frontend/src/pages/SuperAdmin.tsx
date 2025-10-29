@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Package, 
   ShoppingCart, 
@@ -21,7 +22,6 @@ import {
   Truck,
   DollarSign,
   Activity,
-  Calendar,
   Clock,
   Download,
   RefreshCw,
@@ -36,7 +36,9 @@ import {
   Target,
   ArrowUpRight,
   ArrowDownRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Heart,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,8 +56,31 @@ import { useAuth } from "@/contexts/AuthContext";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const SuperAdmin = () => {
-  const { token } = useAuth();
+  const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Redirect to admin login if not authenticated or not superadmin
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    
+    if (!storedToken || !storedUser) {
+      navigate("/admin/login");
+      return;
+    }
+    
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      if (parsedUser.role !== "superadmin") {
+        navigate("/admin/login");
+        return;
+      }
+    } catch (e) {
+      navigate("/admin/login");
+      return;
+    }
+  }, [navigate, user, token]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
   const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string; parentCategory?: { _id: string; name: string } | null }>>([]);
@@ -260,6 +285,54 @@ const SuperAdmin = () => {
   // Product filter state
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
+  // Promo Codes state
+  const [promoCodes, setPromoCodes] = useState<Array<{
+    id: string;
+    code: string;
+    discountPercent: number;
+    expiryDate: string;
+    isActive: boolean;
+    usedCount: number;
+    usageLimit: number | null;
+    minOrderAmount: number;
+    isValid: boolean;
+  }>>([]);
+  const [isAddPromoOpen, setIsAddPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState("");
+  const [promoExpiry, setPromoExpiry] = useState("");
+  const [promoUsageLimit, setPromoUsageLimit] = useState("");
+  const [promoMinAmount, setPromoMinAmount] = useState("");
+  const [promoSubmitting, setPromoSubmitting] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  // Home Page Sections state
+  const [freshPicksProducts, setFreshPicksProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [mostLovedProducts, setMostLovedProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [availableProducts, setAvailableProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
+  const [showAddToFreshPicks, setShowAddToFreshPicks] = useState(false);
+  const [showAddToMostLoved, setShowAddToMostLoved] = useState(false);
+  const [showNewProductFreshPicks, setShowNewProductFreshPicks] = useState(false);
+  const [showNewProductMostLoved, setShowNewProductMostLoved] = useState(false);
+
+  // Admin Management state
+  const [admins, setAdmins] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: string;
+    isOnline: boolean;
+    lastSeen: string | null;
+  }>>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [isCreateAdminOpen, setIsCreateAdminOpen] = useState(false);
+  const [newAdminName, setNewAdminName] = useState("");
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [createAdminError, setCreateAdminError] = useState<string | null>(null);
+
   async function loadPartners() {
     try {
       setPartnersLoading(true);
@@ -321,8 +394,219 @@ const SuperAdmin = () => {
       if (!res.ok) throw new Error("Failed to load products");
       const data = await res.json();
       setProducts(data);
+      setAvailableProducts(data);
     } catch (err) {
       console.error("Load products error:", err);
+    }
+  }
+
+  async function loadPromoCodes() {
+    try {
+      const res = await fetch(`${API_BASE}/api/promo-codes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to load promo codes");
+      const data = await res.json();
+      setPromoCodes(data);
+    } catch (err: any) {
+      console.error("Load promo codes error:", err);
+    }
+  }
+
+  async function handleCreatePromoCode() {
+    setPromoError(null);
+    setPromoSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/promo-codes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          code: promoCode,
+          discountPercent: Number(promoDiscount),
+          expiryDate: promoExpiry,
+          usageLimit: promoUsageLimit ? Number(promoUsageLimit) : null,
+          minOrderAmount: promoMinAmount ? Number(promoMinAmount) : 0
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to create promo code");
+      }
+      await loadPromoCodes();
+      setIsAddPromoOpen(false);
+      setPromoCode("");
+      setPromoDiscount("");
+      setPromoExpiry("");
+      setPromoUsageLimit("");
+      setPromoMinAmount("");
+    } catch (err: any) {
+      setPromoError(err.message);
+    } finally {
+      setPromoSubmitting(false);
+    }
+  }
+
+  async function handleDeletePromoCode(id: string) {
+    if (!confirm("Are you sure you want to delete this promo code?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/promo-codes/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to delete promo code");
+      await loadPromoCodes();
+    } catch (err: any) {
+      console.error("Delete promo code error:", err);
+      alert("Failed to delete promo code");
+    }
+  }
+
+  async function handleTogglePromoCode(id: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/promo-codes/${id}/toggle`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to toggle promo code");
+      await loadPromoCodes();
+    } catch (err: any) {
+      console.error("Toggle promo code error:", err);
+      alert("Failed to toggle promo code");
+    }
+  }
+
+  async function loadHomeSections() {
+    try {
+      // Load Fresh Picks
+      const freshRes = await fetch(`${API_BASE}/api/products/fresh-picks`);
+      if (freshRes.ok) {
+        const freshData = await freshRes.json();
+        setFreshPicksProducts(freshData.map((p: any) => ({
+          _id: p.id,
+          nameEn: p.name,
+          categoryName: p.category,
+          price: p.price,
+          imageUrl: p.image
+        })));
+      }
+
+      // Load Most Loved
+      const lovedRes = await fetch(`${API_BASE}/api/products/most-loved`);
+      if (lovedRes.ok) {
+        const lovedData = await lovedRes.json();
+        setMostLovedProducts(lovedData.map((p: any) => ({
+          _id: p.id,
+          nameEn: p.name,
+          categoryName: p.category,
+          price: p.price,
+          imageUrl: p.image
+        })));
+      }
+    } catch (err) {
+      console.error("Load home sections error:", err);
+    }
+  }
+
+  async function toggleProductSection(productId: string, section: "freshPick" | "mostLoved", currentValue: boolean) {
+    try {
+      const form = new FormData();
+      if (section === "freshPick") {
+        form.append("isFreshPick", (!currentValue).toString());
+        // If adding to Fresh Picks, ensure it's not in Most Loved
+        if (!currentValue) {
+          form.append("isMostLoved", "false");
+        }
+      } else {
+        form.append("isMostLoved", (!currentValue).toString());
+        // If adding to Most Loved, ensure it's not in Fresh Picks
+        if (!currentValue) {
+          form.append("isFreshPick", "false");
+        }
+      }
+      
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
+        method: "PUT",
+        body: form
+      });
+
+      if (!res.ok) throw new Error("Failed to update product");
+      
+      await loadHomeSections();
+      await loadProducts();
+      setShowAddToFreshPicks(false);
+      setShowAddToMostLoved(false);
+    } catch (err) {
+      console.error("Toggle section error:", err);
+      alert("Failed to update product section");
+    }
+  }
+
+  async function loadAdmins() {
+    try {
+      setLoadingAdmins(true);
+      const res = await fetch(`${API_BASE}/api/admin/admins`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to load admins");
+      const data = await res.json();
+      setAdmins(data);
+    } catch (err: any) {
+      console.error("Load admins error:", err);
+    } finally {
+      setLoadingAdmins(false);
+    }
+  }
+
+  async function handleCreateAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateAdminError(null);
+    
+    if (!newAdminName || !newAdminEmail || !newAdminPassword) {
+      setCreateAdminError("All fields are required");
+      return;
+    }
+
+    if (newAdminPassword.length < 6) {
+      setCreateAdminError("Password must be at least 6 characters");
+      return;
+    }
+
+    setCreatingAdmin(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/create-admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: newAdminName,
+          email: newAdminEmail,
+          password: newAdminPassword
+        })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create admin");
+      }
+
+      // Reset form
+      setNewAdminName("");
+      setNewAdminEmail("");
+      setNewAdminPassword("");
+      setIsCreateAdminOpen(false);
+      
+      // Reload admins list
+      await loadAdmins();
+    } catch (err: any) {
+      setCreateAdminError(err.message || "Failed to create admin");
+    } finally {
+      setCreatingAdmin(false);
     }
   }
 
@@ -499,6 +783,16 @@ const SuperAdmin = () => {
     if (activeTab === "delivery-partners") {
       loadPartners();
     }
+    if (activeTab === "promo-codes") {
+      loadPromoCodes();
+    }
+    if (activeTab === "home-sections") {
+      loadHomeSections();
+      loadProducts();
+    }
+    if (activeTab === "admin-management") {
+      loadAdmins();
+    }
   }, [activeTab]);
 
   // Derived order stats for Order Management
@@ -547,10 +841,13 @@ const SuperAdmin = () => {
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-blue-600", bgColor: "bg-blue-50" },
     { id: "add-product", label: "Add Product", icon: Plus, color: "text-green-600", bgColor: "bg-green-50" },
     { id: "product-management", label: "Products", icon: Package, color: "text-purple-600", bgColor: "bg-purple-50" },
+    { id: "home-sections", label: "Home Sections", icon: Home, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "categories", label: "Categories", icon: Tag, color: "text-orange-600", bgColor: "bg-orange-50" },
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "user-management", label: "Users", icon: Users, color: "text-pink-600", bgColor: "bg-pink-50" },
     { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-cyan-600", bgColor: "bg-cyan-50" },
+    { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-yellow-600", bgColor: "bg-yellow-50" },
+    { id: "admin-management", label: "Admin Management", icon: Shield, color: "text-red-600", bgColor: "bg-red-50" },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -587,8 +884,8 @@ const SuperAdmin = () => {
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-500">MDMart Management Panel</p>
+                <h1 className="text-xl font-bold text-gray-900">SuperAdmin Dashboard</h1>
+                <p className="text-sm text-gray-500">MDMart SuperAdmin Panel</p>
               </div>
             </div>
           </div>
@@ -703,7 +1000,7 @@ const SuperAdmin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className="text-3xl font-bold text-blue-900">Rs.{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   <div className="flex items-center gap-1 mt-1">
                     <ShoppingCart className="h-3 w-3 text-blue-600" />
                     <p className="text-xs text-blue-600 font-medium">{deliveredOrdersCount} delivered orders</p>
@@ -796,7 +1093,7 @@ const SuperAdmin = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                            <p className="font-semibold text-gray-900">₹{order.total.toLocaleString('en-IN')}</p>
+                            <p className="font-semibold text-gray-900">Rs.{order.total.toLocaleString('en-IN')}</p>
                           <div className="mt-1">
                             {getStatusBadge(order.status)}
                           </div>
@@ -1150,7 +1447,7 @@ const SuperAdmin = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className="font-semibold text-gray-900">₹{product.price}</span>
+                            <span className="font-semibold text-gray-900">Rs.{product.price}</span>
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -1228,7 +1525,7 @@ const SuperAdmin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (₹)</Label>
+                      <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (Rs.)</Label>
                       <Input 
                         id="edit-price" 
                         type="number" 
@@ -1239,7 +1536,7 @@ const SuperAdmin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-original-price" className="text-sm font-medium text-gray-700">Original Price (₹)</Label>
+                      <Label htmlFor="edit-original-price" className="text-sm font-medium text-gray-700">Original Price (Rs.)</Label>
                       <Input 
                         id="edit-original-price" 
                         type="number" 
@@ -1329,7 +1626,7 @@ const SuperAdmin = () => {
                         <img src={selectedProduct.imageUrl} alt={selectedProduct.nameEn} className="h-12 w-12 rounded-lg object-cover border" />
                         <div>
                           <p className="font-semibold text-gray-900">{selectedProduct.nameEn}</p>
-                          <p className="text-sm text-gray-600">₹{selectedProduct.price}</p>
+                          <p className="text-sm text-gray-600">Rs.{selectedProduct.price}</p>
                         </div>
                       </>
                     )}
@@ -1377,7 +1674,7 @@ const SuperAdmin = () => {
                   <div className="py-8 text-center text-muted-foreground">No details available.</div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: ₹{orderDetail.total.toFixed(2)}</div>
+                    <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: Rs.{orderDetail.total.toFixed(2)}</div>
                     <div className="border rounded-md">
                       <Table>
                         <TableHeader>
@@ -1398,8 +1695,8 @@ const SuperAdmin = () => {
                                 </div>
                               </TableCell>
                               <TableCell>{it.quantity}</TableCell>
-                              <TableCell>₹{Number(it.price).toFixed(2)}</TableCell>
-                              <TableCell>₹{Number(it.price * it.quantity).toFixed(2)}</TableCell>
+                              <TableCell>Rs.{Number(it.price).toFixed(2)}</TableCell>
+                              <TableCell>Rs.{Number(it.price * it.quantity).toFixed(2)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1916,7 +2213,7 @@ const SuperAdmin = () => {
                          <TableCell className="font-medium">#{(order as any).orderId || order.id}</TableCell>
                          <TableCell>{order.customer}</TableCell>
                          <TableCell>{order.items}</TableCell>
-                         <TableCell>₹{order.total}</TableCell>
+                         <TableCell>Rs.{order.total}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {order.status === "delivered" || order.status === "cancelled" ? (
                             getStatusBadge(order.status)
@@ -2015,11 +2312,11 @@ const SuperAdmin = () => {
                                         </div>
                                         <div className="text-center">
                                           <div className="text-sm text-blue-600 font-medium">Price</div>
-                                          <div className="text-lg font-bold text-blue-900">₹{Number(it.price).toFixed(2)}</div>
+                                          <div className="text-lg font-bold text-blue-900">Rs.{Number(it.price).toFixed(2)}</div>
                                         </div>
                                         <div className="text-center">
                                           <div className="text-sm text-blue-600 font-medium">Total</div>
-                                          <div className="text-lg font-bold text-green-600">₹{(Number(it.price) * it.quantity).toFixed(2)}</div>
+                                          <div className="text-lg font-bold text-green-600">Rs.{(Number(it.price) * it.quantity).toFixed(2)}</div>
                                         </div>
                                       </div>
                                     </div>
@@ -2036,7 +2333,7 @@ const SuperAdmin = () => {
                                       </div>
                                       <div className="flex items-center gap-4">
                                         <span className="text-sm text-blue-700">Qty: {it.quantity}</span>
-                                        <span className="text-sm text-blue-900 font-semibold">₹{Number(it.price).toFixed(2)}</span>
+                                        <span className="text-sm text-blue-900 font-semibold">Rs.{Number(it.price).toFixed(2)}</span>
                                       </div>
                                     </div>
                                   ))
@@ -2132,6 +2429,712 @@ const SuperAdmin = () => {
           </div>
         )}
 
+        {/* Promo Codes */}
+        {activeTab === "promo-codes" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Promo Codes</h1>
+                <p className="text-gray-600 mt-1">Create and manage discount codes for your customers</p>
+              </div>
+              <Dialog open={isAddPromoOpen} onOpenChange={setIsAddPromoOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Promo Code
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Create New Promo Code</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {promoError && (
+                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                        {promoError}
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="promoCode">Code *</Label>
+                      <Input
+                        id="promoCode"
+                        placeholder="e.g., SUMMER2025"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        className="uppercase"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="promoDiscount">Discount Percent (%) *</Label>
+                      <Input
+                        id="promoDiscount"
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="e.g., 10"
+                        value={promoDiscount}
+                        onChange={(e) => setPromoDiscount(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="promoExpiry">Expiry Date *</Label>
+                      <Input
+                        id="promoExpiry"
+                        type="datetime-local"
+                        value={promoExpiry}
+                        onChange={(e) => setPromoExpiry(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="promoUsageLimit">Usage Limit (optional)</Label>
+                      <Input
+                        id="promoUsageLimit"
+                        type="number"
+                        min="1"
+                        placeholder="Leave empty for unlimited"
+                        value={promoUsageLimit}
+                        onChange={(e) => setPromoUsageLimit(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="promoMinAmount">Minimum Order Amount (Rs.)</Label>
+                      <Input
+                        id="promoMinAmount"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={promoMinAmount}
+                        onChange={(e) => setPromoMinAmount(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleCreatePromoCode}
+                      disabled={promoSubmitting || !promoCode || !promoDiscount || !promoExpiry}
+                      className="w-full"
+                    >
+                      {promoSubmitting ? "Creating..." : "Create Promo Code"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Promo Codes Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Total Codes</CardTitle>
+                  <Tag className="h-4 w-4 text-yellow-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">{promoCodes.length}</div>
+                  <p className="text-xs text-gray-600 mt-1">All promo codes</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Active Codes</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {promoCodes.filter(c => c.isActive && c.isValid).length}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Currently active</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Expired</CardTitle>
+                  <XCircle className="h-4 w-4 text-red-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {promoCodes.filter(c => !c.isValid).length}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">No longer valid</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Total Uses</CardTitle>
+                  <Activity className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {promoCodes.reduce((sum, c) => sum + c.usedCount, 0)}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Times redeemed</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Promo Codes Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>All Promo Codes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {promoCodes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Promo Codes Yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first promo code to start offering discounts</p>
+                    <Button onClick={() => setIsAddPromoOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Promo Code
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Discount</TableHead>
+                        <TableHead>Expiry Date</TableHead>
+                        <TableHead>Usage</TableHead>
+                        <TableHead>Min Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {promoCodes.map((promo) => (
+                        <TableRow key={promo.id}>
+                          <TableCell className="font-semibold text-gray-900">
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-4 w-4 text-yellow-600" />
+                              {promo.code}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-green-100 text-green-800">
+                              {promo.discountPercent}% OFF
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-gray-400" />
+                              {new Date(promo.expiryDate).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <span className="font-semibold">{promo.usedCount}</span>
+                              {promo.usageLimit ? ` / ${promo.usageLimit}` : ' / ∞'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            Rs.{promo.minOrderAmount}
+                          </TableCell>
+                          <TableCell>
+                            {promo.isValid && promo.isActive ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Active
+                              </Badge>
+                            ) : !promo.isValid ? (
+                              <Badge className="bg-red-100 text-red-800">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Expired
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800">
+                                <Ban className="h-3 w-3 mr-1" />
+                                Inactive
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleTogglePromoCode(promo.id)}
+                                className={promo.isActive ? "text-orange-600 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}
+                              >
+                                {promo.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeletePromoCode(promo.id)}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Home Sections */}
+        {activeTab === "home-sections" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Home Page Sections</h1>
+                <p className="text-gray-600 mt-1">Manage products featured in Fresh Picks and Most Loved sections</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  loadHomeSections();
+                  loadProducts();
+                }}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Fresh Picks Section */}
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50/50">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                        <Star className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900">Fresh Picks for You</CardTitle>
+                        <p className="text-sm text-gray-600">{freshPicksProducts.length} products</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddToFreshPicks(!showAddToFreshPicks)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Existing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowNewProductFreshPicks(!showNewProductFreshPicks)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Product
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {showAddToFreshPicks && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-blue-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Select Product to Add</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowAddToFreshPicks(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {availableProducts
+                          .filter(p => !p.isFreshPick && !p.isMostLoved)
+                          .map((product) => (
+                            <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-xs text-gray-500">{product.categoryName}</p>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleProductSection(product._id, "freshPick", false)}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                        {availableProducts.filter(p => !p.isFreshPick && !p.isMostLoved).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Most Loved</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {showNewProductFreshPicks && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Create New Product</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowNewProductFreshPicks(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <ProductForm 
+                        apiBase={API_BASE}
+                        categories={categoryRows}
+                        defaultFreshPick={true}
+                        onCreated={async () => {
+                          await loadProducts();
+                          await loadHomeSections();
+                          setShowNewProductFreshPicks(false);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {freshPicksProducts.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Star className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No products in Fresh Picks</p>
+                      </div>
+                    ) : (
+                      freshPicksProducts.map((product) => (
+                        <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-3">
+                            <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+                            <div>
+                              <p className="font-medium text-gray-900">{product.nameEn}</p>
+                              <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => toggleProductSection(product._id, "freshPick", true)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Most Loved Section */}
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-rose-50/50">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg">
+                        <Heart className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900">Most Loved Items</CardTitle>
+                        <p className="text-sm text-gray-600">{mostLovedProducts.length} products</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddToMostLoved(!showAddToMostLoved)}
+                        className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Existing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowNewProductMostLoved(!showNewProductMostLoved)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Product
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {showAddToMostLoved && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-pink-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Select Product to Add</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowAddToMostLoved(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {availableProducts
+                          .filter(p => !p.isMostLoved && !p.isFreshPick)
+                          .map((product) => (
+                            <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-xs text-gray-500">{product.categoryName}</p>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleProductSection(product._id, "mostLoved", false)}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                        {availableProducts.filter(p => !p.isMostLoved && !p.isFreshPick).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Fresh Picks</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {showNewProductMostLoved && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Create New Product</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowNewProductMostLoved(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <ProductForm 
+                        apiBase={API_BASE}
+                        categories={categoryRows}
+                        defaultMostLoved={true}
+                        onCreated={async () => {
+                          await loadProducts();
+                          await loadHomeSections();
+                          setShowNewProductMostLoved(false);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {mostLovedProducts.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Heart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No products in Most Loved</p>
+                      </div>
+                    ) : (
+                      mostLovedProducts.map((product) => (
+                        <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-3">
+                            <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+                            <div>
+                              <p className="font-medium text-gray-900">{product.nameEn}</p>
+                              <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => toggleProductSection(product._id, "mostLoved", true)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Management */}
+        {activeTab === "admin-management" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Admin Management</h1>
+                <p className="text-gray-600 mt-1">Create and manage administrator accounts</p>
+              </div>
+              <Dialog open={isCreateAdminOpen} onOpenChange={setIsCreateAdminOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Admin
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Create New Admin</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateAdmin} className="space-y-4">
+                    {createAdminError && (
+                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                        {createAdminError}
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="adminName">Full Name *</Label>
+                      <Input
+                        id="adminName"
+                        placeholder="Enter admin name"
+                        value={newAdminName}
+                        onChange={(e) => setNewAdminName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="adminEmail">Email Address *</Label>
+                      <Input
+                        id="adminEmail"
+                        type="email"
+                        placeholder="admin@example.com"
+                        value={newAdminEmail}
+                        onChange={(e) => setNewAdminEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="adminPassword">Password *</Label>
+                      <Input
+                        id="adminPassword"
+                        type="password"
+                        placeholder="Minimum 6 characters"
+                        value={newAdminPassword}
+                        onChange={(e) => setNewAdminPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters</p>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={creatingAdmin || !newAdminName || !newAdminEmail || !newAdminPassword}
+                      className="w-full"
+                    >
+                      {creatingAdmin ? "Creating..." : "Create Admin"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Admin Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Total Admins</CardTitle>
+                  <Shield className="h-4 w-4 text-red-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">{admins.length}</div>
+                  <p className="text-xs text-gray-600 mt-1">Admin & SuperAdmin accounts</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Regular Admins</CardTitle>
+                  <Users className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {admins.filter(a => a.role === "admin").length}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Admin accounts</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Online Now</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {admins.filter(a => a.isOnline).length}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Currently active</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Admins Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>All Administrators</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingAdmins ? (
+                  <div className="text-center py-12">
+                    <BalancingLoader />
+                  </div>
+                ) : admins.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Admins Yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first admin account</p>
+                    <Button onClick={() => setIsCreateAdminOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Admin
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Last Seen</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {admins.map((admin) => (
+                        <TableRow key={admin.id}>
+                          <TableCell className="font-medium">{admin.name}</TableCell>
+                          <TableCell>{admin.email}</TableCell>
+                          <TableCell>
+                            <Badge className={admin.role === "superadmin" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}>
+                              {admin.role === "superadmin" ? "SuperAdmin" : "Admin"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {admin.isOnline ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Online
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Offline
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(admin.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {admin.lastSeen ? new Date(admin.lastSeen).toLocaleString() : "Never"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Analytics */}
         {activeTab === "analytics" && (
           <div className="space-y-6">
@@ -2176,7 +3179,7 @@ const SuperAdmin = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₹1,247</div>
+                  <div className="text-2xl font-bold">Rs.1,247</div>
                   <p className="text-xs text-muted-foreground">per order</p>
                 </CardContent>
               </Card>
@@ -2193,7 +3196,13 @@ const SuperAdmin = () => {
 export default SuperAdmin;
 
 // Inline ProductForm component to submit to backend and use real categories
-const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; name: string }>; onCreated: () => void }> = ({ apiBase, categories, onCreated }) => {
+const ProductForm: React.FC<{ 
+  apiBase: string; 
+  categories: Array<{ _id: string; name: string }>; 
+  onCreated: () => void;
+  defaultFreshPick?: boolean;
+  defaultMostLoved?: boolean;
+}> = ({ apiBase, categories, onCreated, defaultFreshPick = false, defaultMostLoved = false }) => {
   const [nameEn, setNameEn] = useState("");
   const [nameTa, setNameTa] = useState("");
   const [price, setPrice] = useState("");
@@ -2201,6 +3210,8 @@ const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; 
   const [youtubeLink, setYoutubeLink] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
+  const [isFreshPick, setIsFreshPick] = useState(defaultFreshPick);
+  const [isMostLoved, setIsMostLoved] = useState(defaultMostLoved);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -2221,11 +3232,14 @@ const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; 
       if (youtubeLink) form.append("youtubeLink", youtubeLink);
       form.append("categoryId", categoryId);
       form.append("image", file);
+      form.append("isFreshPick", isFreshPick.toString());
+      form.append("isMostLoved", isMostLoved.toString());
       const res = await fetch(`${apiBase}/api/admin/products`, { method: "POST", body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.message || "Failed to add product");
       // reset
       setNameEn(""); setNameTa(""); setPrice(""); setOriginalPrice(""); setYoutubeLink(""); setCategoryId(""); setFile(null);
+      setIsFreshPick(false); setIsMostLoved(false);
       onCreated();
     } catch (err: any) {
       setError(err.message || "Failed to add product");
@@ -2247,11 +3261,11 @@ const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; 
           <Input id="p-name-ta" value={nameTa} onChange={(e) => setNameTa(e.target.value)} placeholder="Enter product name in Tamil" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="p-price" className="text-sm font-medium text-gray-700">Price (₹)</Label>
+          <Label htmlFor="p-price" className="text-sm font-medium text-gray-700">Price (Rs.)</Label>
           <Input id="p-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="p-original-price" className="text-sm font-medium text-gray-700">Original Price (₹)</Label>
+          <Label htmlFor="p-original-price" className="text-sm font-medium text-gray-700">Original Price (Rs.)</Label>
           <Input id="p-original-price" type="number" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" />
           <p className="text-xs text-gray-500">(Optional)</p>
         </div>

@@ -48,6 +48,12 @@ const OrderSchema = new mongoose.Schema(
       ref: 'DeliveryPartner',
       default: null
     },
+    promoCode: {
+      code: { type: String },
+      discountPercent: { type: Number },
+      discountAmount: { type: Number, default: 0 }
+    },
+    subtotalBeforeDiscount: { type: Number }, // Subtotal before promo discount
     placedAt: { type: Date, default: Date.now }
   },
   { timestamps: true }

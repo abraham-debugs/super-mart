@@ -162,7 +162,7 @@ export default function SubscriptionPlans() {
                 {/* Pricing Badge */}
                 <span className="plan-pricing">
                   <span>
-                    ₹{plan.price} <small>/ {plan.duration}</small>
+                    Rs.{plan.price} <small>/ {plan.duration}</small>
                   </span>
                 </span>
 

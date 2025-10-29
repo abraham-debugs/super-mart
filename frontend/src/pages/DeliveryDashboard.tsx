@@ -298,7 +298,7 @@ export const DeliveryDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">₹{totalEarnings.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">Rs.{totalEarnings.toLocaleString()}</div>
               <p className="text-xs text-gray-500 mt-2">From {completedOrders.length} deliveries</p>
             </CardContent>
           </Card>
@@ -558,7 +558,7 @@ const OrderCard = ({
                 <div className="flex items-center gap-2 ml-auto">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Total:</span>
                   <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                    ₹{order.total.toLocaleString()}
+                    Rs.{order.total.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -632,12 +632,12 @@ const OrderCard = ({
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-gray-900 dark:text-white truncate">{item.name}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Quantity: {item.quantity} × ₹{item.price.toLocaleString()}
+                      Quantity: {item.quantity} × Rs.{item.price.toLocaleString()}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-gray-900 dark:text-white">
-                      ₹{(item.price * item.quantity).toLocaleString()}
+                      Rs.{(item.price * item.quantity).toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -646,7 +646,7 @@ const OrderCard = ({
                 <div className="text-right">
                   <div className="text-sm text-gray-600 dark:text-gray-400">Order Total</div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    ₹{order.total.toLocaleString()}
+                    Rs.{order.total.toLocaleString()}
                   </div>
                 </div>
               </div>

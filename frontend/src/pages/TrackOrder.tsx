@@ -146,7 +146,7 @@ const TrackOrder = () => {
                     <div className="flex justify-between"><span className="font-medium">Customer Name:</span><span>{orderStatus.customerDetails?.fullName}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Mobile Number:</span><span>{orderStatus.customerDetails?.mobile}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Status:</span><div className="flex items-center gap-2">{getStatusIcon(orderStatus.status)}<span className="capitalize font-medium">{orderStatus.status?.replace('_', ' ')}</span></div></div>
-                    <div className="flex justify-between"><span className="font-medium">Total Amount:</span><span className="font-semibold text-lg">₹{orderStatus.total}</span></div>
+                    <div className="flex justify-between"><span className="font-medium">Total Amount:</span><span className="font-semibold text-lg">Rs.{orderStatus.total}</span></div>
                     <div className="flex justify-between"><span className="font-medium">Order Date:</span><span>{new Date(orderStatus.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
                     {orderStatus.paymentScreenshot && (
                       <div className="border-t pt-4 mt-4">

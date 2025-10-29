@@ -287,11 +287,11 @@ export default function ImageSearch({ open, onOpenChange }: ImageSearchProps) {
                           )}
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-blue-600">
-                              ₹{product.price}
+                              Rs.{product.price}
                             </span>
                             {product.originalPrice && product.originalPrice > product.price && (
                               <span className="text-xs text-gray-400 line-through">
-                                ₹{product.originalPrice}
+                                Rs.{product.originalPrice}
                               </span>
                             )}
                           </div>
@@ -323,6 +323,7 @@ export default function ImageSearch({ open, onOpenChange }: ImageSearchProps) {
     </Dialog>
   );
 }
+
 
 
 

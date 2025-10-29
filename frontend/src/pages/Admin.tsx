@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Package, 
   ShoppingCart, 
@@ -56,9 +57,32 @@ import { useAuth } from "@/contexts/AuthContext";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const Admin = () => {
+  const navigate = useNavigate();
   const { user, token } = useAuth();
   const isSuperAdmin = user?.role === "superadmin";
   const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Redirect to admin login if not authenticated or not admin
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    
+    if (!storedToken || !storedUser) {
+      navigate("/admin/login");
+      return;
+    }
+    
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      if (parsedUser.role !== "admin" && parsedUser.role !== "superadmin") {
+        navigate("/admin/login");
+        return;
+      }
+    } catch (e) {
+      navigate("/admin/login");
+      return;
+    }
+  }, [navigate, user, token]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
   const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string; parentCategory?: { _id: string; name: string } | null; showInNavbar?: boolean }>>([]);
@@ -483,8 +507,16 @@ const Admin = () => {
       const form = new FormData();
       if (section === "freshPick") {
         form.append("isFreshPick", (!currentValue).toString());
+        // If adding to Fresh Picks, ensure it's not in Most Loved
+        if (!currentValue) {
+          form.append("isMostLoved", "false");
+        }
       } else {
         form.append("isMostLoved", (!currentValue).toString());
+        // If adding to Most Loved, ensure it's not in Fresh Picks
+        if (!currentValue) {
+          form.append("isFreshPick", "false");
+        }
       }
       
       const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
@@ -945,7 +977,7 @@ const Admin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className="text-3xl font-bold text-blue-900">Rs.{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   <div className="flex items-center gap-1 mt-1">
                     <ShoppingCart className="h-3 w-3 text-blue-600" />
                     <p className="text-xs text-blue-600 font-medium">{deliveredOrdersCount} delivered orders</p>
@@ -1038,7 +1070,7 @@ const Admin = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                            <p className="font-semibold text-gray-900">₹{order.total.toLocaleString('en-IN')}</p>
+                            <p className="font-semibold text-gray-900">Rs.{order.total.toLocaleString('en-IN')}</p>
                           <div className="mt-1">
                             {getStatusBadge(order.status)}
                           </div>
@@ -1392,7 +1424,7 @@ const Admin = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className="font-semibold text-gray-900">₹{product.price}</span>
+                            <span className="font-semibold text-gray-900">Rs.{product.price}</span>
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -1472,7 +1504,7 @@ const Admin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (₹)</Label>
+                      <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (Rs.)</Label>
                       <Input 
                         id="edit-price" 
                         type="number" 
@@ -1483,7 +1515,7 @@ const Admin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-original-price" className="text-sm font-medium text-gray-700">Original Price (₹)</Label>
+                      <Label htmlFor="edit-original-price" className="text-sm font-medium text-gray-700">Original Price (Rs.)</Label>
                       <Input 
                         id="edit-original-price" 
                         type="number" 
@@ -1610,7 +1642,7 @@ const Admin = () => {
                         <img src={selectedProduct.imageUrl} alt={selectedProduct.nameEn} className="h-12 w-12 rounded-lg object-cover border" />
                         <div>
                           <p className="font-semibold text-gray-900">{selectedProduct.nameEn}</p>
-                          <p className="text-sm text-gray-600">₹{selectedProduct.price}</p>
+                          <p className="text-sm text-gray-600">Rs.{selectedProduct.price}</p>
                         </div>
                       </>
                     )}
@@ -1658,7 +1690,7 @@ const Admin = () => {
                   <div className="py-8 text-center text-muted-foreground">No details available.</div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: ₹{orderDetail.total.toFixed(2)}</div>
+                    <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: Rs.{orderDetail.total.toFixed(2)}</div>
                     <div className="border rounded-md">
                       <Table>
                         <TableHeader>
@@ -1679,8 +1711,8 @@ const Admin = () => {
                                 </div>
                               </TableCell>
                               <TableCell>{it.quantity}</TableCell>
-                              <TableCell>₹{Number(it.price).toFixed(2)}</TableCell>
-                              <TableCell>₹{Number(it.price * it.quantity).toFixed(2)}</TableCell>
+                              <TableCell>Rs.{Number(it.price).toFixed(2)}</TableCell>
+                              <TableCell>Rs.{Number(it.price * it.quantity).toFixed(2)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1763,7 +1795,7 @@ const Admin = () => {
                       </div>
                       <div className="max-h-60 overflow-y-auto space-y-2">
                         {availableProducts
-                          .filter(p => !p.isFreshPick)
+                          .filter(p => !p.isFreshPick && !p.isMostLoved)
                           .map((product) => (
                             <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
                               <div className="flex items-center gap-3">
@@ -1782,8 +1814,8 @@ const Admin = () => {
                               </Button>
                             </div>
                           ))}
-                        {availableProducts.filter(p => !p.isFreshPick).length === 0 && (
-                          <p className="text-sm text-gray-500 text-center py-4">All products are already added</p>
+                        {availableProducts.filter(p => !p.isFreshPick && !p.isMostLoved).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Most Loved</p>
                         )}
                       </div>
                     </div>
@@ -1826,7 +1858,7 @@ const Admin = () => {
                             <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
                             <div>
                               <p className="font-medium text-gray-900">{product.nameEn}</p>
-                              <p className="text-sm text-gray-500">{product.categoryName} • ₹{product.price}</p>
+                              <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
                             </div>
                           </div>
                           <Button
@@ -1892,7 +1924,7 @@ const Admin = () => {
                       </div>
                       <div className="max-h-60 overflow-y-auto space-y-2">
                         {availableProducts
-                          .filter(p => !p.isMostLoved)
+                          .filter(p => !p.isMostLoved && !p.isFreshPick)
                           .map((product) => (
                             <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
                               <div className="flex items-center gap-3">
@@ -1911,8 +1943,8 @@ const Admin = () => {
                               </Button>
                             </div>
                           ))}
-                        {availableProducts.filter(p => !p.isMostLoved).length === 0 && (
-                          <p className="text-sm text-gray-500 text-center py-4">All products are already added</p>
+                        {availableProducts.filter(p => !p.isMostLoved && !p.isFreshPick).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Fresh Picks</p>
                         )}
                       </div>
                     </div>
@@ -1955,7 +1987,7 @@ const Admin = () => {
                             <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
                             <div>
                               <p className="font-medium text-gray-900">{product.nameEn}</p>
-                              <p className="text-sm text-gray-500">{product.categoryName} • ₹{product.price}</p>
+                              <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
                             </div>
                           </div>
                           <Button
@@ -2514,7 +2546,7 @@ const Admin = () => {
                          <TableCell className="font-medium">#{(order as any).orderId || order.id}</TableCell>
                          <TableCell>{order.customer}</TableCell>
                          <TableCell>{order.items}</TableCell>
-                         <TableCell>₹{order.total}</TableCell>
+                         <TableCell>Rs.{order.total}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {order.status === "delivered" || order.status === "cancelled" ? (
                             getStatusBadge(order.status)
@@ -2613,11 +2645,11 @@ const Admin = () => {
                                         </div>
                                         <div className="text-center">
                                           <div className="text-sm text-blue-600 font-medium">Price</div>
-                                          <div className="text-lg font-bold text-blue-900">₹{Number(it.price).toFixed(2)}</div>
+                                          <div className="text-lg font-bold text-blue-900">Rs.{Number(it.price).toFixed(2)}</div>
                                         </div>
                                         <div className="text-center">
                                           <div className="text-sm text-blue-600 font-medium">Total</div>
-                                          <div className="text-lg font-bold text-green-600">₹{(Number(it.price) * it.quantity).toFixed(2)}</div>
+                                          <div className="text-lg font-bold text-green-600">Rs.{(Number(it.price) * it.quantity).toFixed(2)}</div>
                                         </div>
                                       </div>
                                     </div>
@@ -2634,7 +2666,7 @@ const Admin = () => {
                                       </div>
                                       <div className="flex items-center gap-4">
                                         <span className="text-sm text-blue-700">Qty: {it.quantity}</span>
-                                        <span className="text-sm text-blue-900 font-semibold">₹{Number(it.price).toFixed(2)}</span>
+                                        <span className="text-sm text-blue-900 font-semibold">Rs.{Number(it.price).toFixed(2)}</span>
                                       </div>
                                     </div>
                                   ))
@@ -2798,7 +2830,7 @@ const Admin = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="promoMinAmount">Minimum Order Amount (₹)</Label>
+                      <Label htmlFor="promoMinAmount">Minimum Order Amount (Rs.)</Label>
                       <Input
                         id="promoMinAmount"
                         type="number"
@@ -2929,7 +2961,7 @@ const Admin = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            ₹{promo.minOrderAmount}
+                            Rs.{promo.minOrderAmount}
                           </TableCell>
                           <TableCell>
                             {promo.isValid && promo.isActive ? (
@@ -3023,7 +3055,7 @@ const Admin = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₹1,247</div>
+                  <div className="text-2xl font-bold">Rs.1,247</div>
                   <p className="text-xs text-muted-foreground">per order</p>
                 </CardContent>
               </Card>
@@ -3105,11 +3137,11 @@ const ProductForm: React.FC<{
           <Input id="p-name-ta" value={nameTa} onChange={(e) => setNameTa(e.target.value)} placeholder="Enter product name in Tamil" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="p-price" className="text-sm font-medium text-gray-700">Price (₹)</Label>
+          <Label htmlFor="p-price" className="text-sm font-medium text-gray-700">Price (Rs.)</Label>
           <Input id="p-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="p-original-price" className="text-sm font-medium text-gray-700">Original Price (₹)</Label>
+          <Label htmlFor="p-original-price" className="text-sm font-medium text-gray-700">Original Price (Rs.)</Label>
           <Input id="p-original-price" type="number" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" />
           <p className="text-xs text-gray-500">(Optional)</p>
         </div>

@@ -240,17 +240,17 @@ const Wishlist: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-baseline gap-2">
                           <span className="text-xl font-bold text-gray-900 dark:text-white">
-                            ₹{item.price.toLocaleString()}
+                            Rs.{item.price.toLocaleString()}
                           </span>
                           {item.originalPrice && (
                             <span className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                              ₹{item.originalPrice.toLocaleString()}
+                              Rs.{item.originalPrice.toLocaleString()}
                             </span>
                           )}
                         </div>
                         {item.originalPrice && (
                           <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 text-xs">
-                            Save ₹{(item.originalPrice - item.price).toLocaleString()}
+                            Save Rs.{(item.originalPrice - item.price).toLocaleString()}
                           </Badge>
                         )}
                       </div>

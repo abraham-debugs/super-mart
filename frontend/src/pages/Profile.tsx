@@ -185,7 +185,7 @@ const Profile: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">₹{totalSpent.toFixed(0)}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">Rs.{totalSpent.toFixed(0)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-white" />
@@ -414,7 +414,7 @@ const Profile: React.FC = () => {
                                   </Badge>
                               </div>
                               <div className="text-right">
-                                  <p className="text-2xl font-bold text-gray-900">₹{Number(order.total).toFixed(2)}</p>
+                                  <p className="text-2xl font-bold text-gray-900">Rs.{Number(order.total).toFixed(2)}</p>
                                   <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     {new Date(order.createdAt).toLocaleDateString()}
@@ -464,7 +464,7 @@ const Profile: React.FC = () => {
                                           <p className="text-xs text-gray-500">Quantity: {it.quantity}</p>
                                         </div>
                                       </div>
-                                      <p className="text-sm font-semibold text-gray-900">₹{Number(it.price * it.quantity).toFixed(2)}</p>
+                                      <p className="text-sm font-semibold text-gray-900">Rs.{Number(it.price * it.quantity).toFixed(2)}</p>
                                     </div>
                                 ))}
                                 </div>
@@ -606,7 +606,7 @@ const Profile: React.FC = () => {
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm font-semibold text-gray-900">₹{bill.amount}</p>
+                                    <p className="text-sm font-semibold text-gray-900">Rs.{bill.amount}</p>
                                     <Badge className={`text-xs ${
                                       bill.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                     }`}>

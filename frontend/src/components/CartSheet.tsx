@@ -15,10 +15,7 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
   const { items, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
+    return `Rs. ${price.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const subtotal = getCartTotal();

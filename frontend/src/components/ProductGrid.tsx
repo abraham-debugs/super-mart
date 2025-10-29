@@ -121,9 +121,9 @@ export const ProductGrid = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Prices</SelectItem>
-                    <SelectItem value="under100">Under $100</SelectItem>
-                    <SelectItem value="100to500">$100 - $500</SelectItem>
-                    <SelectItem value="over500">Over $500</SelectItem>
+                    <SelectItem value="under100">Under Rs. 100</SelectItem>
+                    <SelectItem value="100to500">Rs. 100 - Rs. 500</SelectItem>
+                    <SelectItem value="over500">Over Rs. 500</SelectItem>
                   </SelectContent>
                 </Select>
 

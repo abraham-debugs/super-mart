@@ -1,6 +1,7 @@
 import express from "express";
 import { Product } from "../models/Product.js";
 import { Category } from "../models/Category.js";
+import { Order } from "../models/Order.js";
 
 const router = express.Router();
 
@@ -74,9 +75,31 @@ router.get("/search", async (req, res) => {
 });
 
 // Get Fresh Picks products (for home page "Fresh Picks for You" section)
+// Excludes products that are already in Most Loved to avoid duplication
 router.get("/fresh-picks", async (req, res) => {
   try {
-    const products = await Product.find({ isFreshPick: true })
+    // First, get Most Loved product IDs to exclude them from Fresh Picks
+    const salesData = await Order.aggregate([
+      { $match: { status: { $ne: "cancelled" } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.productId",
+          totalQuantity: { $sum: "$items.quantity" }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 20 }
+    ]);
+    const mostLovedProductIds = salesData.map(item => item._id).filter(Boolean);
+
+    // Get Fresh Picks products, excluding those that are in Most Loved
+    const query = { isFreshPick: true };
+    if (mostLovedProductIds.length > 0) {
+      query._id = { $nin: mostLovedProductIds };
+    }
+
+    const products = await Product.find(query)
       .sort({ createdAt: -1 })
       .limit(20)
       .populate({ path: "categoryId", select: "name" });
@@ -103,14 +126,52 @@ router.get("/fresh-picks", async (req, res) => {
 });
 
 // Get Most Loved products (for home page "Most Loved Items" section)
+// Returns high sales products based on order quantities
 router.get("/most-loved", async (req, res) => {
   try {
-    const products = await Product.find({ isMostLoved: true })
-      .sort({ createdAt: -1 })
-      .limit(20)
+    // Aggregate orders to get total quantities sold per product
+    // Exclude cancelled orders
+    const salesData = await Order.aggregate([
+      { $match: { status: { $ne: "cancelled" } } }, // Exclude cancelled orders
+      { $unwind: "$items" }, // Flatten items array
+      {
+        $group: {
+          _id: "$items.productId",
+          totalQuantity: { $sum: "$items.quantity" }
+        }
+      },
+      { $sort: { totalQuantity: -1 } }, // Sort by highest sales first
+      { $limit: 20 } // Get top 20 high sales products
+    ]);
+
+    // Extract product IDs from sales data
+    const productIds = salesData.map(item => item._id).filter(Boolean);
+
+    // If no sales data, fall back to empty array
+    if (productIds.length === 0) {
+      return res.json([]);
+    }
+
+    // Fetch product details for high sales products
+    const products = await Product.find({ _id: { $in: productIds } })
       .populate({ path: "categoryId", select: "name" });
 
-    const mapped = products.map((p) => ({
+    // Create a map of productId -> totalQuantity for sorting
+    const salesMap = new Map();
+    salesData.forEach(item => {
+      if (item._id) {
+        salesMap.set(String(item._id), item.totalQuantity);
+      }
+    });
+
+    // Sort products by sales quantity (descending)
+    const sortedProducts = products.sort((a, b) => {
+      const aSales = salesMap.get(String(a._id)) || 0;
+      const bSales = salesMap.get(String(b._id)) || 0;
+      return bSales - aSales;
+    });
+
+    const mapped = sortedProducts.map((p) => ({
       id: String(p._id),
       name: p.nameEn || "",
       description: "",

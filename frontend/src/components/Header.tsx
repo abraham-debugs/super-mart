@@ -59,8 +59,8 @@ export const Header = () => {
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-gray-200/50 dark:border-slate-800/50" 
-          : "bg-transparent"
+          ? "bg-blue-600 dark:bg-blue-800 backdrop-blur-xl shadow-lg border-b border-blue-400/30 dark:border-blue-600/30" 
+          : "bg-blue-500/95 dark:bg-blue-700/95 backdrop-blur-md"
       }`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -73,7 +73,7 @@ export const Header = () => {
                   </div>
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300"></div>
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
+                <span className="text-2xl font-bold text-white group-hover:scale-105 transition-transform duration-300 drop-shadow-lg">
                   MDMart
                 </span>
               </Link>
@@ -84,28 +84,28 @@ export const Header = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30"
                   >
                     {item.name}
                   </Link>
                 ))}
                 <Link
                   to="/wishlist"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-1.5"
+                  className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-1.5"
                 >
                   <Heart className="h-4 w-4" />
                  
                 </Link>
                 <Link
                   to="/saved"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-1.5"
+                  className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-1.5"
                 >
                   <Bookmark className="h-4 w-4" />
                   
                 </Link>
                 <Link
                   to="/subscription-plans"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-1.5"
+                  className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-1.5"
                 >
                   <Crown className="h-4 w-4" />
                   Plans
@@ -124,7 +124,7 @@ export const Header = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden hover:bg-blue-50 dark:hover:bg-slate-800"
+                className="md:hidden hover:bg-white/20 text-white"
                 onClick={() => setIsMenuOpen(true)}
               >
                 <Search className="h-5 w-5" />
@@ -141,7 +141,7 @@ export const Header = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsImageSearchOpen(true)}
-                  className="hover:bg-blue-50 dark:hover:bg-slate-800"
+                  className="hover:bg-white/20 text-white"
                   title="Search by image"
                 >
                   <Camera className="h-5 w-5" />
@@ -154,7 +154,7 @@ export const Header = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative hover:bg-blue-50 dark:hover:bg-slate-800"
+                className="relative hover:bg-white/20 text-white"
                 onClick={() => setIsCartOpen(true)}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -171,7 +171,7 @@ export const Header = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="hidden sm:flex hover:bg-blue-50 dark:hover:bg-slate-800"
+                    className="hidden sm:flex hover:bg-white/20 text-white"
                     onClick={() => navigate('/profile')}
                     title="Profile"
                   >
@@ -180,7 +180,7 @@ export const Header = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="hidden sm:flex hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300"
+                    className="hidden sm:flex hover:bg-white/20 text-white border border-transparent hover:border-white/30"
                     onClick={() => { logout(); navigate('/login'); }}
                   >
                     Logout
@@ -190,7 +190,7 @@ export const Header = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsMenuOpen(!isMenuOpen)}
-                      className="hover:bg-blue-50 dark:hover:bg-slate-800"
+                      className="hover:bg-white/20 text-white"
                     >
                       {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </Button>
@@ -201,14 +201,14 @@ export const Header = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="hidden sm:flex hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300"
+                    className="hidden sm:flex hover:bg-white/20 text-white border border-transparent hover:border-white/30"
                     onClick={() => navigate('/login')}
                   >
                     Login
                   </Button>
                   <Button 
                     size="sm" 
-                    className="hidden sm:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="hidden sm:flex bg-white/20 hover:bg-white/30 text-white border border-white/30 hover:border-white/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200"
                     onClick={() => navigate('/register')}
                   >
                     Register
@@ -216,7 +216,7 @@ export const Header = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="sm:hidden hover:bg-blue-50 dark:hover:bg-slate-800"
+                    className="sm:hidden hover:bg-white/20 text-white"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                   >
                     {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -229,7 +229,7 @@ export const Header = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="hidden lg:flex hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300"
+                  className="hidden lg:flex hover:bg-white/20 text-white border border-transparent hover:border-white/30"
                   onClick={() => navigate(user.role === "superadmin" ? '/superadmin' : '/admin')}
                 >
                   Admin
@@ -241,7 +241,7 @@ export const Header = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="lg:hidden border-t border-white/20 bg-blue-600/95 dark:bg-blue-700/95 backdrop-blur-md">
             <div className="container mx-auto px-4 py-4 space-y-4">
               {/* Mobile Search */}
               <div className="flex items-center gap-2">
@@ -265,12 +265,12 @@ export const Header = () => {
               </div>
               
               {/* Mobile Navigation Links */}
-              <nav className="flex flex-col space-y-2 border-t border-gray-200 dark:border-slate-800 pt-4">
+              <nav className="flex flex-col space-y-2 border-t border-white/20 pt-4">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                    className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
@@ -278,7 +278,7 @@ export const Header = () => {
                 ))}
                 <Link
                   to="/wishlist"
-                  className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Heart className="h-5 w-5" />
@@ -286,7 +286,7 @@ export const Header = () => {
                 </Link>
                 <Link
                   to="/saved"
-                  className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Bookmark className="h-5 w-5" />
@@ -294,7 +294,7 @@ export const Header = () => {
                 </Link>
                 <Link
                   to="/subscription-plans"
-                  className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Crown className="h-5 w-5" />
@@ -304,7 +304,7 @@ export const Header = () => {
                   <>
                     <Link
                       to="/profile"
-                      className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-2"
+                      className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30 flex items-center gap-2"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <User className="h-5 w-5" />
@@ -312,14 +312,14 @@ export const Header = () => {
                     </Link>
                     <button
                       onClick={() => { logout(); navigate('/login'); setIsMenuOpen(false); }}
-                      className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-left w-full"
+                      className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 text-left w-full border border-transparent hover:border-white/30"
                     >
                       Logout
                     </button>
                     {(user.role === "admin" || user.role === "superadmin") && (
                       <Link
                         to={user.role === "superadmin" ? '/superadmin' : '/admin'}
-                        className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                        className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Admin Panel
@@ -330,14 +330,14 @@ export const Header = () => {
                   <>
                     <Link
                       to="/login"
-                      className="px-4 py-3 text-base font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                      className="px-4 py-3 text-base font-medium text-white rounded-lg hover:bg-white/20 hover:backdrop-blur-sm transition-all duration-200 border border-transparent hover:border-white/30"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
-                      className="px-4 py-3 text-base font-medium text-white rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-center"
+                      className="px-4 py-3 text-base font-medium text-white rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-200 text-center border border-white/30 hover:border-white/50"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Register

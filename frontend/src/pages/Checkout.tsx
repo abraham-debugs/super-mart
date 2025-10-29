@@ -12,7 +12,8 @@ import {
   Trash2,
   Phone,
   Mail,
-  User
+  User,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,19 +24,26 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddressBook, type Address } from "@/components/AddressBook";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
 const Checkout = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { items: cartItems, getCartCount, getCartTotal, removeFromCart, updateQuantity, clearCart } = useCart();
   const { token } = useAuth() as any;
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountPercent: number; discountAmount: number } | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
   const steps = [
     { id: 1, title: "Delivery Details", description: "Add delivery information" },
@@ -44,14 +52,78 @@ const Checkout = () => {
   ];
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(price);
+    return `Rs. ${price.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const deliveryFee = deliveryMethod === "express" ? 50 : 30;
-  const totalAmount = getCartTotal() + deliveryFee;
+  const subtotal = getCartTotal();
+  const discountAmount = appliedPromoCode ? Math.round((subtotal * appliedPromoCode.discountPercent) / 100) : 0;
+  const totalAmount = subtotal - discountAmount + deliveryFee;
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) {
+      toast({
+        title: "Invalid Input",
+        description: "Please enter a promo code",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsValidatingPromo(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/promo-codes/validate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          code: promoCodeInput.trim(),
+          orderAmount: subtotal
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({
+          title: "Promo Code Error",
+          description: data.message || "Invalid promo code",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const discount = Math.round((subtotal * data.discountPercent) / 100);
+      setAppliedPromoCode({
+        code: data.code,
+        discountPercent: data.discountPercent,
+        discountAmount: discount
+      });
+      setPromoCodeInput("");
+      toast({
+        title: "Promo Code Applied!",
+        description: `${data.discountPercent}% discount applied successfully`,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to validate promo code. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromoCode(null);
+    setPromoCodeInput("");
+    toast({
+      title: "Promo Code Removed",
+      description: "Discount has been removed",
+    });
+  };
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
@@ -75,6 +147,8 @@ const Checkout = () => {
       address: `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? `, ${selectedAddress.addressLine2}` : ''}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`
     };
     const paymentInfo = { method: paymentMethod };
+    const promoCode = appliedPromoCode ? { code: appliedPromoCode.code } : null;
+    
     try {
       if (!token) {
         // Not authenticated - redirect to login
@@ -82,13 +156,13 @@ const Checkout = () => {
         return;
       }
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:5000"}/api/orders/`, {
+      const res = await fetch(`${API_BASE}/api/orders/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ items, total, customerDetails, paymentInfo })
+        body: JSON.stringify({ items, total, customerDetails, paymentInfo, promoCode, deliveryFee })
       });
       if (res.status === 401) {
         // token invalid or expired
@@ -219,7 +293,7 @@ const Checkout = () => {
                             <Truck className="h-4 w-4" />
                             <span>Standard Delivery (2-3 days)</span>
                           </Label>
-                          <p className="text-sm text-gray-500">₹30 delivery fee</p>
+                          <p className="text-sm text-gray-500">Rs.30 delivery fee</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 p-4 border rounded-lg">
@@ -229,7 +303,7 @@ const Checkout = () => {
                             <Clock className="h-4 w-4" />
                             <span>Express Delivery (Same day)</span>
                           </Label>
-                          <p className="text-sm text-gray-500">₹50 delivery fee</p>
+                          <p className="text-sm text-gray-500">Rs.50 delivery fee</p>
                         </div>
                       </div>
                     </RadioGroup>
@@ -286,7 +360,7 @@ const Checkout = () => {
                         <div className="flex-1">
                           <Label htmlFor="wallet" className="flex items-center space-x-2">
                             <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
-                              <span className="text-xs font-bold text-green-600">₹</span>
+                              <span className="text-xs font-bold text-green-600">Rs.</span>
                             </div>
                             <span>Digital Wallet</span>
                           </Label>
@@ -409,8 +483,14 @@ const Checkout = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal ({getCartCount()} items)</span>
-                    <span>{formatPrice(getCartTotal())}</span>
+                    <span>{formatPrice(subtotal)}</span>
                   </div>
+                  {appliedPromoCode && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount ({appliedPromoCode.code})</span>
+                      <span>-{formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
                     <span>{formatPrice(deliveryFee)}</span>
@@ -430,7 +510,7 @@ const Checkout = () => {
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Truck className="h-4 w-4" />
-                    <span>Free delivery on orders above ₹500</span>
+                    <span>Free delivery on orders above Rs.500</span>
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4" />
@@ -439,12 +519,49 @@ const Checkout = () => {
                 </div>
 
                 {/* Promo Code */}
-                <div className="space-y-2">
-                  <Label htmlFor="promo">Promo Code</Label>
-                  <div className="flex space-x-2">
-                    <Input id="promo" placeholder="Enter promo code" />
-                    <Button variant="outline">Apply</Button>
-                  </div>
+                <div className="space-y-2 pt-4 border-t">
+                  {appliedPromoCode ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                        <div>
+                          <p className="text-sm font-medium text-green-700">{appliedPromoCode.code}</p>
+                          <p className="text-xs text-green-600">{appliedPromoCode.discountPercent}% discount applied</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemovePromoCode}
+                          className="h-6 w-6 p-0 text-green-700 hover:text-green-900"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Label htmlFor="promo">Promo Code</Label>
+                      <div className="flex space-x-2">
+                        <Input 
+                          id="promo" 
+                          placeholder="Enter promo code" 
+                          value={promoCodeInput}
+                          onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleApplyPromoCode();
+                            }
+                          }}
+                        />
+                        <Button 
+                          variant="outline" 
+                          onClick={handleApplyPromoCode}
+                          disabled={isValidatingPromo || !promoCodeInput.trim()}
+                        >
+                          {isValidatingPromo ? "..." : "Apply"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -224,12 +224,12 @@ export const SearchBar = () => {
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-base font-bold text-green-600">
-                          ₹{product.price}
+                          Rs.{product.price}
                         </span>
                         {product.originalPrice && product.originalPrice > product.price && (
                           <>
                             <span className="text-xs text-gray-400 line-through">
-                              ₹{product.originalPrice}
+                              Rs.{product.originalPrice}
                             </span>
                             <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
                               {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF

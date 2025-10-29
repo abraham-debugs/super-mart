@@ -22,6 +22,7 @@ import OrderSuccess from "./pages/OrderSuccess";
 import TrackOrder from "./pages/TrackOrder";
 import { DeliveryLogin } from "./pages/DeliveryLogin";
 import { DeliveryDashboard } from "./pages/DeliveryDashboard";
+import { AdminLogin } from "./pages/AdminLogin";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,9 @@ const App = () => (
                 {/* Auth pages (clean layout, no footer) */}
                 <Route path="/login" element={<Layout showFooter={false}><Login /></Layout>} />
                 <Route path="/register" element={<Layout showFooter={false}><Register /></Layout>} />
+                
+                {/* Admin pages */}
+                <Route path="/admin/login" element={<AdminLogin />} />
                 
                 {/* Delivery pages (they have their own navigation) */}
                 <Route path="/delivery/login" element={<DeliveryLogin />} />

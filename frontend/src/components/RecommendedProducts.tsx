@@ -186,11 +186,11 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                       </h3>
                       <div className="flex items-center gap-1">
                         <span className="text-sm font-bold text-blue-600">
-                          ₹{product.price}
+                          Rs.{product.price}
                         </span>
                         {product.originalPrice && product.originalPrice > product.price && (
                           <span className="text-[10px] text-gray-400 line-through">
-                            ₹{product.originalPrice}
+                            Rs.{product.originalPrice}
                           </span>
                         )}
                       </div>
@@ -199,7 +199,7 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                     {/* Add to Cart Button */}
                     <Button
                       size="sm"
-                      className="w-full mt-2 h-7 text-[11px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      className="w-full mt-2 h-7 text-[11px] bg-green-700 hover:from-purple-700 hover:to-pink-700 text-white"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Add to cart logic (implement with your cart context)
