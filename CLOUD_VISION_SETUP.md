@@ -1,6 +1,6 @@
 # Google Cloud Vision API Setup Guide
 
-This guide will help you set up Google Cloud Vision API for image-based product search in the Super Mart Shop application.
+This guide will help you set up Google Cloud Vision API for image-based product search in the MDMart application.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ This guide will help you set up Google Cloud Vision API for image-based product 
 4. Create a service account:
    - Go to "IAM & Admin" > "Service Accounts"
    - Click "Create Service Account"
-   - Give it a name (e.g., "super-mart-vision")
+   - Give it a name (e.g., "mdmart-vision")
    - Grant it the "Cloud Vision API User" role
    - Click "Done"
 
@@ -202,6 +202,7 @@ The button will still appear but will show an appropriate message when clicked.
 For issues with:
 - **Google Cloud Platform:** Check [GCP Documentation](https://cloud.google.com/vision/docs)
 - **Application setup:** Create an issue in the repository
+
 
 
 

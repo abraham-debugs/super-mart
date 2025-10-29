@@ -82,15 +82,47 @@ router.post("/verify-email", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "email and password required" });
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "email and password required" });
+    }
+    
+    // Normalize email to lowercase and trim whitespace
+    const normalizedEmail = String(email).toLowerCase().trim();
+    
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      console.log(`Login attempt failed: User not found for email "${normalizedEmail}"`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    
+    // Check if user has a password hash
+    if (!user.passwordHash) {
+      console.log(`Login attempt failed: User "${normalizedEmail}" has no password hash`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    
     const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+    if (!ok) {
+      console.log(`Login attempt failed: Invalid password for email "${normalizedEmail}"`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    
     const token = signToken(user);
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, role: user.role || "user" } });
+    console.log(`Login successful: User "${normalizedEmail}" logged in`);
+    res.json({ 
+      token, 
+      user: { 
+        id: String(user._id), 
+        name: user.name, 
+        email: user.email, 
+        preferredCategoryId: user.preferredCategoryId || null, 
+        isProfileComplete: user.isProfileComplete, 
+        role: user.role || "user" 
+      } 
+    });
   } catch (err) {
-    res.status(500).json({ message: "Login failed", error: err.message });
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Login failed", error: err?.message || String(err) });
   }
 });
 

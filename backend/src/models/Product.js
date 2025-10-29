@@ -9,7 +9,9 @@ const ProductSchema = new mongoose.Schema(
     imageUrl: { type: String, required: true },
     publicId: { type: String, required: true },
     youtubeLink: { type: String, trim: true },
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true }
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+    isFreshPick: { type: Boolean, default: false }, // For "Fresh Picks for You" section
+    isMostLoved: { type: Boolean, default: false }   // For "Most Loved Items" section
   },
   { timestamps: true }
 );

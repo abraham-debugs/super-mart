@@ -21,6 +21,10 @@ const CategorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
       default: null
+    },
+    showInNavbar: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

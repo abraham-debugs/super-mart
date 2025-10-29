@@ -29,23 +29,81 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   }
 
   const handleAddToWishlist = async () => {
+    if (!token) {
+      toast({ 
+        title: "Login Required", 
+        description: "Please login to add items to your wishlist",
+        variant: "destructive"
+      });
+      window.location.href = '/login';
+      return;
+    }
+
     try {
       const res = await authedPost(`/api/user/wishlist/add`);
-      if (!res.ok) throw new Error("Failed to add to wishlist");
+      
+      if (res.status === 401) {
+        toast({ 
+          title: "Authentication Required", 
+          description: "Your session has expired. Please login again.",
+          variant: "destructive"
+        });
+        window.location.href = '/login';
+        return;
+      }
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to add to wishlist" }));
+        throw new Error(errorData.message || "Failed to add to wishlist");
+      }
+      
       toast({ title: "Added to Wishlist", description: `${product.name} was added to your wishlist` });
       setIsLiked(true);
     } catch (err: any) {
-      toast({ title: "Action failed", description: err.message || "Could not add to wishlist" });
+      toast({ 
+        title: "Action failed", 
+        description: err.message || "Could not add to wishlist",
+        variant: "destructive"
+      });
     }
   };
 
   const handleSaveForLater = async () => {
+    if (!token) {
+      toast({ 
+        title: "Login Required", 
+        description: "Please login to save items for later",
+        variant: "destructive"
+      });
+      window.location.href = '/login';
+      return;
+    }
+
     try {
       const res = await authedPost(`/api/user/save-later/add`);
-      if (!res.ok) throw new Error("Failed to save for later");
+      
+      if (res.status === 401) {
+        toast({ 
+          title: "Authentication Required", 
+          description: "Your session has expired. Please login again.",
+          variant: "destructive"
+        });
+        window.location.href = '/login';
+        return;
+      }
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to save for later" }));
+        throw new Error(errorData.message || "Failed to save for later");
+      }
+      
       toast({ title: "Saved for later", description: `${product.name} was saved for later` });
     } catch (err: any) {
-      toast({ title: "Action failed", description: err.message || "Could not save for later" });
+      toast({ 
+        title: "Action failed", 
+        description: err.message || "Could not save for later",
+        variant: "destructive"
+      });
     }
   };
 

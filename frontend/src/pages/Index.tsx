@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
-import { Footer } from "@/components/Footer";
 import { Features } from "@/components/Features";
 
 import RecommendedProducts from "@/components/RecommendedProducts";
-import { featuredProducts, bestSellers, products } from "@/data/products";
+import { products } from "@/data/products";
 import type { Product } from "@/types/product";
 import { useLocation, useNavigate } from "react-router-dom";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 interface SearchCategory {
   id: string;
@@ -23,6 +23,8 @@ const Index = () => {
   const [allProducts, setAllProducts] = useState<Product[]>(products);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchCategories, setSearchCategories] = useState<SearchCategory[]>([]);
+  const [freshPicks, setFreshPicks] = useState<Product[]>([]);
+  const [mostLoved, setMostLoved] = useState<Product[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -53,6 +55,30 @@ const Index = () => {
 
     window.addEventListener("category:selected", onCategory as EventListener);
     return () => window.removeEventListener("category:selected", onCategory as EventListener);
+  }, []);
+
+  // Load Fresh Picks and Most Loved from backend
+  useEffect(() => {
+    async function loadFeaturedProducts() {
+      try {
+        // Load Fresh Picks
+        const freshRes = await fetch(`${API_BASE}/api/products/fresh-picks`);
+        if (freshRes.ok) {
+          const freshData = await freshRes.json();
+          setFreshPicks(freshData || []);
+        }
+
+        // Load Most Loved
+        const lovedRes = await fetch(`${API_BASE}/api/products/most-loved`);
+        if (lovedRes.ok) {
+          const lovedData = await lovedRes.json();
+          setMostLoved(lovedData || []);
+        }
+      } catch (err) {
+        console.warn("Failed to load featured products:", err);
+      }
+    }
+    loadFeaturedProducts();
   }, []);
 
   // Apply URL query (?q=) based search from DB; re-run when location.search changes
@@ -102,9 +128,7 @@ const Index = () => {
       {/* Background Pattern */}
       <div className="fixed inset-0 bg-pattern opacity-30 pointer-events-none"></div>
       
-      <Header />
-      
-      <main className="relative z-10">
+      <div className="relative z-10">
         {/* Category Carousel */}
          
         {/* Hero Section */}
@@ -112,32 +136,36 @@ const Index = () => {
         <CategoryCarousel />
 
          {/* Features */}
-         <Features />
+         
 
         {/* Personalized Recommendations */}
         <RecommendedProducts limit={10} />
         
-        {/* Featured Products */}
-        <section className="py-12 lg:py-16 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-secondary/5"></div>
-          <ProductGrid 
-            title="Fresh Picks for You" 
-            showFilters={false} 
-            productsToShow={featuredProducts}
-          />
-        </section>
-        
-       
-
-        {/* Best Sellers */}
-        <section className="py-12 lg:py-16 bg-gradient-to-br from-muted/30 to-muted/10 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5"></div>
-          <ProductGrid 
-            title="Most Loved Items" 
-            showFilters={false} 
-            productsToShow={bestSellers}
-          />
-        </section>
+        {/* Featured Products - Fresh Picks */}
+        {freshPicks.length > 0 && (
+          <section className="py-12 lg:py-16 relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-secondary/5"></div>
+            <ProductGrid 
+              title="Fresh Picks for You" 
+              showFilters={false} 
+              productsToShow={freshPicks}
+            />
+          </section>
+        )}
+      
+        <Features />   
+      
+        {/* Most Loved Items */}
+        {mostLoved.length > 0 && (
+          <section className="py-12 lg:py-16 bg-gradient-to-br from-muted/30 to-muted/10 relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5"></div>
+            <ProductGrid 
+              title="Most Loved Items" 
+              showFilters={false} 
+              productsToShow={mostLoved}
+            />
+          </section>
+        )}
         
         {/* Search Results - Categories */}
         {searchQuery && searchCategories.length > 0 && (
@@ -196,10 +224,7 @@ const Index = () => {
             productsToShow={allProducts}
           />
         </section>
-      </main>
-      
-      {/* Footer */}
-      <Footer />
+      </div>
     </div>
   );
 };

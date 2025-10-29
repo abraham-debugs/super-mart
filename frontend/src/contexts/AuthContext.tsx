@@ -41,16 +41,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   async function login(email: string, password: string) {
+    // Normalize email input (lowercase, trim)
+    const normalizedEmail = email.toLowerCase().trim();
+    
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: normalizedEmail, password })
     });
-    const data = await res.json().catch(() => null);
+    
+    const data = await res.json().catch(() => ({ message: "Network error or invalid response" }));
+    
     if (!res.ok) {
-      const message = data?.message || "Login failed";
+      const message = data?.message || `Login failed (${res.status})`;
+      console.error("Login error:", {
+        status: res.status,
+        statusText: res.statusText,
+        message: data?.message,
+        error: data?.error
+      });
       throw new Error(message);
     }
+    
+    if (!data.token || !data.user) {
+      console.error("Login response missing token or user:", data);
+      throw new Error("Invalid response from server");
+    }
+    
     setToken(data.token);
     setUser(data.user);
   }

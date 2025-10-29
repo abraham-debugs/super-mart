@@ -73,4 +73,80 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// Get Fresh Picks products (for home page "Fresh Picks for You" section)
+router.get("/fresh-picks", async (req, res) => {
+  try {
+    const products = await Product.find({ isFreshPick: true })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate({ path: "categoryId", select: "name" });
+
+    const mapped = products.map((p) => ({
+      id: String(p._id),
+      name: p.nameEn || "",
+      description: "",
+      price: p.price,
+      originalPrice: p.originalPrice || undefined,
+      category: p.categoryId?.name || "",
+      image: p.imageUrl,
+      rating: 5,
+      reviews: 0,
+      inStock: true,
+      isNew: false,
+      isBestSeller: false,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch fresh picks", error: err?.message || String(err) });
+  }
+});
+
+// Get Most Loved products (for home page "Most Loved Items" section)
+router.get("/most-loved", async (req, res) => {
+  try {
+    const products = await Product.find({ isMostLoved: true })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate({ path: "categoryId", select: "name" });
+
+    const mapped = products.map((p) => ({
+      id: String(p._id),
+      name: p.nameEn || "",
+      description: "",
+      price: p.price,
+      originalPrice: p.originalPrice || undefined,
+      category: p.categoryId?.name || "",
+      image: p.imageUrl,
+      rating: 5,
+      reviews: 0,
+      inStock: true,
+      isNew: false,
+      isBestSeller: false,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch most loved", error: err?.message || String(err) });
+  }
+});
+
+// Get navbar categories (public endpoint)
+router.get("/navbar-categories", async (_req, res) => {
+  try {
+    const { Category } = await import("../models/Category.js");
+    const categories = await Category.find({ showInNavbar: true })
+      .select('name _id')
+      .sort({ name: 1 });
+    
+    res.json(categories.map(cat => ({
+      id: String(cat._id),
+      name: cat.name
+    })));
+  } catch (err) {
+    console.error("Failed to fetch navbar categories:", err);
+    res.status(500).json({ message: "Failed to fetch navbar categories", error: err.message });
+  }
+});
+
 export default router;

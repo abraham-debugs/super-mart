@@ -588,7 +588,7 @@ const SuperAdmin = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-500">Zepto Management Panel</p>
+                <p className="text-sm text-gray-500">MDMart Management Panel</p>
               </div>
             </div>
           </div>
@@ -619,7 +619,7 @@ const SuperAdmin = () => {
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                   <Zap className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-lg font-bold text-gray-900">Zepto Admin</span>
+                <span className="text-lg font-bold text-gray-900">MDMart Admin</span>
               </div>
               
               <nav className="space-y-2">

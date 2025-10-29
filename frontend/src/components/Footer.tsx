@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Twitter, Instagram, Facebook, Youtube, Linkedin, Star, Truck, Shield, Award } from "lucide-react";
+import { Mail, Twitter, Instagram, Facebook, Youtube, Linkedin, Star, Shield } from "lucide-react";
 
 export function Footer(): JSX.Element {
 	return (
@@ -14,13 +14,13 @@ export function Footer(): JSX.Element {
 					<div className="col-span-1 lg:col-span-2">
 						<div className="flex items-center gap-3 mb-6">
 							<div className="relative">
-							<div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center font-bold text-white text-xl shadow-lg">
-								Z
-							</div>
-							<div className="absolute inset-0 rounded-2xl bg-blue-600 opacity-20 blur-lg"></div>
+								<div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center font-bold text-white text-xl shadow-lg">
+									M
+								</div>
+								<div className="absolute inset-0 rounded-2xl bg-blue-600 opacity-20 blur-lg"></div>
 							</div>
 							<span className="text-2xl font-bold text-blue-600">
-								Zepto
+								MDMart
 							</span>
 						</div>
 						<p className="text-base text-muted-foreground leading-relaxed max-w-md mb-8">
@@ -39,7 +39,7 @@ export function Footer(): JSX.Element {
 											id="newsletter"
 											type="email"
 											placeholder="Enter your email"
-											className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
+											className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
 										/>
 									</div>
 									<button
@@ -152,13 +152,11 @@ export function Footer(): JSX.Element {
 					</div>
 				</div>
 
-				
-
 				{/* Bottom */}
 				<div className="mt-12 flex flex-col items-center justify-between gap-6 border-t border-border/50 pt-8 text-muted-foreground sm:flex-row">
 					<div className="flex items-center gap-2">
 						<Star className="w-4 h-4 text-yellow-500 fill-current" />
-						<span>© {new Date().getFullYear()} Zepto. All rights reserved.</span>
+						<span>© {new Date().getFullYear()} MDMart. All rights reserved.</span>
 					</div>
 					<div className="flex items-center gap-6">
 						<a className="hover:text-primary transition-colors duration-200" href="#">Privacy Policy</a>
@@ -170,5 +168,3 @@ export function Footer(): JSX.Element {
 		</footer>
 	);
 }
-
-

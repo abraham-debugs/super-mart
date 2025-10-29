@@ -1,4 +1,4 @@
-# Super Mart Backend
+# MDMart Backend
 
 ## Setup
 

@@ -13,7 +13,7 @@ const router = express.Router();
 // Create category with image upload (image optional for parent categories)
 router.post("/categories", upload.single("image"), async (req, res) => {
   try {
-    const { name, parentCategory } = req.body;
+    const { name, parentCategory, showInNavbar } = req.body;
     if (!name) {
       return res.status(400).json({ message: "name is required" });
     }
@@ -26,7 +26,8 @@ router.post("/categories", upload.single("image"), async (req, res) => {
         name, 
         imageUrl: placeholderUrl, 
         publicId: "placeholder",
-        parentCategory: null
+        parentCategory: null,
+        showInNavbar: showInNavbar === "true" || showInNavbar === true
       });
       return res.status(201).json(category);
     }
@@ -56,14 +57,15 @@ router.post("/categories", upload.single("image"), async (req, res) => {
         name, 
         imageUrl: dataUrl, 
         publicId: "local",
-        parentCategory: parentCategory || null
+        parentCategory: parentCategory || null,
+        showInNavbar: showInNavbar === "true" || showInNavbar === true
       });
       return res.status(201).json(category);
     }
 
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: "supermart/categories",
+        folder: "mdmart/categories",
         resource_type: "image",
         transformation: [{ width: 600, height: 600, crop: "fill", gravity: "auto" }]
       },
@@ -77,7 +79,8 @@ router.post("/categories", upload.single("image"), async (req, res) => {
               name,
               imageUrl: result.secure_url,
               publicId: result.public_id,
-              parentCategory: parentCategory || null
+              parentCategory: parentCategory || null,
+              showInNavbar: showInNavbar === "true" || showInNavbar === true
             });
             res.status(201).json(category);
           } catch (dbErr) {
@@ -269,7 +272,9 @@ router.get("/products", async (req, res) => {
       originalPrice: p.originalPrice,
       imageUrl: p.imageUrl,
       categoryId: p.categoryId?._id || null,
-      categoryName: p.categoryId?.name || ""
+      categoryName: p.categoryId?.name || "",
+      isFreshPick: p.isFreshPick || false,
+      isMostLoved: p.isMostLoved || false
     }));
     res.json(mapped);
   } catch (err) {
@@ -280,7 +285,7 @@ router.get("/products", async (req, res) => {
 // Create product in existing category
 router.post("/products", upload.single("image"), async (req, res) => {
   try {
-    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId } = req.body;
+    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId, isFreshPick, isMostLoved } = req.body;
     if (!nameEn || !price || !categoryId || !req.file) {
       return res.status(400).json({ message: "nameEn, price, categoryId and image are required" });
     }
@@ -304,7 +309,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
-            folder: "supermart/products",
+            folder: "mdmart/products",
             resource_type: "image",
             transformation: [{ width: 800, height: 800, crop: "fill", gravity: "auto" }]
           },
@@ -327,7 +332,9 @@ router.post("/products", upload.single("image"), async (req, res) => {
       imageUrl,
       publicId,
       youtubeLink,
-      categoryId
+      categoryId,
+      isFreshPick: isFreshPick === "true" || isFreshPick === true,
+      isMostLoved: isMostLoved === "true" || isMostLoved === true
     });
 
     res.status(201).json(product);
@@ -341,7 +348,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
 router.put("/products/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId } = req.body;
+    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId, isFreshPick, isMostLoved } = req.body;
     const product = await Product.findById(id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -362,6 +369,13 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
       if (!category) return res.status(404).json({ message: "Category not found" });
       product.categoryId = categoryId;
     }
+    // Update home page section flags
+    if (isFreshPick !== undefined) {
+      product.isFreshPick = isFreshPick === "true" || isFreshPick === true;
+    }
+    if (isMostLoved !== undefined) {
+      product.isMostLoved = isMostLoved === "true" || isMostLoved === true;
+    }
 
     // Handle image update if new image provided
     if (req.file) {
@@ -379,7 +393,7 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
         const result = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             {
-              folder: "supermart/products",
+              folder: "mdmart/products",
               resource_type: "image",
               transformation: [{ width: 800, height: 800, crop: "fill", gravity: "auto" }]
             },
@@ -443,7 +457,7 @@ router.delete("/products/:id", requireAuth, requireSuperAdmin, async (req, res) 
 router.put("/categories/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, parentCategory } = req.body;
+    const { name, parentCategory, showInNavbar } = req.body;
     const category = await Category.findById(id);
     if (!category) return res.status(404).json({ message: "Category not found" });
 
@@ -459,6 +473,11 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
     // Update parent category if provided (including setting to null)
     if (parentCategory !== undefined) {
       category.parentCategory = parentCategory || null;
+    }
+
+    // Update showInNavbar if provided
+    if (showInNavbar !== undefined) {
+      category.showInNavbar = showInNavbar === "true" || showInNavbar === true;
     }
 
     if (req.file) {
@@ -478,7 +497,7 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
         const result = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             {
-              folder: "supermart/categories",
+              folder: "mdmart/categories",
               resource_type: "image",
               transformation: [{ width: 600, height: 600, crop: "fill", gravity: "auto" }]
             },

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Your super-mart shop now features a comprehensive **ML-powered recommendation engine** that provides personalized product suggestions based on user behavior and activity.
+Your MDMart shop now features a comprehensive **ML-powered recommendation engine** that provides personalized product suggestions based on user behavior and activity.
 
 ## 🎯 Features Implemented
 
@@ -472,5 +472,6 @@ GET /api/recommendations/activity/summary
 **Your personalized recommendation system is ready to use!** 🎉
 
 Users will now see tailored product suggestions based on their browsing and shopping behavior, just like Amazon, Netflix, and other major e-commerce platforms!
+
 
 

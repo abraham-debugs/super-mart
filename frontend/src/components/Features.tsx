@@ -41,7 +41,7 @@ export const Features = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Why Choose <span className="text-blue-600">Zepto</span>?
+            Why Choose <span className="text-blue-600">MDMart</span>?
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Experience the future of grocery shopping with our premium service, 

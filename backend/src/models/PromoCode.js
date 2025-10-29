@@ -60,3 +60,4 @@ PromoCodeSchema.methods.isValid = function() {
 export const PromoCode = mongoose.models.PromoCode || mongoose.model("PromoCode", PromoCodeSchema);
 
 
+

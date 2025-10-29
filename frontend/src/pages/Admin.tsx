@@ -36,7 +36,8 @@ import {
   Target,
   ArrowUpRight,
   ArrowDownRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BalancingLoader } from "@/components/BalancingLoader";
@@ -59,7 +61,7 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
-  const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string; parentCategory?: { _id: string; name: string } | null }>>([]);
+  const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string; parentCategory?: { _id: string; name: string } | null; showInNavbar?: boolean }>>([]);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryFile, setNewCategoryFile] = useState<File | null>(null);
@@ -70,6 +72,8 @@ const Admin = () => {
   const [editName, setEditName] = useState("");
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editParentCategory, setEditParentCategory] = useState<string>("");
+  const [newCategoryShowInNavbar, setNewCategoryShowInNavbar] = useState(false);
+  const [editShowInNavbar, setEditShowInNavbar] = useState(false);
 
   // Promo Codes state
   const [promoCodes, setPromoCodes] = useState<Array<{
@@ -251,11 +255,12 @@ const Admin = () => {
     }
   }
 
-  function openEdit(category: { _id: string; name: string; parentCategory?: { _id: string; name: string } | null }) {
+  function openEdit(category: { _id: string; name: string; parentCategory?: { _id: string; name: string } | null; showInNavbar?: boolean }) {
     setEditOpenForId(category._id);
     setEditName(category.name);
     setEditFile(null);
     setEditParentCategory(category.parentCategory?._id || "");
+    setEditShowInNavbar(category.showInNavbar || false);
   }
 
   async function handleEditCategory(e: React.FormEvent) {
@@ -265,6 +270,7 @@ const Admin = () => {
     if (editName) form.append("name", editName);
     if (editFile) form.append("image", editFile);
     form.append("parentCategory", editParentCategory || "");
+    form.append("showInNavbar", editShowInNavbar.toString());
     try {
       const res = await fetch(`${API_BASE}/api/admin/categories/${editOpenForId}`, { method: "PUT", body: form });
       const data = await res.json().catch(() => null);
@@ -302,12 +308,14 @@ const Admin = () => {
       if (newParentCategory) {
         form.append("parentCategory", newParentCategory);
       }
+      form.append("showInNavbar", newCategoryShowInNavbar.toString());
       const res = await fetch(`${API_BASE}/api/admin/categories`, { method: "POST", body: form });
       const data = await res.json().then(v => v).catch(() => null);
       if (!res.ok) throw new Error(data?.message || "Failed to add category");
       setNewCategoryName("");
       setNewCategoryFile(null);
       setNewParentCategory("");
+      setNewCategoryShowInNavbar(false);
       setIsAddCategoryOpen(false);
       await loadCategories();
     } catch (err: any) {
@@ -317,13 +325,22 @@ const Admin = () => {
     }
   }
 
-  const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
   const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
+  
+  // Home Page Sections state
+  const [freshPicksProducts, setFreshPicksProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [mostLovedProducts, setMostLovedProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [availableProducts, setAvailableProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
+  const [showAddToFreshPicks, setShowAddToFreshPicks] = useState(false);
+  const [showAddToMostLoved, setShowAddToMostLoved] = useState(false);
+  const [showNewProductFreshPicks, setShowNewProductFreshPicks] = useState(false);
+  const [showNewProductMostLoved, setShowNewProductMostLoved] = useState(false);
   
   // Product management states
   const [editProductOpen, setEditProductOpen] = useState(false);
   const [deleteProductOpen, setDeleteProductOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string } | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean } | null>(null);
   const [editProductData, setEditProductData] = useState({
     nameEn: "",
     nameTa: "",
@@ -331,7 +348,9 @@ const Admin = () => {
     originalPrice: "",
     youtubeLink: "",
     categoryId: "",
-    image: null as File | null
+    image: null as File | null,
+    isFreshPick: false,
+    isMostLoved: false
   });
   const [editProductLoading, setEditProductLoading] = useState(false);
   const [deleteProductLoading, setDeleteProductLoading] = useState(false);
@@ -421,23 +440,133 @@ const Admin = () => {
       if (!res.ok) throw new Error("Failed to load products");
       const data = await res.json();
       setProducts(data);
+      setAvailableProducts(data);
     } catch (err) {
       console.error("Load products error:", err);
     }
   }
 
+  async function loadHomeSections() {
+    try {
+      // Load Fresh Picks
+      const freshRes = await fetch(`${API_BASE}/api/products/fresh-picks`);
+      if (freshRes.ok) {
+        const freshData = await freshRes.json();
+        setFreshPicksProducts(freshData.map((p: any) => ({
+          _id: p.id,
+          nameEn: p.name,
+          categoryName: p.category,
+          price: p.price,
+          imageUrl: p.image
+        })));
+      }
+
+      // Load Most Loved
+      const lovedRes = await fetch(`${API_BASE}/api/products/most-loved`);
+      if (lovedRes.ok) {
+        const lovedData = await lovedRes.json();
+        setMostLovedProducts(lovedData.map((p: any) => ({
+          _id: p.id,
+          nameEn: p.name,
+          categoryName: p.category,
+          price: p.price,
+          imageUrl: p.image
+        })));
+      }
+    } catch (err) {
+      console.error("Load home sections error:", err);
+    }
+  }
+
+  async function toggleProductSection(productId: string, section: "freshPick" | "mostLoved", currentValue: boolean) {
+    try {
+      const form = new FormData();
+      if (section === "freshPick") {
+        form.append("isFreshPick", (!currentValue).toString());
+      } else {
+        form.append("isMostLoved", (!currentValue).toString());
+      }
+      
+      const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
+        method: "PUT",
+        body: form
+      });
+
+      if (!res.ok) throw new Error("Failed to update product");
+      
+      await loadHomeSections();
+      await loadProducts();
+      setShowAddToFreshPicks(false);
+      setShowAddToMostLoved(false);
+    } catch (err) {
+      console.error("Toggle section error:", err);
+      alert("Failed to update product section");
+    }
+  }
+
   // Product management functions
-  function openEditProduct(product: { _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }) {
+  async function openEditProduct(product: { _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }) {
     setSelectedProduct(product);
-    setEditProductData({
-      nameEn: product.nameEn,
-      nameTa: "",
-      price: product.price.toString(),
-      originalPrice: "",
-      youtubeLink: "",
-      categoryId: "",
-      image: null
-    });
+    // Fetch full product details to get all fields
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/products`);
+      if (res.ok) {
+        const allProducts = await res.json();
+        const fullProduct = allProducts.find((p: any) => p._id === product._id);
+        if (fullProduct) {
+          setEditProductData({
+            nameEn: fullProduct.nameEn || product.nameEn,
+            nameTa: fullProduct.nameTa || "",
+            price: fullProduct.price?.toString() || product.price.toString(),
+            originalPrice: fullProduct.originalPrice?.toString() || "",
+            youtubeLink: fullProduct.youtubeLink || "",
+            categoryId: fullProduct.categoryId || "",
+            image: null,
+            isFreshPick: fullProduct.isFreshPick || false,
+            isMostLoved: fullProduct.isMostLoved || false
+          });
+        } else {
+          // Fallback to basic data
+          setEditProductData({
+            nameEn: product.nameEn,
+            nameTa: "",
+            price: product.price.toString(),
+            originalPrice: "",
+            youtubeLink: "",
+            categoryId: "",
+            image: null,
+            isFreshPick: product.isFreshPick || false,
+            isMostLoved: product.isMostLoved || false
+          });
+        }
+      } else {
+        // Fallback to basic data
+        setEditProductData({
+          nameEn: product.nameEn,
+          nameTa: "",
+          price: product.price.toString(),
+          originalPrice: "",
+          youtubeLink: "",
+          categoryId: "",
+          image: null,
+          isFreshPick: product.isFreshPick || false,
+          isMostLoved: product.isMostLoved || false
+        });
+      }
+    } catch (err) {
+      // Fallback to basic data
+      setEditProductData({
+        nameEn: product.nameEn,
+        nameTa: "",
+        price: product.price.toString(),
+        originalPrice: "",
+        youtubeLink: "",
+        categoryId: "",
+        image: null,
+        isFreshPick: product.isFreshPick || false,
+        isMostLoved: product.isMostLoved || false
+      });
+    }
     setEditProductOpen(true);
   }
 
@@ -462,6 +591,8 @@ const Admin = () => {
       if (editProductData.youtubeLink) form.append("youtubeLink", editProductData.youtubeLink);
       if (editProductData.categoryId) form.append("categoryId", editProductData.categoryId);
       if (editProductData.image) form.append("image", editProductData.image);
+      form.append("isFreshPick", editProductData.isFreshPick.toString());
+      form.append("isMostLoved", editProductData.isMostLoved.toString());
 
       const res = await fetch(`${API_BASE}/api/admin/products/${selectedProduct._id}`, {
         method: "PUT",
@@ -482,7 +613,9 @@ const Admin = () => {
         originalPrice: "",
         youtubeLink: "",
         categoryId: "",
-        image: null
+        image: null,
+        isFreshPick: false,
+        isMostLoved: false
       });
       await loadProducts();
     } catch (err: any) {
@@ -602,6 +735,10 @@ const Admin = () => {
     if (activeTab === "promo-codes") {
       loadPromoCodes();
     }
+    if (activeTab === "home-sections") {
+      loadHomeSections();
+      loadProducts();
+    }
   }, [activeTab]);
 
   // Derived order stats for Order Management
@@ -650,6 +787,7 @@ const Admin = () => {
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-blue-600", bgColor: "bg-blue-50" },
     { id: "add-product", label: "Add Product", icon: Plus, color: "text-green-600", bgColor: "bg-green-50" },
     { id: "product-management", label: "Products", icon: Package, color: "text-purple-600", bgColor: "bg-purple-50" },
+    { id: "home-sections", label: "Home Sections", icon: Home, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "categories", label: "Categories", icon: Tag, color: "text-orange-600", bgColor: "bg-orange-50" },
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "user-management", label: "Users", icon: Users, color: "text-pink-600", bgColor: "bg-pink-50" },
@@ -692,7 +830,7 @@ const Admin = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-500">Zepto Management Panel</p>
+                <p className="text-sm text-gray-500">MDMart Management Panel</p>
               </div>
             </div>
           </div>
@@ -723,7 +861,7 @@ const Admin = () => {
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                   <Zap className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-lg font-bold text-gray-900">Zepto Admin</span>
+                <span className="text-lg font-bold text-gray-900">MDMart Admin</span>
               </div>
               
               <nav className="space-y-2">
@@ -1389,6 +1527,43 @@ const Admin = () => {
                     />
                     <p className="text-xs text-gray-500">Leave empty to keep current image</p>
                   </div>
+
+                  {/* Home Page Sections */}
+                  <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <Label className="text-sm font-semibold text-gray-900 dark:text-white">Home Page Sections</Label>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">Select which home page sections this product should appear in</p>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="edit-fresh-pick"
+                        checked={editProductData.isFreshPick}
+                        onCheckedChange={(checked) => setEditProductData({...editProductData, isFreshPick: !!checked})}
+                      />
+                      <Label 
+                        htmlFor="edit-fresh-pick" 
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                      >
+                        <Star className="h-4 w-4 text-blue-600" />
+                        Show in "Fresh Picks for You" section
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="edit-most-loved"
+                        checked={editProductData.isMostLoved}
+                        onCheckedChange={(checked) => setEditProductData({...editProductData, isMostLoved: !!checked})}
+                      />
+                      <Label 
+                        htmlFor="edit-most-loved" 
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                      >
+                        <Heart className="h-4 w-4 text-pink-600" />
+                        Show in "Most Loved Items" section
+                      </Label>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end gap-3">
                     <Button 
                       type="button" 
@@ -1519,6 +1694,289 @@ const Admin = () => {
         )}
 
         {/* Categories */}
+        {/* Home Page Sections */}
+        {activeTab === "home-sections" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Home Page Sections</h1>
+                <p className="text-gray-600 mt-1">Manage products featured on the home page</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  loadHomeSections();
+                  loadProducts();
+                }}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Fresh Picks Section */}
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50/50">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                        <Star className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900">Fresh Picks for You</CardTitle>
+                        <p className="text-sm text-gray-600">{freshPicksProducts.length} products</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddToFreshPicks(!showAddToFreshPicks)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Existing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowNewProductFreshPicks(!showNewProductFreshPicks)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Product
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Existing Product Modal */}
+                  {showAddToFreshPicks && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-blue-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Select Product to Add</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowAddToFreshPicks(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {availableProducts
+                          .filter(p => !p.isFreshPick)
+                          .map((product) => (
+                            <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-xs text-gray-500">{product.categoryName}</p>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleProductSection(product._id, "freshPick", false)}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                        {availableProducts.filter(p => !p.isFreshPick).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">All products are already added</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New Product Form */}
+                  {showNewProductFreshPicks && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Create New Product</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowNewProductFreshPicks(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <ProductForm 
+                        apiBase={API_BASE}
+                        categories={categoryRows}
+                        defaultFreshPick={true}
+                        onCreated={async () => {
+                          await loadProducts();
+                          await loadHomeSections();
+                          setShowNewProductFreshPicks(false);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Products List */}
+                  <div className="space-y-3">
+                    {freshPicksProducts.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Star className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No products in Fresh Picks</p>
+                        <p className="text-xs text-gray-400 mt-1">Add products to showcase on home page</p>
+                      </div>
+                    ) : (
+                      freshPicksProducts.map((product) => (
+                        <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-3">
+                            <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+                            <div>
+                              <p className="font-medium text-gray-900">{product.nameEn}</p>
+                              <p className="text-sm text-gray-500">{product.categoryName} • ₹{product.price}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => toggleProductSection(product._id, "freshPick", true)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Most Loved Section */}
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-rose-50/50">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg">
+                        <Heart className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900">Most Loved Items</CardTitle>
+                        <p className="text-sm text-gray-600">{mostLovedProducts.length} products</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddToMostLoved(!showAddToMostLoved)}
+                        className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Existing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowNewProductMostLoved(!showNewProductMostLoved)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Product
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Existing Product Modal */}
+                  {showAddToMostLoved && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-pink-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Select Product to Add</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowAddToMostLoved(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {availableProducts
+                          .filter(p => !p.isMostLoved)
+                          .map((product) => (
+                            <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-xs text-gray-500">{product.categoryName}</p>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleProductSection(product._id, "mostLoved", false)}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                        {availableProducts.filter(p => !p.isMostLoved).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">All products are already added</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New Product Form */}
+                  {showNewProductMostLoved && (
+                    <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="font-semibold text-gray-900">Create New Product</Label>
+                        <Button variant="ghost" size="sm" onClick={() => setShowNewProductMostLoved(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <ProductForm 
+                        apiBase={API_BASE}
+                        categories={categoryRows}
+                        defaultMostLoved={true}
+                        onCreated={async () => {
+                          await loadProducts();
+                          await loadHomeSections();
+                          setShowNewProductMostLoved(false);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Products List */}
+                  <div className="space-y-3">
+                    {mostLovedProducts.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Heart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No products in Most Loved</p>
+                        <p className="text-xs text-gray-400 mt-1">Add products to showcase on home page</p>
+                      </div>
+                    ) : (
+                      mostLovedProducts.map((product) => (
+                        <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-3">
+                            <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+                            <div>
+                              <p className="font-medium text-gray-900">{product.nameEn}</p>
+                              <p className="text-sm text-gray-500">{product.categoryName} • ₹{product.price}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => toggleProductSection(product._id, "mostLoved", true)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
         {activeTab === "categories" && (
           <div className="space-y-8">
             {/* Enhanced Header */}
@@ -1607,6 +2065,23 @@ const Admin = () => {
                             : "Optional for parent categories. A placeholder will be used if not provided."}
                         </p>
                       </div>
+                      
+                      {/* Show in Navbar Checkbox */}
+                      <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <Checkbox 
+                          id="new-cat-navbar"
+                          checked={newCategoryShowInNavbar}
+                          onCheckedChange={(checked) => setNewCategoryShowInNavbar(!!checked)}
+                        />
+                        <Label 
+                          htmlFor="new-cat-navbar" 
+                          className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                        >
+                          <Home className="h-4 w-4 text-blue-600" />
+                          Show this category in navbar
+                        </Label>
+                      </div>
+                      
                       <div className="flex justify-end gap-3 pt-4">
                       <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
                         <Button type="submit" disabled={catSubmitting} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
@@ -1828,6 +2303,23 @@ const Admin = () => {
                                       />
                                       <p className="text-xs text-gray-500">Leave empty to keep current image</p>
                                     </div>
+                                    
+                                    {/* Show in Navbar Checkbox */}
+                                    <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                                      <Checkbox 
+                                        id="edit-cat-navbar"
+                                        checked={editShowInNavbar}
+                                        onCheckedChange={(checked) => setEditShowInNavbar(!!checked)}
+                                      />
+                                      <Label 
+                                        htmlFor="edit-cat-navbar" 
+                                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                                      >
+                                        <Home className="h-4 w-4 text-blue-600" />
+                                        Show this category in navbar
+                                      </Label>
+                                    </div>
+                                    
                                     <div className="flex justify-end gap-3 pt-4">
                                     <Button type="button" variant="outline" onClick={() => setEditOpenForId(null)}>Cancel</Button>
                                       <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
@@ -2548,7 +3040,13 @@ const Admin = () => {
 export default Admin;
 
 // Inline ProductForm component to submit to backend and use real categories
-const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; name: string }>; onCreated: () => void }> = ({ apiBase, categories, onCreated }) => {
+const ProductForm: React.FC<{ 
+  apiBase: string; 
+  categories: Array<{ _id: string; name: string }>; 
+  onCreated: () => void;
+  defaultFreshPick?: boolean;
+  defaultMostLoved?: boolean;
+}> = ({ apiBase, categories, onCreated, defaultFreshPick = false, defaultMostLoved = false }) => {
   const [nameEn, setNameEn] = useState("");
   const [nameTa, setNameTa] = useState("");
   const [price, setPrice] = useState("");
@@ -2556,6 +3054,8 @@ const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; 
   const [youtubeLink, setYoutubeLink] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
+  const [isFreshPick, setIsFreshPick] = useState(defaultFreshPick);
+  const [isMostLoved, setIsMostLoved] = useState(defaultMostLoved);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -2576,11 +3076,14 @@ const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; 
       if (youtubeLink) form.append("youtubeLink", youtubeLink);
       form.append("categoryId", categoryId);
       form.append("image", file);
+      form.append("isFreshPick", isFreshPick.toString());
+      form.append("isMostLoved", isMostLoved.toString());
       const res = await fetch(`${apiBase}/api/admin/products`, { method: "POST", body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.message || "Failed to add product");
       // reset
       setNameEn(""); setNameTa(""); setPrice(""); setOriginalPrice(""); setYoutubeLink(""); setCategoryId(""); setFile(null);
+      setIsFreshPick(false); setIsMostLoved(false);
       onCreated();
     } catch (err: any) {
       setError(err.message || "Failed to add product");
@@ -2633,6 +3136,43 @@ const ProductForm: React.FC<{ apiBase: string; categories: Array<{ _id: string; 
         <Label htmlFor="p-image" className="text-sm font-medium text-gray-700">Image</Label>
         <input id="p-image" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
+
+      {/* Home Page Sections */}
+      <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+        <Label className="text-sm font-semibold text-gray-900 dark:text-white">Home Page Sections</Label>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">Select which home page sections this product should appear in</p>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="p-fresh-pick"
+            checked={isFreshPick}
+            onCheckedChange={(checked) => setIsFreshPick(!!checked)}
+          />
+          <Label 
+            htmlFor="p-fresh-pick" 
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+          >
+            <Star className="h-4 w-4 text-blue-600" />
+            Show in "Fresh Picks for You" section
+          </Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="p-most-loved"
+            checked={isMostLoved}
+            onCheckedChange={(checked) => setIsMostLoved(!!checked)}
+          />
+          <Label 
+            htmlFor="p-most-loved" 
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+          >
+            <Heart className="h-4 w-4 text-pink-600" />
+            Show in "Most Loved Items" section
+          </Label>
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <Button className="px-8 py-2" type="submit" disabled={submitting}>{submitting ? "Adding..." : "Add Product"}</Button>
       </div>

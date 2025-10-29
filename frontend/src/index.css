@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Zepto Quick Commerce Design System - All colors MUST be HSL */
+/* MDMart Quick Commerce Design System - All colors MUST be HSL */
 
 @layer base {
   :root {

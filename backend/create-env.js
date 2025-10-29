@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Quick .env file generator for Super Mart Shop
+ * Quick .env file generator for MDMart Shop
  * Run: node create-env.js
  */
 
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.join(__dirname, '.env');
 
-const envTemplate = `# Super Mart Shop - Backend Configuration
+const envTemplate = `# MDMart Shop - Backend Configuration
 # Generated on ${new Date().toISOString()}
 
 # Database Configuration

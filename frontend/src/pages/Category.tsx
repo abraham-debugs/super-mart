@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { ProductGrid } from "@/components/ProductGrid";
 import { BalancingLoader } from "@/components/BalancingLoader";
 import type { Product } from "@/types/product";
@@ -78,9 +76,8 @@ const Category = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <div className="fixed inset-0 bg-pattern opacity-30 pointer-events-none"></div>
-      <Header />
 
-      <main className="relative z-10">
+      <div className="relative z-10">
         {/* Enhanced Category Header */}
         <section className="bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/30 border-b border-gray-200/50">
           <div className="container mx-auto px-4 py-8">
@@ -175,9 +172,7 @@ const Category = () => {
             )}
           </div>
         </section>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
 };
