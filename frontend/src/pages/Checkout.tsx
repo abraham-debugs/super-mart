@@ -156,7 +156,7 @@ const Checkout = () => {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/orders/`, {
+      const res = await fetch(`${API_BASE}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +182,7 @@ const Checkout = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -193,9 +193,9 @@ const Checkout = () => {
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back</span>
               </Button>
-              <h1 className="text-2xl font-bold text-gray-800">Checkout</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Checkout</h1>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
               <Shield className="h-4 w-4" />
               <span>Secure Checkout</span>
             </div>
@@ -203,18 +203,18 @@ const Checkout = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
           {/* Main Checkout Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Progress Steps */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   {steps.map((step, index) => (
                     <div key={step.id} className="flex items-center">
                       <div className="flex items-center">
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                        <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 ${
                           currentStep >= step.id 
                             ? 'bg-blue-600 border-blue-600 text-white' 
                             : 'border-gray-300 text-gray-500'
@@ -222,11 +222,11 @@ const Checkout = () => {
                           {currentStep > step.id ? (
                             <CheckCircle className="h-4 w-4" />
                           ) : (
-                            <span className="text-sm font-medium">{step.id}</span>
+                            <span className="text-xs sm:text-sm font-medium">{step.id}</span>
                           )}
                         </div>
-                        <div className="ml-3">
-                          <p className={`text-sm font-medium ${
+                        <div className="ml-2 sm:ml-3">
+                          <p className={`text-xs sm:text-sm font-medium ${
                             currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
                           }`}>
                             {step.title}
@@ -235,7 +235,7 @@ const Checkout = () => {
                         </div>
                       </div>
                       {index < steps.length - 1 && (
-                        <div className={`w-16 h-0.5 mx-4 ${
+                        <div className={`w-10 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
                           currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
                         }`} />
                       )}
@@ -475,7 +475,7 @@ const Checkout = () => {
 
           {/* Order Summary Sidebar */}
           <div className="space-y-6">
-            <Card className="sticky top-4">
+            <Card className="lg:sticky lg:top-4">
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>

@@ -104,10 +104,11 @@ export function AddressForm({ isOpen, onClose, onSave, address }: AddressFormPro
               name="mobile"
               value={formData.mobile}
               onChange={handleInputChange}
-              placeholder="Enter your mobile number"
+              placeholder="e.g., +911234567890"
               required
-              pattern="[0-9]{10}"
-              title="Please enter a valid 10-digit mobile number"
+              maxLength={13}
+              pattern={".{13,13}"}
+              title="Please enter a 13-character mobile (e.g., +911234567890)"
             />
           </div>
 

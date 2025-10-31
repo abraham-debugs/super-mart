@@ -136,7 +136,7 @@ const Profile: React.FC = () => {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
               <p className="mt-2 text-blue-100">Manage your account and view your orders</p>
-            </div>
+                </div>
             <Button
               variant="outline"
               className="bg-white/10 border-white/30 text-white hover:bg-white/20"
@@ -145,9 +145,9 @@ const Profile: React.FC = () => {
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
@@ -274,49 +274,50 @@ const Profile: React.FC = () => {
                       )}
 
                       <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
+                <div className="space-y-2">
                           <Label htmlFor="name" className="flex items-center gap-2">
                             <User className="h-4 w-4 text-gray-500" />
                             Full Name
                           </Label>
                           <Input
-                            id="name"
-                            type="text"
-                            placeholder="John Doe"
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="border-gray-300"
-                          />
-                        </div>
+                  />
+                </div>
 
-                        <div className="space-y-2">
+                <div className="space-y-2">
                           <Label htmlFor="email" className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-gray-500" />
                             Email Address
                           </Label>
                           <Input
-                            id="email"
-                            type="email"
+                    id="email"
+                    type="email"
                             value={email}
                             readOnly
                             className="bg-gray-50 border-gray-300"
-                          />
-                        </div>
+                  />
+                </div>
 
-                        <div className="space-y-2">
+                <div className="space-y-2">
                           <Label htmlFor="phone" className="flex items-center gap-2">
                             <Phone className="h-4 w-4 text-gray-500" />
                             Phone Number
                           </Label>
                           <Input
-                            id="phone"
-                            type="tel"
-                            placeholder="+1 555 000 1234"
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 555 000 1234"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => setPhone(e.target.value.slice(0,13))}
+                            maxLength={13}
                             className="border-gray-300"
-                          />
-                        </div>
+                  />
+                </div>
 
                         <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="address" className="flex items-center gap-2">
@@ -324,15 +325,15 @@ const Profile: React.FC = () => {
                             Address
                           </Label>
                           <Textarea
-                            id="address"
-                            rows={3}
-                            placeholder="Street, City, State, ZIP"
+                    id="address"
+                    rows={3}
+                    placeholder="Street, City, State, ZIP"
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                             className="border-gray-300"
-                          />
-                        </div>
-                      </div>
+                  />
+                </div>
+              </div>
 
                       <div className="flex justify-end pt-4">
                         <Button
@@ -342,8 +343,8 @@ const Profile: React.FC = () => {
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
-                      </div>
-                    </form>
+              </div>
+            </form>
                   </CardContent>
                 </Card>
 
@@ -357,11 +358,11 @@ const Profile: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
+                <div className="space-y-2">
                         <Label htmlFor="password">New Password</Label>
                         <Input id="password" type="password" className="border-gray-300" />
-                      </div>
-                      <div className="space-y-2">
+                </div>
+                <div className="space-y-2">
                         <Label htmlFor="confirm">Confirm Password</Label>
                         <Input id="confirm" type="password" className="border-gray-300" />
                       </div>
@@ -462,13 +463,13 @@ const Profile: React.FC = () => {
                                       <div>
                                           <p className="text-sm font-medium text-gray-900">{it.name}</p>
                                           <p className="text-xs text-gray-500">Quantity: {it.quantity}</p>
-                                        </div>
-                                      </div>
+                </div>
+              </div>
                                       <p className="text-sm font-semibold text-gray-900">Rs.{Number(it.price * it.quantity).toFixed(2)}</p>
                                     </div>
                                 ))}
-                                </div>
-                              </div>
+              </div>
+            </div>
                           </div>
                         );
                       })}

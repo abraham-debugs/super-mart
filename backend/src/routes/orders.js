@@ -3,8 +3,14 @@ import { requireAuth } from "../middleware/auth.js";
 import { Order } from "../models/Order.js";
 import { Counter } from "../models/Counter.js";
 import { PromoCode } from "../models/PromoCode.js";
+import { sendSms, buildOrderPlacedMessage, buildOrderDeliveredMessage } from "../services/sms.js";
 
 const router = express.Router();
+
+// Sanity ping to verify mount
+router.get("/ping", (_req, res) => {
+  res.json({ ok: true });
+});
 
 // Place a new order
 router.post("/", requireAuth, async (req, res) => {
@@ -13,6 +19,10 @@ router.post("/", requireAuth, async (req, res) => {
     const { items, total, address, paymentInfo, customerDetails, promoCode, deliveryFee = 0 } = req.body;
     if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: "Order items required" });
     if (!total) return res.status(400).json({ message: "Order total required" });
+    const mobile = customerDetails?.mobile || customerDetails?.phone || address?.phone;
+    if (!mobile || String(mobile).length !== 13) {
+      return res.status(400).json({ message: "Mobile number must be 13 characters (include country code)" });
+    }
     
     // Calculate subtotal from items
     const subtotalBeforeDiscount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -80,6 +90,16 @@ router.post("/", requireAuth, async (req, res) => {
       promoCode: promoCodeData,
       subtotalBeforeDiscount
     });
+    // attempt SMS notify (non-fatal)
+    try {
+      const phone = customerDetails?.mobile || customerDetails?.phone || address?.phone;
+      if (phone) {
+        const msg = buildOrderPlacedMessage({ customerName: customerDetails?.name, orderId, etaMins: req.body?.etaMins });
+        await sendSms(phone, msg);
+      }
+    } catch (e) {
+      console.warn("Order placed SMS failed:", e?.message || e);
+    }
     res.status(201).json(order);
   } catch (err) {
     res.status(500).json({ message: "Failed to place order", error: err?.message || String(err) });
@@ -119,6 +139,29 @@ router.get("/track", async (req, res) => {
     res.json(resp);
   } catch (err) {
     res.status(500).json({ message: "Failed to track order", error: err?.message || String(err) });
+  }
+});
+
+// Mark delivered and send SMS confirmation
+router.put("/:id/delivered", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    order.status = "delivered";
+    await order.save();
+    try {
+      const phone = order?.customerDetails?.mobile || order?.customerDetails?.phone || order?.address?.phone;
+      if (phone) {
+        const msg = buildOrderDeliveredMessage({ customerName: order?.customerDetails?.name, orderId: order.orderId || order._id });
+        await sendSms(phone, msg);
+      }
+    } catch (e) {
+      console.warn("Delivered SMS failed:", e?.message || e);
+    }
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update delivery status", error: err?.message || String(err) });
   }
 });
 

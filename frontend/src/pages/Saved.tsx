@@ -141,7 +141,7 @@ const Saved: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-4 py-8 sm:py-12">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
