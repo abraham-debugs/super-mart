@@ -7,6 +7,7 @@ import { Features } from "@/components/Features";
 import RecommendedProducts from "@/components/RecommendedProducts";
 import { products } from "@/data/products";
 import type { Product } from "@/types/product";
+import { AdsCarousel } from "@/components/AdsCarousel";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -166,6 +167,11 @@ const Index = () => {
             />
           </section>
         )}
+
+        {/* Ads Carousel */}
+        <section className="py-10">
+          <AdsCarousel />
+        </section>
         
         {/* Search Results - Categories */}
         {searchQuery && searchCategories.length > 0 && (

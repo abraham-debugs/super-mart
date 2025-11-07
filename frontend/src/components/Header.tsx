@@ -1,21 +1,16 @@
 import { useState, useEffect } from "react";
-import { Search, ShoppingCart, User, Menu, X, Camera, Heart, Bookmark, Crown } from "lucide-react";
+import { ShoppingCart, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "./ThemeToggle";
 import { useCart } from "@/contexts/CartContext";
 import { CartSheet } from "./CartSheet";
 import { Link, useNavigate } from "react-router-dom";
-import VoiceSearch from "@/components/VoiceSearch";
-import ImageSearch from "@/components/ImageSearch";
 import { SearchBar } from "@/components/SearchBar";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
@@ -30,276 +25,137 @@ export const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const [navbarCategories, setNavbarCategories] = useState<Array<{ id: string; name: string }>>([]);
-  
-  useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-    async function loadNavbarCategories() {
-      try {
-        const res = await fetch(`${API_BASE}/api/products/navbar-categories`);
-        if (res.ok) {
-          const data = await res.json();
-          setNavbarCategories(data || []);
-        }
-      } catch (err) {
-        console.warn("Failed to load navbar categories:", err);
-      }
-    }
-    loadNavbarCategories();
-  }, []);
-  
-  const navigation = navbarCategories.length > 0 
-    ? navbarCategories.map(cat => ({ 
-        name: cat.name, 
-        href: `/category/${cat.id}` 
-      }))
-    : [];
+  const navigation = [
+    { name: "Home", href: "/" },
+    { name: "Plan", href: "/subscription-plans" },
+    { name: "About Us", href: "/#about" },
+    { name: "Shop", href: "/#shop" },
+  ];
 
   return (
     <>
-      <header className={`sticky top-0 z-50 transition-all duration-300 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b`}>
+      <header className={`sticky top-0 z-50 transition-all duration-300 bg-[#f7aa29]/95 backdrop-blur-md shadow-[0_8px_24px_rgba(247,170,41,0.25)] border-none`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo Section */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-8">
               <Link to="/" className="flex items-center gap-3 group">
                 <div className="relative">
-                  <div className="flex items-center justify-center w-11 h-11 rounded-xl border border-border bg-foreground/5 transition-all duration-300 group-hover:scale-105">
-                    <span className="text-foreground font-bold text-lg">M</span>
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/70 ring-2  text-white ring-white/60 transition-all duration-300 group-hover:scale-105">
+                    <span className="text-[#132c5f] font-bold text-white text-xl">M</span>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-foreground group-hover:scale-105 transition-transform duration-300">
+                <span className="text-2xl font-bold text-[#132c5f] group-hover:scale-105 transition-transform duration-300">
                   MDMart
                 </span>
               </Link>
 
               {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-1">
+              <nav className="hidden lg:flex items-center gap-3">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 hover:text-foreground"
+                    className="px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#1c2f61] rounded-full transition-colors duration-200 hover:bg-white/40"
                   >
                     {item.name}
                   </Link>
                 ))}
-                <Link
-                  to="/wishlist"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 hover:text-foreground flex items-center gap-1.5"
-                >
-                  <Heart className="h-4 w-4" />
-                 
-                </Link>
-                <Link
-                  to="/saved"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 hover:text-foreground flex items-center gap-1.5"
-                >
-                  <Bookmark className="h-4 w-4" />
-                  
-                </Link>
-                <Link
-                  to="/subscription-plans"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 hover:text-foreground flex items-center gap-1.5"
-                >
-                  <Crown className="h-4 w-4" />
-                  Plans
-                </Link>
               </nav>
             </div>
 
-              {/* Search Bar - Desktop */}
-            <div className="hidden md:flex items-center flex-1 max-w-xl mx-6">
-              <SearchBar />
-              </div>
-
             {/* Actions Section */}
             <div className="flex items-center gap-2">
-              {/* Search Icon - Mobile/Tablet */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="md:hidden hover:bg-primary/5"
-                onClick={() => setIsMenuOpen(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-
-              {/* Voice & Image Search - Desktop */}
-              <div className="hidden lg:flex items-center gap-2">
-                <VoiceSearch onSearch={(q) => {
-                  if (q.trim()) {
-                    window.location.href = `/?q=${encodeURIComponent(q.trim())}`;
-                  }
-                }} />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsImageSearchOpen(true)}
-                  className="hover:bg-primary/5"
-                  title="Search by image"
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
+              <div className="hidden md:block w-64 xl:w-80">
+                <div className="rounded-full bg-white/70 px-4 py-1 shadow-inner shadow-white/40">
+                  <SearchBar />
+                </div>
               </div>
 
-                <ThemeToggle />
-
-                {/* Cart */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                className="relative hover:bg-primary/5"
-                  onClick={() => setIsCartOpen(true)}
-                >
-                <ShoppingCart className="h-5 w-5" />
-                  {getCartCount() > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground border-0 shadow-lg">
-                      {getCartCount()}
-                    </Badge>
-                  )}
-                </Button>
-
-              {/* Auth Buttons */}
               {user ? (
                 <>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="hidden sm:flex hover:bg-primary/5"
+                  <Button
+                    size="icon"
+                    className="hidden sm:flex h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
                     onClick={() => navigate('/profile')}
                     title="Profile"
                   >
                     <User className="h-5 w-5" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="hidden sm:flex hover:bg-primary/5"
-                    onClick={() => { logout(); navigate('/login'); }}
-                  >
-                    Logout
-                  </Button>
-                  <div className="sm:hidden">
+                  {(user.role === "admin" || user.role === "superadmin") && (
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsMenuOpen(!isMenuOpen)}
-                      className="hover:bg-primary/5"
+                      size="sm"
+                      className="hidden lg:flex rounded-full bg-[#f7aa29] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                      onClick={() => navigate(user.role === "superadmin" ? '/superadmin' : '/admin')}
                     >
-                      {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                      Admin
                     </Button>
-                  </div>
+                  )}
                 </>
               ) : (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="hidden sm:flex hover:bg-primary/5"
-                    onClick={() => navigate('/login')}
-                  >
-                    Login
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="hidden sm:flex bg-primary/10 hover:bg-primary/15 border border-primary/20 transition-all duration-200"
-                    onClick={() => navigate('/register')}
-                  >
-                    Register
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="sm:hidden hover:bg-primary/5"
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  >
-                    {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                <Button
+                  size="sm"
+                  className="hidden sm:flex rounded-full bg-[#f7aa29] px-5 py-2 text-sm font-semibold uppercase tracking-wide text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                  onClick={() => navigate('/login')}
+                >
+                  Login
                 </Button>
-                </>
               )}
 
-              {/* Admin Link - Desktop */}
-              {(user?.role === "admin" || user?.role === "superadmin") && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="hidden lg:flex hover:bg-primary/5"
-                  onClick={() => navigate(user.role === "superadmin" ? '/superadmin' : '/admin')}
-                >
-                  Admin
-                </Button>
-              )}
+              <Button
+                size="icon"
+                className="relative h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                onClick={() => setIsCartOpen(true)}
+                title="Cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {getCartCount() > 0 && (
+                  <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-0 bg-primary p-0 text-xs text-primary-foreground shadow-lg">
+                    {getCartCount()}
+                  </Badge>
+                )}
+              </Button>
+
+              <Button
+                size="icon"
+                className="sm:hidden h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                title="Menu"
+              >
+                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-md">
+          <div className="lg:hidden border-t border-white/50 bg-[#f7aa29]/95 backdrop-blur-md">
             <div className="container mx-auto px-4 py-4 space-y-4">
               {/* Mobile Search */}
               <div className="flex items-center gap-2">
-                <div className="flex-1">
+                <div className="flex-1 rounded-full bg-white/80 px-4 py-1">
                   <SearchBar />
                 </div>
-                <VoiceSearch onSearch={(q) => {
-                  if (q.trim()) {
-                    window.location.href = `/?q=${encodeURIComponent(q.trim())}`;
-                    setIsMenuOpen(false);
-                  }
-                }} />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsImageSearchOpen(true)}
-                  className="hover:bg-primary/5"
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-          </div>
+              </div>
 
               {/* Mobile Navigation Links */}
-              <nav className="flex flex-col space-y-2 border-t border-border pt-4">
+              <nav className="flex flex-col space-y-2 border-t border-white/50 pt-4">
                   {navigation.map((item) => (
                   <Link
                       key={item.name}
                     to={item.href}
-                    className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200"
+                    className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
                   </Link>
                 ))}
-                <Link
-                  to="/wishlist"
-                  className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Heart className="h-5 w-5" />
-                  Wishlist
-                </Link>
-                <Link
-                  to="/saved"
-                  className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Bookmark className="h-5 w-5" />
-                  Saved
-                </Link>
-                <Link
-                  to="/subscription-plans"
-                  className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Crown className="h-5 w-5" />
-                  Subscription Plans
-                </Link>
                 {user ? (
                   <>
                     <Link
                       to="/profile"
-                      className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
+                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200 flex items-center gap-2"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <User className="h-5 w-5" />
@@ -307,14 +163,14 @@ export const Header = () => {
                     </Link>
                     <button
                       onClick={() => { logout(); navigate('/login'); setIsMenuOpen(false); }}
-                      className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200 text-left w-full"
+                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200 text-left w-full"
                     >
                       Logout
                     </button>
                     {(user.role === "admin" || user.role === "superadmin") && (
                       <Link
                         to={user.role === "superadmin" ? '/superadmin' : '/admin'}
-                        className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200"
+                        className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Admin Panel
@@ -325,14 +181,14 @@ export const Header = () => {
                   <>
                     <Link
                       to="/login"
-                      className="px-4 py-3 text-base font-medium text-foreground rounded-lg hover:bg-primary/5 transition-all duration-200"
+                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
-                      className="px-4 py-3 text-base font-medium rounded-lg bg-primary/10 hover:bg-primary/15 transition-all duration-200 text-center"
+                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg bg-white/80 hover:bg-white transition-all duration-200 text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Register
@@ -344,9 +200,7 @@ export const Header = () => {
             </div>
           )}
       </header>
-
       <CartSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <ImageSearch open={isImageSearchOpen} onOpenChange={setIsImageSearchOpen} />
     </>
   );
 };

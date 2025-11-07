@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '@/contexts/CartContext';
+import type { Product as CartProduct } from '@/types/product';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
 
@@ -16,6 +18,7 @@ interface Product {
   originalPrice?: number;
   imageUrl: string;
   categoryId?: {
+    _id?: string;
     nameEn: string;
     nameTa?: string;
   };
@@ -29,6 +32,7 @@ interface RecommendedProductsProps {
 export default function RecommendedProducts({ limit = 10, title }: RecommendedProductsProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [strategy, setStrategy] = useState<string>('');
@@ -199,14 +203,26 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                     {/* Add to Cart Button */}
                     <Button
                       size="sm"
-                      className="w-full mt-2 h-7 text-[11px] bg-green-700 hover:from-purple-700 hover:to-pink-700 text-white"
+                      className="w-full mt-2 h-7 text-[11px] rounded-md bg-[#f7aa29] text-[#1c2a52] font-semibold shadow-[0_10px_18px_rgba(247,170,41,0.25)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#e49a21]"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Add to cart logic (implement with your cart context)
-                        console.log('Add to cart:', product._id);
+                        const cartProduct: CartProduct = {
+                          id: product._id,
+                          name: product.nameEn,
+                          description: product.nameTa || product.nameEn,
+                          price: product.price,
+                          originalPrice: product.originalPrice,
+                          category: product.categoryId?.nameEn || 'Recommended',
+                          image: product.imageUrl,
+                          rating: 0,
+                          reviews: 0,
+                          inStock: true,
+                        };
+
+                        addToCart(cartProduct);
                       }}
                     >
-                      Add
+                      Add to Cart
                     </Button>
                   </CardContent>
                 </Card>
