@@ -1004,6 +1004,87 @@ const Admin = () => {
     }
   }
 
+  function exportDashboardToCsv() {
+    // High-level summary
+    const summaryHeaders = ["Metric", "Value"];
+    const summaryRows = [
+      ["Total Revenue", totalRevenue.toFixed(2)],
+      ["Total Orders", String(totalOrdersCount)],
+      ["Delivered Orders", String(deliveredOrdersCount)],
+      ["Active Users", String(activeUsersCount)],
+    ];
+
+    // Daily trends for the last 30 days based on adminOrders
+    const byDay: Record<
+      string,
+      { date: string; orders: number; delivered: number; cancelled: number; revenue: number }
+    > = {};
+
+    const now = new Date();
+    const cutoff = new Date();
+    cutoff.setDate(now.getDate() - 30);
+
+    adminOrders.forEach((order) => {
+      const created = new Date((order as any).date || (order as any).createdAt);
+      if (isNaN(created.getTime()) || created < cutoff) return;
+      const key = created.toISOString().slice(0, 10); // YYYY-MM-DD
+      if (!byDay[key]) {
+        byDay[key] = {
+          date: key,
+          orders: 0,
+          delivered: 0,
+          cancelled: 0,
+          revenue: 0,
+        };
+      }
+      const bucket = byDay[key];
+      bucket.orders += 1;
+      if (String(order.status) === "delivered") bucket.delivered += 1;
+      if (String(order.status) === "cancelled") bucket.cancelled += 1;
+      if (order.status !== "cancelled") {
+        bucket.revenue += Number(order.total || 0);
+      }
+    });
+
+    const trendHeaders = [
+      "Date",
+      "Total Orders",
+      "Delivered Orders",
+      "Cancelled Orders",
+      "Revenue",
+    ];
+    const trendRows = Object.values(byDay)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((d) => [
+        d.date,
+        String(d.orders),
+        String(d.delivered),
+        String(d.cancelled),
+        d.revenue.toFixed(2),
+      ]);
+
+    const lines: string[] = [];
+    // Summary section
+    lines.push(summaryHeaders.join(","));
+    lines.push(...summaryRows.map((r) => r.join(",")));
+    lines.push(""); // blank line
+    // Trend section
+    lines.push("Daily Trends (Last 30 Days)");
+    lines.push(trendHeaders.join(","));
+    lines.push(...trendRows.map((r) => r.join(",")));
+
+    const csv = lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `mdmart-dashboard-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       {/* Header */}
@@ -1118,7 +1199,7 @@ const Admin = () => {
                 <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your store.</p>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={exportDashboardToCsv}>
                   <Download className="h-4 w-4 mr-2" />
                   Export Report
                 </Button>
