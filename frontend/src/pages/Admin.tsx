@@ -38,7 +38,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   MoreHorizontal,
-  Heart
+  Heart,
+  Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,26 +63,12 @@ const Admin = () => {
   const isSuperAdmin = user?.role === "superadmin";
   const [activeTab, setActiveTab] = useState("dashboard");
   
-  // Redirect to admin login if not authenticated or not admin
+  // NOTE: Previously this effect forced a redirect to /admin/login
+  // when the user was not authenticated as admin. The requirement
+  // is now to allow direct access to /admin without compulsory login,
+  // so we intentionally do not redirect here.
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    
-    if (!storedToken || !storedUser) {
-      navigate("/admin/login");
-      return;
-    }
-    
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      if (parsedUser.role !== "admin" && parsedUser.role !== "superadmin") {
-        navigate("/admin/login");
-        return;
-      }
-    } catch (e) {
-      navigate("/admin/login");
-      return;
-    }
+    // no-op; kept in case we want to add telemetry or soft warnings later
   }, [navigate, user, token]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
@@ -119,6 +106,34 @@ const Admin = () => {
   const [promoMinAmount, setPromoMinAmount] = useState("");
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
+
+  type AdminPoster = {
+    _id: string;
+    title: string;
+    subtitle?: string;
+    description?: string;
+    ctaText?: string;
+    ctaLink?: string;
+    imageUrl: string;
+    order?: number;
+    isActive: boolean;
+    createdAt?: string;
+  };
+
+  const [homeAds, setHomeAds] = useState<AdminPoster[]>([]);
+  const [adsLoading, setAdsLoading] = useState(false);
+  const [adsError, setAdsError] = useState<string | null>(null);
+  const [adDialogOpen, setAdDialogOpen] = useState(false);
+  const [adSubmitting, setAdSubmitting] = useState(false);
+  const [editingAd, setEditingAd] = useState<AdminPoster | null>(null);
+  const [adTitle, setAdTitle] = useState("");
+  const [adSubtitle, setAdSubtitle] = useState("");
+  const [adDescription, setAdDescription] = useState("");
+  const [adCtaText, setAdCtaText] = useState("Shop Now");
+  const [adCtaLink, setAdCtaLink] = useState("/");
+  const [adOrder, setAdOrder] = useState("0");
+  const [adIsActive, setAdIsActive] = useState(true);
+  const [adFile, setAdFile] = useState<File | null>(null);
 
   async function loadCategories() {
     try {
@@ -497,6 +512,8 @@ const Admin = () => {
           imageUrl: p.image
         })));
       }
+
+      await loadAdPosters();
     } catch (err) {
       console.error("Load home sections error:", err);
     }
@@ -841,6 +858,151 @@ const Admin = () => {
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.inactive;
     return <Badge className={config.color}>{config.label}</Badge>;
   };
+
+  function resetAdForm() {
+    setAdTitle("");
+    setAdSubtitle("");
+    setAdDescription("");
+    setAdCtaText("Shop Now");
+    setAdCtaLink("/");
+    setAdOrder("0");
+    setAdIsActive(true);
+    setAdFile(null);
+  }
+
+  function openAdDialog(poster?: AdminPoster) {
+    if (poster) {
+      setEditingAd(poster);
+      setAdTitle(poster.title || "");
+      setAdSubtitle(poster.subtitle || "");
+      setAdDescription(poster.description || "");
+      setAdCtaText(poster.ctaText || "Shop Now");
+      setAdCtaLink(poster.ctaLink || "/");
+      setAdOrder(String(typeof poster.order === "number" ? poster.order : poster.order ?? 0));
+      setAdIsActive(Boolean(poster.isActive));
+      setAdFile(null);
+    } else {
+      setEditingAd(null);
+      resetAdForm();
+    }
+    setAdsError(null);
+    setAdDialogOpen(true);
+  }
+
+  async function loadAdPosters() {
+    try {
+      setAdsLoading(true);
+      setAdsError(null);
+      const url = token ? `${API_BASE}/api/ads/manage` : `${API_BASE}/api/ads`;
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      } as RequestInit);
+      if (!res.ok) throw new Error("Failed to load home posters");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setHomeAds(data);
+      } else {
+        setHomeAds([]);
+      }
+    } catch (err: any) {
+      console.error("Load ad posters error:", err);
+      setAdsError(err?.message || "Failed to load posters");
+    } finally {
+      setAdsLoading(false);
+    }
+  }
+
+  async function handleSubmitAd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token) {
+      setAdsError("Authentication required");
+      return;
+    }
+    if (!adTitle.trim()) {
+      setAdsError("Title is required");
+      return;
+    }
+    if (!editingAd && !adFile) {
+      setAdsError("Please upload an image for the poster");
+      return;
+    }
+
+    setAdSubmitting(true);
+    setAdsError(null);
+
+    try {
+      const form = new FormData();
+      form.append("title", adTitle.trim());
+      if (adSubtitle.trim()) form.append("subtitle", adSubtitle.trim());
+      if (adDescription.trim()) form.append("description", adDescription.trim());
+      if (adCtaText.trim()) form.append("ctaText", adCtaText.trim());
+      if (adCtaLink.trim()) form.append("ctaLink", adCtaLink.trim());
+      form.append("order", adOrder || "0");
+      form.append("isActive", adIsActive ? "true" : "false");
+      if (adFile) form.append("image", adFile);
+
+      const url = editingAd
+        ? `${API_BASE}/api/ads/${editingAd._id}`
+        : `${API_BASE}/api/ads`;
+      const method = editingAd ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to save poster");
+      }
+
+      setAdDialogOpen(false);
+      setEditingAd(null);
+      resetAdForm();
+      await loadAdPosters();
+    } catch (err: any) {
+      console.error("Save poster error:", err);
+      setAdsError(err?.message || "Failed to save poster");
+    } finally {
+      setAdSubmitting(false);
+    }
+  }
+
+  async function handleDeleteAd(poster: AdminPoster) {
+    if (!token) return;
+    if (!confirm(`Delete poster "${poster.title}"?`)) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/ads/${poster._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete poster");
+      await loadAdPosters();
+    } catch (err) {
+      console.error("Delete poster error:", err);
+      alert("Failed to delete poster");
+    }
+  }
+
+  async function handleToggleAd(poster: AdminPoster) {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/ads/${poster._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isActive: !poster.isActive }),
+      });
+      if (!res.ok) throw new Error("Failed to update poster");
+      await loadAdPosters();
+    } catch (err) {
+      console.error("Toggle poster error:", err);
+      alert("Failed to update poster status");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
@@ -2005,6 +2167,294 @@ const Admin = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Home Page Posters */}
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 lg:col-span-2">
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center shadow-lg">
+                        <Image className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900">Home Page Posters</CardTitle>
+                        <p className="text-sm text-gray-600">
+                          {homeAds.filter((poster) => poster.isActive).length} active • {homeAds.length} total
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadAdPosters()}
+                        className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Refresh
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => openAdDialog()}
+                        className="bg-[#f7aa29] text-[#1c2a52] hover:bg-[#e49a21]"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Poster
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {adsError && !adDialogOpen && (
+                    <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
+                      {adsError}
+                    </div>
+                  )}
+                  {adsLoading ? (
+                    <div className="py-12 text-center">
+                      <BalancingLoader />
+                      <p className="mt-3 text-sm text-gray-500">Loading posters...</p>
+                    </div>
+                  ) : homeAds.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <Image className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <h3 className="text-lg font-semibold text-gray-900">No posters yet</h3>
+                      <p className="text-sm text-gray-600 mb-4">Add promotional posters to highlight offers on the home page.</p>
+                      <Button onClick={() => openAdDialog()} className="bg-[#f7aa29] text-[#1c2a52] hover:bg-[#e49a21]">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Poster
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                      {homeAds.map((poster) => (
+                        <div
+                          key={poster._id}
+                          className="group overflow-hidden rounded-2xl border border-amber-100 bg-white/80 shadow hover:shadow-lg transition-shadow"
+                        >
+                          <div className="relative h-44 overflow-hidden">
+                            <img
+                              src={poster.imageUrl}
+                              alt={poster.title}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute top-3 left-3">
+                              <Badge className={poster.isActive ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}>
+                                {poster.isActive ? "Active" : "Hidden"}
+                              </Badge>
+                            </div>
+                            <div className="absolute top-3 right-3 text-xs font-semibold text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                              Order {poster.order ?? 0}
+                            </div>
+                          </div>
+                          <div className="space-y-2 p-4">
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-900">{poster.title}</h4>
+                              {poster.subtitle && <p className="text-sm text-gray-600">{poster.subtitle}</p>}
+                              {poster.description && <p className="text-sm text-gray-500">{poster.description}</p>}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 break-all">
+                              {poster.ctaText && (
+                                <span className="font-medium text-gray-700">CTA:</span>
+                              )}
+                              {poster.ctaText && <span>{poster.ctaText}</span>}
+                              {poster.ctaLink && (
+                                <a
+                                  href={poster.ctaLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {poster.ctaLink}
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 pt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleAd(poster)}
+                                className={poster.isActive ? "text-amber-600 hover:bg-amber-50" : "text-green-600 hover:bg-green-50"}
+                              >
+                                {poster.isActive ? (
+                                  <span className="flex items-center">
+                                    <Ban className="h-4 w-4 mr-2" /> Hide
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center">
+                                    <CheckCircle className="h-4 w-4 mr-2" /> Activate
+                                  </span>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openAdDialog(poster)}
+                                className="text-blue-600 hover:bg-blue-50"
+                              >
+                                <Edit className="h-4 w-4 mr-2" /> Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteAd(poster)}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Dialog
+                open={adDialogOpen}
+                onOpenChange={(open) => {
+                  setAdDialogOpen(open);
+                  if (!open) {
+                    setEditingAd(null);
+                    resetAdForm();
+                    setAdsError(null);
+                  }
+                }}
+              >
+                <DialogContent className="sm:max-w-xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold text-gray-900">
+                      {editingAd ? "Edit Home Poster" : "Add Home Poster"}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmitAd} className="space-y-5">
+                    {adsError && (
+                      <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
+                        {adsError}
+                      </div>
+                    )}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="poster-title">Title *</Label>
+                        <Input
+                          id="poster-title"
+                          value={adTitle}
+                          onChange={(e) => setAdTitle(e.target.value)}
+                          placeholder="Mega Fresh Grocery Fiesta"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="poster-subtitle">Subtitle</Label>
+                        <Input
+                          id="poster-subtitle"
+                          value={adSubtitle}
+                          onChange={(e) => setAdSubtitle(e.target.value)}
+                          placeholder="Limited Time"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="poster-description">Description</Label>
+                        <Textarea
+                          id="poster-description"
+                          value={adDescription}
+                          onChange={(e) => setAdDescription(e.target.value)}
+                          placeholder="Save up to 40% on fruits, veggies, and essentials."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="poster-cta-text">CTA Text</Label>
+                        <Input
+                          id="poster-cta-text"
+                          value={adCtaText}
+                          onChange={(e) => setAdCtaText(e.target.value)}
+                          placeholder="Shop Now"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="poster-cta-link">CTA Link</Label>
+                        <Input
+                          id="poster-cta-link"
+                          value={adCtaLink}
+                          onChange={(e) => setAdCtaLink(e.target.value)}
+                          placeholder="/shop"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="poster-order">Display Order</Label>
+                        <Input
+                          id="poster-order"
+                          type="number"
+                          value={adOrder}
+                          onChange={(e) => setAdOrder(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-500">Lower numbers appear first in the carousel.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Visibility</Label>
+                        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                          <Checkbox
+                            id="poster-active"
+                            checked={adIsActive}
+                            onCheckedChange={(checked) => setAdIsActive(!!checked)}
+                          />
+                          <Label htmlFor="poster-active" className="text-sm text-gray-700 cursor-pointer">
+                            Show this poster on the home page
+                          </Label>
+                        </div>
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="poster-image">
+                          Poster Image {editingAd ? <span className="text-xs text-gray-500">(Leave empty to keep current image)</span> : "*"}
+                        </Label>
+                        <input
+                          id="poster-image"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setAdFile(e.target.files?.[0] || null)}
+                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                        />
+                        {editingAd && !adFile && (
+                          <div className="mt-2 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                            <img src={editingAd.imageUrl} alt={editingAd.title} className="h-14 w-14 rounded object-cover" />
+                            <p className="text-xs text-gray-500">Current poster image</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setAdDialogOpen(false);
+                          setEditingAd(null);
+                          resetAdForm();
+                          setAdsError(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={adSubmitting}
+                        className="bg-[#f7aa29] text-[#1c2a52] hover:bg-[#e49a21]"
+                      >
+                        {adSubmitting ? (
+                          <span className="flex items-center">
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </span>
+                        ) : (
+                          <span>{editingAd ? "Save Changes" : "Create Poster"}</span>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         )}

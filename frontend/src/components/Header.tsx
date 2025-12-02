@@ -118,7 +118,7 @@ export const Header = () => {
 
               <Button
                 size="icon"
-                className="sm:hidden h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                className="md:hidden h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 title="Menu"
               >

@@ -128,9 +128,9 @@ const Profile: React.FC = () => {
   const deliveredOrders = orders.filter(o => o.status === "delivered").length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#fff8f0] via-[#fff2dc] to-[#ffe4c7]">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-12">
+      <div className="bg-gradient-to-r from-[#ff8c42] via-[#ff7043] to-[#ff5e62] text-white py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
@@ -159,7 +159,7 @@ const Profile: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">Total Orders</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{orders.length}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#ff9f43] to-[#ff6f61] flex items-center justify-center">
                   <ShoppingBag className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -173,10 +173,10 @@ const Profile: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">Delivered</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{deliveredOrders}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#2ecc71] to-[#27ae60] flex items-center justify-center">
                   <Package className="h-6 w-6 text-white" />
-            </div>
-          </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -187,7 +187,7 @@ const Profile: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">Total Spent</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">Rs.{totalSpent.toFixed(0)}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#a554ff] to-[#6c2dff] flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -202,7 +202,7 @@ const Profile: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center">
                   <div className="relative">
-                    <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                    <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-[#ff9f43] to-[#ff5e62] flex items-center justify-center">
                       <span className="text-3xl font-bold text-white">
                         {name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || "U"}
                       </span>
@@ -211,7 +211,7 @@ const Profile: React.FC = () => {
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-gray-900">{name || user?.name || "User"}</h3>
                   <p className="text-sm text-gray-500">{email}</p>
-                  <Badge className="mt-3 bg-gradient-to-r from-blue-500 to-purple-500">Premium Member</Badge>
+                  <Badge className="mt-3 bg-gradient-to-r from-[#ff9f43] to-[#ff5e62]">Premium Member</Badge>
                     </div>
 
                 <div className="mt-6 space-y-2">
@@ -238,19 +238,19 @@ const Profile: React.FC = () => {
           <div className="lg:col-span-3">
             <Tabs defaultValue="account" className="space-y-6" onValueChange={(val) => setActiveTab(val as any)}>
               <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1">
-                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
                   <User className="h-4 w-4 mr-2" />
                   Account
                 </TabsTrigger>
-                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
                   <Package className="h-4 w-4 mr-2" />
                   Orders
                 </TabsTrigger>
-                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
                   <MapPin className="h-4 w-4 mr-2" />
                   Addresses
                 </TabsTrigger>
-                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
+                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
                   <Crown className="h-4 w-4 mr-2" />
                   Subscription
                 </TabsTrigger>
@@ -339,7 +339,7 @@ const Profile: React.FC = () => {
                         <Button
                           type="submit"
                           disabled={saving}
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                          className="bg-gradient-to-r from-[#ff9f43] to-[#ff5e62] hover:from-[#ff7b42] hover:to-[#ff4b5c] shadow-lg"
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
@@ -434,7 +434,7 @@ const Profile: React.FC = () => {
                                         <React.Fragment key={s}>
                                           <div className="flex flex-col items-center">
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                                              done ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg" : "bg-gray-200 text-gray-500"
+                                              done ? "bg-gradient-to-br from-[#2ecc71] to-[#27ae60] text-white shadow-lg" : "bg-gray-200 text-gray-500"
                                             }`}>
                                               {done ? <Check className="h-5 w-5" /> : <span className="text-sm font-medium">{idx + 1}</span>}
                                             </div>
@@ -624,7 +624,7 @@ const Profile: React.FC = () => {
                         <div className="flex gap-3">
                           <Button 
                             onClick={() => navigate('/subscription-plans')}
-                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                            className="flex-1 bg-gradient-to-r from-[#ff9f43] to-[#ff5e62] hover:from-[#ff7b42] hover:to-[#ff4b5c]"
                           >
                             <Crown className="h-4 w-4 mr-2" />
                             {subscription.planType === 'free' ? 'Upgrade Plan' : 'Change Plan'}
@@ -661,7 +661,7 @@ const Profile: React.FC = () => {
                         <p className="text-gray-600 mb-4">You don't have an active subscription</p>
                         <Button 
                           onClick={() => navigate('/subscription-plans')}
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                          className="bg-gradient-to-r from-[#ff9f43] to-[#ff5e62] hover:from-[#ff7b42] hover:to-[#ff4b5c]"
                         >
                           View Plans
                         </Button>
