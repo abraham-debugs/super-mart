@@ -86,7 +86,7 @@ export const Header = () => {
                     <Button
                       size="sm"
                       className="hidden lg:flex rounded-full bg-[#f7aa29] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
-                      onClick={() => navigate(user.role === "superadmin" ? '/superadmin' : '/admin')}
+                      onClick={() => navigate(user.role === "superadmin" ? '/superadmin/login' : '/admin/login')}
                     >
                       Admin
                     </Button>

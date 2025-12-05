@@ -18,7 +18,7 @@ const mapBackendToProduct = (p: any): Product => ({
   image: p.imageUrl || p.image || "",
   rating: Number(p.rating || 0),
   reviews: Number(p.reviews || 0),
-  inStock: p.inStock !== undefined ? Boolean(p.inStock) : true,
+  inStock: p.stock !== undefined ? (p.stock || 0) > 0 : (p.inStock !== undefined ? Boolean(p.inStock) : true),
   discount: p.discount ? Number(p.discount) : undefined,
   isNew: Boolean(p.isNew),
   isBestSeller: Boolean(p.isBestSeller),

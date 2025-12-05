@@ -38,7 +38,8 @@ router.get("/search", async (req, res) => {
       image: p.imageUrl,
       rating: 5,
       reviews: 0,
-      inStock: true,
+      inStock: (p.stock || 0) > 0,
+      stock: p.stock || 0,
       isNew: false,
       isBestSeller: false,
     }));
@@ -114,7 +115,8 @@ router.get("/fresh-picks", async (req, res) => {
       image: p.imageUrl,
       rating: 5,
       reviews: 0,
-      inStock: true,
+      inStock: (p.stock || 0) > 0,
+      stock: p.stock || 0,
       isNew: false,
       isBestSeller: false,
     }));
@@ -181,7 +183,8 @@ router.get("/most-loved", async (req, res) => {
       image: p.imageUrl,
       rating: 5,
       reviews: 0,
-      inStock: true,
+      inStock: (p.stock || 0) > 0,
+      stock: p.stock || 0,
       isNew: false,
       isBestSeller: false,
     }));

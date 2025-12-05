@@ -16,6 +16,7 @@ import subscriptionRoutes from "./routes/subscriptions.js";
 import imageSearchRoutes from "./routes/imageSearch.js";
 import recommendationRoutes from "./routes/recommendations.js";
 import promoCodeRoutes from "./routes/promoCodes.js";
+import adsRoutes from "./routes/ads.js";
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/image-search", imageSearchRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/promo-codes", promoCodeRoutes);
+app.use("/api/ads", adsRoutes);
 
 const port = process.env.PORT || 5000;
 

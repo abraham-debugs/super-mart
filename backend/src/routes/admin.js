@@ -275,7 +275,8 @@ router.get("/products", async (req, res) => {
       categoryId: p.categoryId?._id || null,
       categoryName: p.categoryId?.name || "",
       isFreshPick: p.isFreshPick || false,
-      isMostLoved: p.isMostLoved || false
+      isMostLoved: p.isMostLoved || false,
+      stock: p.stock || 0
     }));
     res.json(mapped);
   } catch (err) {
@@ -339,13 +340,32 @@ router.post("/products", upload.single("image"), async (req, res) => {
       youtubeLink,
       categoryId,
       isFreshPick: shouldBeFreshPick,
-      isMostLoved: shouldBeMostLoved && !shouldBeFreshPick // Only set isMostLoved if not Fresh Pick
+      isMostLoved: shouldBeMostLoved && !shouldBeFreshPick, // Only set isMostLoved if not Fresh Pick
+      stock: req.body.stock ? Number(req.body.stock) : 0
     });
 
     res.status(201).json(product);
   } catch (err) {
     console.error("POST /api/admin/products error:", err);
     res.status(500).json({ message: "Failed to create product", error: err?.message || String(err) });
+  }
+});
+
+// Update product stock (bulk update endpoint) - MUST be before /products/:id route
+router.put("/products/stock", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { productId, stock } = req.body;
+    if (!productId || stock === undefined) {
+      return res.status(400).json({ message: "productId and stock are required" });
+    }
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    product.stock = Math.max(0, Number(stock));
+    await product.save();
+    res.json({ _id: product._id, stock: product.stock });
+  } catch (err) {
+    console.error("PUT /api/admin/products/stock error:", err);
+    res.status(500).json({ message: "Failed to update stock", error: err?.message || String(err) });
   }
 });
 
@@ -369,6 +389,7 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
     if (price) product.price = Number(price);
     if (originalPrice) product.originalPrice = Number(originalPrice);
     if (youtubeLink) product.youtubeLink = youtubeLink;
+    if (req.body.stock !== undefined) product.stock = Number(req.body.stock);
     if (categoryId) {
       const category = await Category.findById(categoryId);
       if (!category) return res.status(404).json({ message: "Category not found" });

@@ -11,7 +11,8 @@ const ProductSchema = new mongoose.Schema(
     youtubeLink: { type: String, trim: true },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     isFreshPick: { type: Boolean, default: false }, // For "Fresh Picks for You" section
-    isMostLoved: { type: Boolean, default: false }   // For "Most Loved Items" section
+    isMostLoved: { type: Boolean, default: false },   // For "Most Loved Items" section
+    stock: { type: Number, default: 0, min: 0 } // Inventory stock quantity
   },
   { timestamps: true }
 );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   ArrowLeft, 
   MapPin, 
@@ -36,7 +36,33 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items: cartItems, getCartCount, getCartTotal, removeFromCart, updateQuantity, clearCart } = useCart();
-  const { token } = useAuth() as any;
+  const { user, token } = useAuth() as any;
+  
+  // Enforce login requirement - redirect to login if not authenticated
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    
+    if (!storedToken || !storedUser || !user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to proceed with checkout",
+        variant: "destructive"
+      });
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
+    
+    // Also check if cart is empty
+    if (getCartCount() === 0) {
+      toast({
+        title: "Cart is Empty",
+        description: "Please add items to your cart before checkout",
+      });
+      navigate("/");
+      return;
+    }
+  }, [navigate, user, token, getCartCount, toast]);
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("upi");

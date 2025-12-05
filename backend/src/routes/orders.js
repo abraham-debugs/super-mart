@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { Order } from "../models/Order.js";
 import { Counter } from "../models/Counter.js";
 import { PromoCode } from "../models/PromoCode.js";
+import { Product } from "../models/Product.js";
 import { sendSms, buildOrderPlacedMessage, buildOrderDeliveredMessage } from "../services/sms.js";
 
 const router = express.Router();
@@ -78,6 +79,18 @@ router.post("/", requireAuth, async (req, res) => {
     );
     const seq = String(counter.seq).padStart(2, "0");
     const orderId = `${dayKey}${seq}`;
+
+    // Reduce stock for each product in the order
+    for (const item of items) {
+      if (item.productId) {
+        const product = await Product.findById(item.productId);
+        if (product) {
+          const quantity = item.quantity || 1;
+          product.stock = Math.max(0, (product.stock || 0) - quantity);
+          await product.save();
+        }
+      }
+    }
 
     const order = await Order.create({ 
       userId, 

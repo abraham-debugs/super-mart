@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ProductCard } from "./ProductCard";
-import { products } from "@/data/products";
 import { Product } from "@/types/product";
 
 interface ProductGridProps {
@@ -16,7 +15,7 @@ interface ProductGridProps {
 export const ProductGrid = ({ 
   title = "All Products", 
   showFilters = true, 
-  productsToShow = products 
+  productsToShow = [] 
 }: ProductGridProps) => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(productsToShow);
   const [sortBy, setSortBy] = useState<string>("default");

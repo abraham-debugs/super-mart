@@ -5,7 +5,6 @@ import { CategoryCarousel } from "@/components/CategoryCarousel";
 import { Features } from "@/components/Features";
 
 import RecommendedProducts from "@/components/RecommendedProducts";
-import { products } from "@/data/products";
 import type { Product } from "@/types/product";
 import { AdsCarousel } from "@/components/AdsCarousel";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -21,7 +20,7 @@ interface SearchCategory {
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>(products);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchCategories, setSearchCategories] = useState<SearchCategory[]>([]);
   const [freshPicks, setFreshPicks] = useState<Product[]>([]);
@@ -40,17 +39,22 @@ const Index = () => {
       const targetId = normalize(detail.id || "");
       const targetName = normalize(detail.name || "");
 
-      const filtered = products.filter((p) => {
-        const prodCat = normalize(p.category || "");
-        // match if product category contains the category name or id, or vice versa
-        return (
-          (prodCat && targetName && prodCat.includes(targetName)) ||
-          (prodCat && targetId && prodCat.includes(targetId)) ||
-          (targetName && targetName.includes(prodCat))
-        );
-      });
-
-      setAllProducts(filtered.length > 0 ? filtered : products);
+      // Fetch products from backend API for the selected category
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/products?category=${encodeURIComponent(detail.name)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const prods = Array.isArray(data) ? data : [];
+            setAllProducts(prods);
+          } else {
+            setAllProducts([]);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch category products:", e);
+          setAllProducts([]);
+        }
+      })();
       setSearchQuery("");
     };
 
@@ -115,9 +119,23 @@ const Index = () => {
         }
       })();
     } else {
-      // if no query and no category selection, show all
+      // if no query and no category selection, fetch all products from backend
       if (!selectedCategory) {
-        setAllProducts(products);
+        (async () => {
+          try {
+            const res = await fetch(`${API_BASE}/api/products`);
+            if (res.ok) {
+              const data = await res.json();
+              const prods = Array.isArray(data) ? data : [];
+              setAllProducts(prods);
+            } else {
+              setAllProducts([]);
+            }
+          } catch (e) {
+            console.warn("Failed to fetch products:", e);
+            setAllProducts([]);
+          }
+        })();
       }
       setSearchQuery("");
       setSearchCategories([]);

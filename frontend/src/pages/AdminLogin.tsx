@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,15 +6,76 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Mail, Lock, AlertCircle, LogIn, Sparkles, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 export const AdminLogin = () => {
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check authentication and redirect if already logged in as admin
+  useEffect(() => {
+    const checkAuth = () => {
+      // Check localStorage directly first
+      const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
+      const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
+      
+      // If no token or user data, show login form
+      if (!storedToken || !storedUserRaw) {
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Validate user data
+      try {
+        const storedUser = JSON.parse(storedUserRaw);
+        // Only redirect if user has admin or superadmin role
+        if (storedUser && storedUser.role && (storedUser.role === "admin" || storedUser.role === "superadmin")) {
+          // User is already logged in as admin, redirect to dashboard
+          navigate("/admin", { replace: true });
+          return;
+        }
+      } catch (e) {
+        // Invalid user data, show login form
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Also check AuthContext when available
+      if (token && user && user.role && (user.role === "admin" || user.role === "superadmin")) {
+        navigate("/admin", { replace: true });
+        return;
+      }
+      
+      // Not logged in as admin, show login form
+      setIsCheckingAuth(false);
+    };
+    
+    // Run check immediately
+    checkAuth();
+    
+    // Also set a timeout to ensure we show the form even if something goes wrong
+    const timeout = setTimeout(() => {
+      setIsCheckingAuth(false);
+    }, 500);
+    
+    return () => clearTimeout(timeout);
+  }, [token, user, navigate]);
+  
+  // Show loading spinner only briefly while checking
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-indigo-50 to-pink-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+        <div className="h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,11 +99,17 @@ export const AdminLogin = () => {
 
       console.log('Response status:', res.status);
       
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
+      }
+      
       console.log('Response data:', data);
 
       if (!res.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || data.error || `Login failed: ${res.status}`);
       }
 
       // Store token in localStorage (both formats for compatibility)
@@ -51,7 +118,7 @@ export const AdminLogin = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("auth_user", JSON.stringify(data.user));
       
-      // Reload page to refresh AuthContext
+      // Reload page to refresh AuthContext, then navigate to admin
       window.location.href = "/admin";
     } catch (err: any) {
       setError(err.message || "Login failed. Please try again.");

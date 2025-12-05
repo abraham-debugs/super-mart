@@ -39,7 +39,8 @@ import {
   ArrowDownRight,
   MoreHorizontal,
   Heart,
-  Image
+  Image,
+  Warehouse
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,13 +64,7 @@ const Admin = () => {
   const isSuperAdmin = user?.role === "superadmin";
   const [activeTab, setActiveTab] = useState("dashboard");
   
-  // NOTE: Previously this effect forced a redirect to /admin/login
-  // when the user was not authenticated as admin. The requirement
-  // is now to allow direct access to /admin without compulsory login,
-  // so we intentionally do not redirect here.
-  useEffect(() => {
-    // no-op; kept in case we want to add telemetry or soft warnings later
-  }, [navigate, user, token]);
+  // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
   const [categoryRows, setCategoryRows] = useState<Array<{ _id: string; name: string; imageUrl: string; parentCategory?: { _id: string; name: string } | null; showInNavbar?: boolean }>>([]);
@@ -135,6 +130,167 @@ const Admin = () => {
   const [adIsActive, setAdIsActive] = useState(true);
   const [adFile, setAdFile] = useState<File | null>(null);
 
+  // Inventory Management state
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>("all");
+  const [inventoryProducts, setInventoryProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; stock: number; imageUrl: string }>>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [editingStock, setEditingStock] = useState<{ productId: string; currentStock: number } | null>(null);
+  const [newStockValue, setNewStockValue] = useState("");
+  const [stockUpdating, setStockUpdating] = useState(false);
+
+  // Products and Orders state
+  const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
+  const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
+  
+  // Home Page Sections state
+  const [freshPicksProducts, setFreshPicksProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [mostLovedProducts, setMostLovedProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
+  const [availableProducts, setAvailableProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
+  const [showAddToFreshPicks, setShowAddToFreshPicks] = useState(false);
+  const [showAddToMostLoved, setShowAddToMostLoved] = useState(false);
+  const [showNewProductFreshPicks, setShowNewProductFreshPicks] = useState(false);
+  const [showNewProductMostLoved, setShowNewProductMostLoved] = useState(false);
+  
+  // Product management states
+  const [editProductOpen, setEditProductOpen] = useState(false);
+  const [deleteProductOpen, setDeleteProductOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean } | null>(null);
+  const [editProductData, setEditProductData] = useState({
+    nameEn: "",
+    nameTa: "",
+    price: "",
+    originalPrice: "",
+    youtubeLink: "",
+    categoryId: "",
+    image: null as File | null,
+    isFreshPick: false,
+    isMostLoved: false
+  });
+  const [editProductLoading, setEditProductLoading] = useState(false);
+  const [deleteProductLoading, setDeleteProductLoading] = useState(false);
+  const [editProductError, setEditProductError] = useState<string | null>(null);
+  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; phone: string; orders: number; status: string; joinDate: string }>>([]);
+  const [loadingAdminOrders, setLoadingAdminOrders] = useState(false);
+  const [loadingAdminUsers, setLoadingAdminUsers] = useState(false);
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetailLoading, setOrderDetailLoading] = useState(false);
+  const [orderDetail, setOrderDetail] = useState<null | { id: string; customerDetails?: any; status: string; paymentMode?: string; paymentStatus?: string; transactionId?: string; total: number; createdAt: string; items: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>(null);
+  const [searchDate, setSearchDate] = useState("");
+  const [searchOrderId, setSearchOrderId] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "placed" | "confirmed" | "payment_verified" | "booked" | "shipped" | "delivered" | "cancelled">("all");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  // Delivery partners state
+  const [partners, setPartners] = useState<Array<{ id: string; name: string; phone: string; status: "active" | "inactive" }>>([]);
+  const [partnersLoading, setPartnersLoading] = useState(false);
+  const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
+  const [editPartner, setEditPartner] = useState<null | { id: string; name: string; phone: string; status: "active" | "inactive" }>(null);
+  const [pName, setPName] = useState("");
+  const [pPhone, setPPhone] = useState("");
+  const [pStatus, setPStatus] = useState<"active" | "inactive">("active");
+
+  // Product filter state
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+
+  // Redirect to admin login if not authenticated or not admin
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    
+    if (!storedToken || !storedUser) {
+      navigate("/admin/login");
+      return;
+    }
+    
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      if (parsedUser.role !== "admin" && parsedUser.role !== "superadmin") {
+        navigate("/admin/login");
+        return;
+      }
+    } catch (e) {
+      navigate("/admin/login");
+      return;
+    }
+  }, [navigate, user, token]);
+
+  // Immediately check authentication and redirect to login BEFORE rendering anything
+  // This check happens synchronously before any hooks or rendering
+  const checkAuthAndRedirect = () => {
+    if (typeof window === "undefined") return false;
+    
+    const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
+    const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
+    
+    // If no token or user data, redirect immediately
+    if (!storedToken || !storedUserRaw || storedToken.trim() === "" || storedUserRaw.trim() === "") {
+      // Clear any invalid data
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("auth_user");
+      window.location.href = "/admin/login";
+      return false;
+    }
+    
+    // Parse and validate user data
+    let storedUser = null;
+    try {
+      storedUser = JSON.parse(storedUserRaw);
+    } catch (e) {
+      // Invalid user data - clear and redirect to login
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("auth_user");
+      window.location.href = "/admin/login";
+      return false;
+    }
+    
+    // Check if user has admin or superadmin role
+    if (!storedUser || !storedUser.role || (storedUser.role !== "admin" && storedUser.role !== "superadmin")) {
+      // Clear invalid user data
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("auth_user");
+      window.location.href = "/admin/login";
+      return false;
+    }
+    
+    return true;
+  };
+  
+  // Check authentication immediately - if not authorized, redirect and return null
+  if (!checkAuthAndRedirect()) {
+    return null;
+  }
+  
+  // Also verify with AuthContext when available
+  useEffect(() => {
+    if (token && user) {
+      if (user.role !== "admin" && user.role !== "superadmin") {
+        // Clear invalid data and redirect
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("auth_user");
+        if (typeof window !== "undefined") {
+          window.location.href = "/admin/login";
+        }
+      }
+    } else if (token === null && user === null) {
+      // AuthContext has loaded but no user/token - double check localStorage
+      const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
+      if (!storedToken) {
+        if (typeof window !== "undefined") {
+          window.location.href = "/admin/login";
+        }
+      }
+    }
+  }, [token, user]);
+
   async function loadCategories() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/categories`);
@@ -146,12 +302,117 @@ const Admin = () => {
     }
   }
 
+  async function loadInventoryProducts(categoryId?: string) {
+    setInventoryLoading(true);
+    try {
+      const url = categoryId && categoryId !== "all" 
+        ? `${API_BASE}/api/admin/products?categoryId=${encodeURIComponent(categoryId)}`
+        : `${API_BASE}/api/admin/products`;
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+        throw new Error(errorData.message || "Failed to load products");
+      }
+      const data = await res.json();
+      setInventoryProducts(data);
+    } catch (err: any) {
+      console.error("Load inventory products error:", err);
+      alert(`Failed to load products: ${err.message}`);
+    } finally {
+      setInventoryLoading(false);
+    }
+  }
+
+  async function updateProductStock(productId: string, stock: number) {
+    if (!token) {
+      alert("Authentication required. Please log in again.");
+      return;
+    }
+    if (!productId) {
+      alert("Product ID is required");
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      alert("Invalid stock value. Please enter a valid number >= 0");
+      return;
+    }
+    
+    // Validate MongoDB ObjectId format (24 hex characters)
+    const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+    const productIdStr = String(productId);
+    if (!objectIdRegex.test(productIdStr)) {
+      console.error("Invalid productId format:", productIdStr);
+      alert("Invalid product ID format");
+      return;
+    }
+    
+    setStockUpdating(true);
+    try {
+      const requestBody = { 
+        productId: productIdStr, 
+        stock: Math.max(0, Math.floor(Number(stock))) 
+      };
+      
+      console.log("Updating stock:", requestBody);
+      
+      const res = await fetch(`${API_BASE}/api/admin/products/stock`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      // Read response body only once
+      let responseData;
+      try {
+        responseData = await res.json();
+      } catch (e) {
+        // If JSON parsing fails, create error object
+        responseData = { message: `HTTP ${res.status}: ${res.statusText}` };
+      }
+      
+      if (!res.ok) {
+        const errorMessage = responseData?.message || responseData?.error || `Failed to update stock (${res.status})`;
+        console.error("Update stock error response:", {
+          status: res.status,
+          statusText: res.statusText,
+          errorData: responseData,
+          requestBody
+        });
+        throw new Error(errorMessage);
+      }
+      
+      // Success - use the already parsed responseData
+      console.log("Stock updated successfully:", responseData);
+      
+      await loadInventoryProducts(inventoryCategoryFilter === "all" ? undefined : inventoryCategoryFilter);
+      setEditingStock(null);
+      setNewStockValue("");
+    } catch (err: any) {
+      console.error("Update stock error:", err);
+      const errorMsg = err.message || "Unknown error occurred";
+      alert(`Failed to update stock: ${errorMsg}`);
+    } finally {
+      setStockUpdating(false);
+    }
+  }
+
   async function loadPromoCodes() {
+    if (!token) return;
     try {
       const res = await fetch(`${API_BASE}/api/promo-codes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error("Failed to load promo codes");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+        throw new Error(errorData.message || "Failed to load promo codes");
+      }
       const data = await res.json();
       setPromoCodes(data);
     } catch (err: any) {
@@ -364,67 +625,14 @@ const Admin = () => {
     }
   }
 
-  const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
-  const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
-  
-  // Home Page Sections state
-  const [freshPicksProducts, setFreshPicksProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
-  const [mostLovedProducts, setMostLovedProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
-  const [availableProducts, setAvailableProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
-  const [showAddToFreshPicks, setShowAddToFreshPicks] = useState(false);
-  const [showAddToMostLoved, setShowAddToMostLoved] = useState(false);
-  const [showNewProductFreshPicks, setShowNewProductFreshPicks] = useState(false);
-  const [showNewProductMostLoved, setShowNewProductMostLoved] = useState(false);
-  
-  // Product management states
-  const [editProductOpen, setEditProductOpen] = useState(false);
-  const [deleteProductOpen, setDeleteProductOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean } | null>(null);
-  const [editProductData, setEditProductData] = useState({
-    nameEn: "",
-    nameTa: "",
-    price: "",
-    originalPrice: "",
-    youtubeLink: "",
-    categoryId: "",
-    image: null as File | null,
-    isFreshPick: false,
-    isMostLoved: false
-  });
-  const [editProductLoading, setEditProductLoading] = useState(false);
-  const [deleteProductLoading, setDeleteProductLoading] = useState(false);
-  const [editProductError, setEditProductError] = useState<string | null>(null);
-  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; name: string; email: string; phone: string; orders: number; status: string; joinDate: string }>>([]);
-  const [loadingAdminOrders, setLoadingAdminOrders] = useState(false);
-  const [loadingAdminUsers, setLoadingAdminUsers] = useState(false);
-  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [orderDetailLoading, setOrderDetailLoading] = useState(false);
-  const [orderDetail, setOrderDetail] = useState<null | { id: string; customerDetails?: any; status: string; paymentMode?: string; paymentStatus?: string; transactionId?: string; total: number; createdAt: string; items: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>(null);
-  const [searchDate, setSearchDate] = useState("");
-  const [searchOrderId, setSearchOrderId] = useState("");
-  const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "placed" | "confirmed" | "payment_verified" | "booked" | "shipped" | "delivered" | "cancelled">("all");
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-
-  // Delivery partners state
-  const [partners, setPartners] = useState<Array<{ id: string; name: string; phone: string; status: "active" | "inactive" }>>([]);
-  const [partnersLoading, setPartnersLoading] = useState(false);
-  const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
-  const [editPartner, setEditPartner] = useState<null | { id: string; name: string; phone: string; status: "active" | "inactive" }>(null);
-  const [pName, setPName] = useState("");
-  const [pPhone, setPPhone] = useState("");
-  const [pStatus, setPStatus] = useState<"active" | "inactive">("active");
-
-  // Product filter state
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
-
   async function loadPartners() {
     try {
       setPartnersLoading(true);
       const res = await fetch(`${API_BASE}/api/admin/delivery-partners`);
       if (!res.ok) throw new Error("Failed to load partners");
       const data = await res.json();
-      setPartners(data);
+      // Ensure all IDs are strings for consistent comparison with order assignedDeliveryPartner
+      setPartners(data.map((p: any) => ({ ...p, id: String(p.id) })));
     } catch (e) {
       console.error("Load partners error:", e);
     } finally {
@@ -788,6 +996,9 @@ const Admin = () => {
       loadHomeSections();
       loadProducts();
     }
+    if (activeTab === "inventory") {
+      loadInventoryProducts();
+    }
   }, [activeTab]);
 
   // Derived order stats for Order Management
@@ -836,6 +1047,7 @@ const Admin = () => {
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-blue-600", bgColor: "bg-blue-50" },
     { id: "add-product", label: "Add Product", icon: Plus, color: "text-green-600", bgColor: "bg-green-50" },
     { id: "product-management", label: "Products", icon: Package, color: "text-purple-600", bgColor: "bg-purple-50" },
+    { id: "inventory", label: "Inventory", icon: Warehouse, color: "text-teal-600", bgColor: "bg-teal-50" },
     { id: "home-sections", label: "Home Sections", icon: Home, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "categories", label: "Categories", icon: Tag, color: "text-orange-600", bgColor: "bg-orange-50" },
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
@@ -893,11 +1105,26 @@ const Admin = () => {
     try {
       setAdsLoading(true);
       setAdsError(null);
-      const url = token ? `${API_BASE}/api/ads/manage` : `${API_BASE}/api/ads`;
-      const res = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      } as RequestInit);
-      if (!res.ok) throw new Error("Failed to load home posters");
+      
+      // Get token from localStorage or AuthContext
+      const authToken = token || localStorage.getItem("token") || localStorage.getItem("auth_token");
+      
+      if (!authToken) {
+        setAdsError("Authentication required");
+        return;
+      }
+      
+      const res = await fetch(`${API_BASE}/api/ads/manage`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+        throw new Error(errorData.message || "Failed to load home posters");
+      }
+      
       const data = await res.json();
       if (Array.isArray(data)) {
         setHomeAds(data);
@@ -1965,6 +2192,197 @@ const Admin = () => {
                 )}
               </DialogContent>
             </Dialog>
+          </div>
+        )}
+
+        {/* Inventory Management */}
+        {activeTab === "inventory" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+                <p className="text-gray-600 mt-1">Update stock levels for products by category</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => loadInventoryProducts(inventoryCategoryFilter === "all" ? undefined : inventoryCategoryFilter)}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            {/* Category Filter */}
+            <Card className="border-0 shadow-md bg-gradient-to-r from-teal-50 to-cyan-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-teal-600" />
+                    <Label className="text-sm font-semibold text-gray-700">Filter by Category:</Label>
+                  </div>
+                  <Select 
+                    value={inventoryCategoryFilter} 
+                    onValueChange={(value) => {
+                      setInventoryCategoryFilter(value);
+                      loadInventoryProducts(value === "all" ? undefined : value);
+                    }}
+                  >
+                    <SelectTrigger className="w-64 bg-white">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Warehouse className="h-4 w-4" />
+                          All Categories
+                        </div>
+                      </SelectItem>
+                      {categoryRows.map((cat) => (
+                        <SelectItem key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {inventoryCategoryFilter !== "all" && (
+                    <Badge variant="secondary" className="bg-teal-100 text-teal-700 border-teal-200">
+                      {inventoryProducts.length} {inventoryProducts.length === 1 ? 'product' : 'products'}
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Inventory Table */}
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-0">
+                {inventoryLoading ? (
+                  <div className="py-12 text-center">
+                    <BalancingLoader />
+                    <p className="mt-3 text-sm text-gray-500">Loading inventory...</p>
+                  </div>
+                ) : inventoryProducts.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <Warehouse className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600 font-medium">No products found</p>
+                    <p className="text-sm text-gray-500">Try selecting a different category</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200/50">
+                        <TableHead className="font-semibold text-gray-900">Product</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Category</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Current Stock</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                        <TableHead className="font-semibold text-gray-900">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {inventoryProducts.map((product) => {
+                        const isOutOfStock = (product.stock || 0) === 0;
+                        const isEditing = editingStock?.productId === product._id;
+                        return (
+                          <TableRow key={product._id} className="hover:bg-gray-50/50">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <img 
+                                  src={product.imageUrl} 
+                                  alt={product.nameEn}
+                                  className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                />
+                                <div>
+                                  <p className="font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-xs text-gray-500">ID: {product._id.slice(-6)}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                                {product.categoryName || "Uncategorized"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={newStockValue}
+                                    onChange={(e) => setNewStockValue(e.target.value)}
+                                    className="w-24"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      const stock = parseInt(newStockValue);
+                                      if (!isNaN(stock) && stock >= 0) {
+                                        updateProductStock(product._id, stock);
+                                      }
+                                    }}
+                                    disabled={stockUpdating}
+                                    className="bg-teal-600 hover:bg-teal-700"
+                                  >
+                                    {stockUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingStock(null);
+                                      setNewStockValue("");
+                                    }}
+                                    disabled={stockUpdating}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : 'text-gray-900'}`}>
+                                    {product.stock || 0}
+                                  </span>
+                                  <span className="text-xs text-gray-500">units</span>
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isOutOfStock ? (
+                                <Badge className="bg-red-100 text-red-800 border-red-300">
+                                  Out of Stock
+                                </Badge>
+                              ) : (product.stock || 0) < 10 ? (
+                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                                  Low Stock
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-green-100 text-green-800 border-green-300">
+                                  In Stock
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {!isEditing && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingStock({ productId: product._id, currentStock: product.stock || 0 });
+                                    setNewStockValue(String(product.stock || 0));
+                                  }}
+                                  className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Update Stock
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -3101,16 +3519,25 @@ const Admin = () => {
                              </Badge>
                            ) : (
                              <Select 
-                               value={(order as any).assignedDeliveryPartner || "not-assigned"}
+                               key={`partner-select-${order.id}-${partners.length}`}
+                               value={(() => {
+                                 const assignedId = (order as any).assignedDeliveryPartner;
+                                 if (!assignedId) return "not-assigned";
+                                 // Convert to string and ensure it matches a partner ID
+                                 const assignedIdStr = String(assignedId);
+                                 // Check if partner exists in the list (including inactive ones for display)
+                                 const partnerExists = partners.some(p => String(p.id) === assignedIdStr);
+                                 return partnerExists ? assignedIdStr : "not-assigned";
+                               })()}
                                onValueChange={(partnerId) => handleAssignPartner(order, partnerId)}
                              >
                               <SelectTrigger className="w-32" onClick={(e) => e.stopPropagation()}>
-                                <SelectValue />
+                                <SelectValue placeholder="Select partner" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="not-assigned">Not Assigned</SelectItem>
                                 {partners.filter(p => p.status === "active").map((p) => (
-                                  <SelectItem key={p.id} value={p.id}>
+                                  <SelectItem key={p.id} value={String(p.id)}>
                                     {p.name}
                                   </SelectItem>
                                 ))}
