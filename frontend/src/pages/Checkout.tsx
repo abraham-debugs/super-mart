@@ -167,10 +167,23 @@ const Checkout = () => {
       imageUrl: item.image
     }));
     const total = totalAmount;
+    // Normalize mobile to include country code and meet backend requirement (13 chars, e.g. +91XXXXXXXXXX)
+    const rawMobile = selectedAddress.mobile || "";
+    const normalizedMobile = rawMobile.startsWith("+")
+      ? rawMobile
+      : `+91${rawMobile.replace(/\D/g, "")}`;
     const customerDetails = {
       fullName: selectedAddress.fullName,
-      mobile: selectedAddress.mobile,
+      mobile: normalizedMobile,
       address: `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? `, ${selectedAddress.addressLine2}` : ''}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`
+    };
+    const addressPayload = {
+      line1: selectedAddress.addressLine1,
+      line2: selectedAddress.addressLine2 || "",
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      pincode: selectedAddress.pincode,
+      phone: normalizedMobile
     };
     const paymentInfo = { method: paymentMethod };
     const promoCode = appliedPromoCode ? { code: appliedPromoCode.code } : null;
@@ -188,7 +201,7 @@ const Checkout = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ items, total, customerDetails, paymentInfo, promoCode, deliveryFee })
+        body: JSON.stringify({ items, total, customerDetails, address: addressPayload, paymentInfo, promoCode, deliveryFee })
       });
       if (res.status === 401) {
         // token invalid or expired

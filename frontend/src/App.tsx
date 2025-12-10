@@ -48,9 +48,9 @@ const App = () => (
                 <Route path="/track-order" element={<Layout><TrackOrder /></Layout>} />
                 <Route path="/subscription-plans" element={<Layout><SubscriptionPlans /></Layout>} />
                 
-                {/* Auth pages (clean layout, no footer) */}
-                <Route path="/login" element={<Layout showFooter={false}><Login /></Layout>} />
-                <Route path="/register" element={<Layout showFooter={false}><Register /></Layout>} />
+                {/* Auth pages (no navbar/footer) */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 
                 {/* Admin pages - login route must come BEFORE /admin route */}
                 <Route path="/admin/login" element={<AdminLogin />} />
