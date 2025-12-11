@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -26,6 +26,23 @@ import { AdminLogin } from "./pages/AdminLogin";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 
 const queryClient = new QueryClient();
+
+// Simple admin guard using AuthContext + localStorage as fallback
+const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+  const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
+  let hasAdmin = false;
+  if (token && storedUserRaw) {
+    try {
+      const u = JSON.parse(storedUserRaw);
+      hasAdmin = u?.role === "admin" || u?.role === "superadmin";
+    } catch {
+      hasAdmin = false;
+    }
+  }
+  if (!hasAdmin) return <Navigate to="/admin/login" replace />;
+  return children;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -56,8 +73,8 @@ const App = () => (
                 <Route path="/admin/login" element={<AdminLogin />} />
                 
                 {/* Pages without Header/Footer (they have their own navigation) */}
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/superadmin" element={<SuperAdmin />} />
+                <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+                <Route path="/superadmin" element={<RequireAdmin><SuperAdmin /></RequireAdmin>} />
                 
                 {/* Delivery pages (they have their own navigation) */}
                 <Route path="/delivery/login" element={<DeliveryLogin />} />

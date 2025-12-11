@@ -2725,11 +2725,11 @@ const Admin = () => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
                       {homeAds.map((poster) => (
                         <div
                           key={poster._id}
-                          className="group overflow-hidden rounded-2xl border border-amber-100 bg-white/80 shadow hover:shadow-lg transition-shadow"
+                          className="snap-start min-w-[280px] max-w-sm flex-1 group overflow-hidden rounded-2xl border border-amber-100 bg-white/80 shadow hover:shadow-lg transition-shadow"
                         >
                           <div className="relative h-44 overflow-hidden">
                             <img

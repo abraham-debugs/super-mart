@@ -208,12 +208,21 @@ const Checkout = () => {
         navigate("/login", { state: { from: "/checkout" } });
         return;
       }
-      if (!res.ok) throw new Error("Order failed");
+      if (!res.ok) {
+        let errMsg = "Order failed";
+        try {
+          const errData = await res.json();
+          errMsg = errData?.message || errMsg;
+        } catch (_) {
+          // ignore parse errors
+        }
+        throw new Error(errMsg);
+      }
   // Clear cart and navigate to order success page
   clearCart();
   navigate("/order-success");
     } catch (err) {
-      alert("Order failed. Please try again.");
+      alert(err instanceof Error ? err.message : "Order failed. Please try again.");
     }
   };
 
