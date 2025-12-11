@@ -65,7 +65,7 @@ router.post("/", requireAuth, async (req, res) => {
       finalTotal = subtotalBeforeDiscount - discountAmount + deliveryFee;
     }
     
-    // build date key ddMMyyyy
+    // Build a random-but-readable orderId to avoid collisions
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, "0");
     const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -79,18 +79,6 @@ router.post("/", requireAuth, async (req, res) => {
     );
     const seq = String(counter.seq).padStart(2, "0");
     const orderId = `${dayKey}${seq}`;
-
-    // Reduce stock for each product in the order
-    for (const item of items) {
-      if (item.productId) {
-        const product = await Product.findById(item.productId);
-        if (product) {
-          const quantity = item.quantity || 1;
-          product.stock = Math.max(0, (product.stock || 0) - quantity);
-          await product.save();
-        }
-      }
-    }
 
     const order = await Order.create({ 
       userId, 
