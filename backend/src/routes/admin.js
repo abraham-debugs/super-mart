@@ -7,6 +7,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { User } from "../models/User.js";
 import { Order } from "../models/Order.js";
 import { DeliveryPartner } from "../models/DeliveryPartner.js";
+import { SubscriptionPlan } from "../models/SubscriptionPlan.js";
 import { requireAuth, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -676,6 +677,181 @@ router.get("/admins", requireAuth, requireSuperAdmin, async (req, res) => {
   } catch (err) {
     console.error("Get admins error:", err);
     res.status(500).json({ message: "Failed to fetch admins", error: err?.message || String(err) });
+  }
+});
+
+// ==================== Subscription Plans Management ====================
+
+// Get all subscription plans
+router.get("/subscription-plans", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const plans = await SubscriptionPlan.find().sort({ order: 1, createdAt: -1 });
+    res.json(plans);
+  } catch (err) {
+    console.error("Get subscription plans error:", err);
+    res.status(500).json({ message: "Failed to fetch subscription plans", error: err?.message || String(err) });
+  }
+});
+
+// Create a new subscription plan
+router.post("/subscription-plans", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const {
+      planId,
+      name,
+      price,
+      duration,
+      description,
+      features,
+      popular,
+      isActive,
+      maxOrders,
+      freeDelivery,
+      prioritySupport,
+      exclusiveDeals,
+      cashbackPercentage,
+      order
+    } = req.body;
+
+    if (!planId || !name) {
+      return res.status(400).json({ message: "planId and name are required" });
+    }
+
+    // Check if planId already exists
+    const existing = await SubscriptionPlan.findOne({ planId: planId.toLowerCase() });
+    if (existing) {
+      return res.status(409).json({ message: "Plan ID already exists" });
+    }
+
+    const plan = await SubscriptionPlan.create({
+      planId: planId.toLowerCase(),
+      name,
+      price: Number(price) || 0,
+      duration: duration || 'month',
+      description: description || '',
+      features: Array.isArray(features) ? features : [],
+      popular: popular === true || popular === 'true',
+      isActive: isActive !== false && isActive !== 'false',
+      maxOrders: maxOrders !== undefined ? Number(maxOrders) : 10,
+      freeDelivery: freeDelivery === true || freeDelivery === 'true',
+      prioritySupport: prioritySupport === true || prioritySupport === 'true',
+      exclusiveDeals: exclusiveDeals === true || exclusiveDeals === 'true',
+      cashbackPercentage: cashbackPercentage !== undefined ? Number(cashbackPercentage) : 0,
+      order: order !== undefined ? Number(order) : 0
+    });
+
+    res.status(201).json(plan);
+  } catch (err) {
+    console.error("Create subscription plan error:", err);
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: "Plan ID already exists" });
+    }
+    res.status(500).json({ message: "Failed to create subscription plan", error: err?.message || String(err) });
+  }
+});
+
+// Update a subscription plan
+router.put("/subscription-plans/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      planId,
+      name,
+      price,
+      duration,
+      description,
+      features,
+      popular,
+      isActive,
+      maxOrders,
+      freeDelivery,
+      prioritySupport,
+      exclusiveDeals,
+      cashbackPercentage,
+      order
+    } = req.body;
+
+    const updateData = {};
+    if (planId !== undefined) updateData.planId = planId.toLowerCase();
+    if (name !== undefined) updateData.name = name;
+    if (price !== undefined) updateData.price = Number(price);
+    if (duration !== undefined) updateData.duration = duration;
+    if (description !== undefined) updateData.description = description;
+    if (features !== undefined) updateData.features = Array.isArray(features) ? features : [];
+    if (popular !== undefined) updateData.popular = popular === true || popular === 'true';
+    if (isActive !== undefined) updateData.isActive = isActive !== false && isActive !== 'false';
+    if (maxOrders !== undefined) updateData.maxOrders = Number(maxOrders);
+    if (freeDelivery !== undefined) updateData.freeDelivery = freeDelivery === true || freeDelivery === 'true';
+    if (prioritySupport !== undefined) updateData.prioritySupport = prioritySupport === true || prioritySupport === 'true';
+    if (exclusiveDeals !== undefined) updateData.exclusiveDeals = exclusiveDeals === true || exclusiveDeals === 'true';
+    if (cashbackPercentage !== undefined) updateData.cashbackPercentage = Number(cashbackPercentage);
+    if (order !== undefined) updateData.order = Number(order);
+
+    // Check if planId is being changed and if it conflicts
+    if (planId) {
+      const existing = await SubscriptionPlan.findOne({ 
+        planId: planId.toLowerCase(),
+        _id: { $ne: id }
+      });
+      if (existing) {
+        return res.status(409).json({ message: "Plan ID already exists" });
+      }
+    }
+
+    const plan = await SubscriptionPlan.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!plan) {
+      return res.status(404).json({ message: "Subscription plan not found" });
+    }
+
+    res.json(plan);
+  } catch (err) {
+    console.error("Update subscription plan error:", err);
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: "Plan ID already exists" });
+    }
+    res.status(500).json({ message: "Failed to update subscription plan", error: err?.message || String(err) });
+  }
+});
+
+// Delete a subscription plan
+router.delete("/subscription-plans/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const plan = await SubscriptionPlan.findByIdAndDelete(id);
+
+    if (!plan) {
+      return res.status(404).json({ message: "Subscription plan not found" });
+    }
+
+    res.json({ message: "Subscription plan deleted successfully", plan });
+  } catch (err) {
+    console.error("Delete subscription plan error:", err);
+    res.status(500).json({ message: "Failed to delete subscription plan", error: err?.message || String(err) });
+  }
+});
+
+// Toggle plan active status
+router.put("/subscription-plans/:id/toggle", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const plan = await SubscriptionPlan.findById(id);
+
+    if (!plan) {
+      return res.status(404).json({ message: "Subscription plan not found" });
+    }
+
+    plan.isActive = !plan.isActive;
+    await plan.save();
+
+    res.json(plan);
+  } catch (err) {
+    console.error("Toggle subscription plan error:", err);
+    res.status(500).json({ message: "Failed to toggle subscription plan", error: err?.message || String(err) });
   }
 });
 

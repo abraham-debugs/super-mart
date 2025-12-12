@@ -1,84 +1,57 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { Subscription } from '../models/Subscription.js';
+import { SubscriptionPlan } from '../models/SubscriptionPlan.js';
 import { User } from '../models/User.js';
 
 const router = express.Router();
 
 // Get all available plans
-router.get('/plans', (req, res) => {
-  const plans = [
-    {
-      id: 'free',
-      name: 'Free',
-      price: 0,
-      duration: 'forever',
-      description: 'Perfect for trying out our service with basic features.',
-      features: [
-        { text: '10 orders per month', included: true },
-        { text: 'Standard delivery', included: true },
-        { text: 'Basic support', included: true },
-        { text: 'Free delivery', included: false },
-        { text: 'Priority support', included: false },
-        { text: 'Exclusive deals', included: false },
-        { text: 'Cashback', included: false }
-      ]
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: 199,
-      duration: 'month',
-      description: 'Great for individuals who shop regularly and want more benefits.',
-      features: [
-        { text: '50 orders per month', included: true },
-        { text: 'Free delivery on all orders', included: true },
-        { text: 'Exclusive deals access', included: true },
-        { text: '2% cashback on all orders', included: true },
-        { text: 'Email support', included: true },
-        { text: 'Priority support', included: false },
-        { text: 'Unlimited orders', included: false }
-      ],
-      popular: false
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: 499,
-      duration: 'month',
-      description: 'Best for families and power users who shop frequently.',
-      features: [
-        { text: '200 orders per month', included: true },
-        { text: 'Free delivery on all orders', included: true },
-        { text: 'Priority customer support', included: true },
-        { text: 'Exclusive deals access', included: true },
-        { text: '5% cashback on all orders', included: true },
-        { text: 'Early access to sales', included: true },
-        { text: 'Birthday month special offers', included: true }
-      ],
-      popular: true
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 999,
-      duration: 'month',
-      description: 'Ultimate plan for businesses and bulk buyers with unlimited benefits.',
-      features: [
-        { text: 'Unlimited orders', included: true },
-        { text: 'Free delivery on all orders', included: true },
-        { text: '24/7 priority support', included: true },
-        { text: 'Exclusive deals access', included: true },
-        { text: '10% cashback on all orders', included: true },
-        { text: 'Dedicated account manager', included: true },
-        { text: 'Bulk order discounts', included: true },
-        { text: 'Custom pricing for large orders', included: true }
-      ],
-      popular: false
-    }
-  ];
+router.get('/plans', async (req, res) => {
+  try {
+    // Fetch active plans from database, sorted by order
+    const dbPlans = await SubscriptionPlan.find({ isActive: true })
+      .sort({ order: 1, createdAt: -1 });
 
-  res.json(plans);
+    // If no plans in database, return default plans (fallback)
+    if (dbPlans.length === 0) {
+      const defaultPlans = [
+        {
+          id: 'free',
+          name: 'Free',
+          price: 0,
+          duration: 'forever',
+          description: 'Perfect for trying out our service with basic features.',
+          features: [
+            { text: '10 orders per month', included: true },
+            { text: 'Standard delivery', included: true },
+            { text: 'Basic support', included: true },
+            { text: 'Free delivery', included: false },
+            { text: 'Priority support', included: false },
+            { text: 'Exclusive deals', included: false },
+            { text: 'Cashback', included: false }
+          ]
+        }
+      ];
+      return res.json(defaultPlans);
+    }
+
+    // Transform database plans to match frontend format
+    const plans = dbPlans.map(plan => ({
+      id: plan.planId,
+      name: plan.name,
+      price: plan.price,
+      duration: plan.duration,
+      description: plan.description,
+      features: plan.features || [],
+      popular: plan.popular || false
+    }));
+
+    res.json(plans);
+  } catch (error) {
+    console.error('Get plans error:', error);
+    res.status(500).json({ message: 'Error fetching subscription plans' });
+  }
 });
 
 // Get current user subscription
