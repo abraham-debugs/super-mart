@@ -1,4 +1,5 @@
 import { ShieldCheck, Timer, Wallet, Award, Truck, Star } from "lucide-react";
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
 
 export const Features = () => {
   const items = [
@@ -52,10 +53,15 @@ export const Features = () => {
         {/* Features Grid */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {items.map(({ icon: Icon, title, desc, color, bgColor, iconColor }, i) => (
-            <div 
-              key={title} 
+            <FollowerPointerCard
+              key={title}
+              title={
+                <div className="flex items-center space-x-2">
+                  <Icon className="h-3 w-3" />
+                  <p className="text-xs font-semibold">{title}</p>
+                </div>
+              }
               className="group relative overflow-hidden rounded-3xl border border-border/50 bg-card/80 backdrop-blur-sm p-8 text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 hover:border-primary/20"
-              style={{ animationDelay: `${i * 0.1}s` }}
             >
               {/* Background Color */}
               <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
@@ -78,7 +84,7 @@ export const Features = () => {
               
               {/* Hover Effect Line */}
               <div className="absolute bottom-0 left-0 h-1 w-0 bg-blue-600 group-hover:w-full transition-all duration-500"></div>
-            </div>
+            </FollowerPointerCard>
           ))}
         </div>
 

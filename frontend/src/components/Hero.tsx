@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
 import { ArrowRight, Clock, Shield, ShoppingBag, Truck } from "lucide-react";
 
 const heroGraphic = "/online-shopping-vector-illustration1-removebg-preview.png";
@@ -99,21 +100,39 @@ export const Hero = () => {
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="rounded-full bg-[#f45d48] px-8 py-6 text-base font-semibold shadow-lg shadow-[#f45d4833] transition-transform duration-200 hover:-translate-y-1 hover:bg-[#d94b39] sm:text-lg"
+                <FollowerPointerCard
+                  title={
+                    <div className="flex items-center space-x-2">
+                      <ShoppingBag className="h-3 w-3" />
+                      <p className="text-xs font-semibold">Start Shopping</p>
+                    </div>
+                  }
                 >
-                  Try Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="rounded-full border-2 border-[#d8e0ff] px-8 py-6 text-base font-semibold text-[#1c4bff] transition-colors duration-200 hover:bg-white hover:text-[#153fe0] sm:text-lg"
+                  <Button
+                    size="lg"
+                    className="rounded-full bg-[#f45d48] px-8 py-6 text-base font-semibold shadow-lg shadow-[#f45d4833] transition-transform duration-200 hover:-translate-y-1 hover:bg-[#d94b39] sm:text-lg"
+                  >
+                    Try Now
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </FollowerPointerCard>
+                <FollowerPointerCard
+                  title={
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-3 w-3" />
+                      <p className="text-xs font-semibold">Learn More</p>
+                    </div>
+                  }
                 >
-                  <Clock className="mr-2 h-5 w-5" />
-                  Learn More
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="rounded-full border-2 border-[#d8e0ff] px-8 py-6 text-base font-semibold text-[#1c4bff] transition-colors duration-200 hover:bg-white hover:text-[#153fe0] sm:text-lg"
+                  >
+                    <Clock className="mr-2 h-5 w-5" />
+                    Learn More
+                  </Button>
+                </FollowerPointerCard>
               </div>
 
               <div className="flex flex-wrap items-center gap-6">

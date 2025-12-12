@@ -6,6 +6,7 @@ import { Product } from "@/types/product";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
 import { useState } from "react";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -116,11 +117,19 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     : 0;
 
   return (
-    <Card 
-      className="group relative overflow-hidden bg-card border border-border/50 rounded-xl shadow-soft hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 hover:border-primary/20"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <FollowerPointerCard
+      title={
+        <div className="flex items-center space-x-2">
+          <ShoppingCart className="h-3 w-3" />
+          <p className="text-xs font-semibold">{product.name}</p>
+        </div>
+      }
     >
+      <Card 
+        className="group relative overflow-hidden bg-card border border-border/50 rounded-xl shadow-soft hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 hover:border-primary/20"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
       {/* Discount Badge */}
       {discountPercentage > 0 && (
         <div className="absolute top-3 left-3 z-10">
@@ -218,5 +227,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
       </CardContent>
     </Card>
+    </FollowerPointerCard>
   );
 };

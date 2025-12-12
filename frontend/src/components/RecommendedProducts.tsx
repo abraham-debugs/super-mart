@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
+import { FollowerPointerCard } from '@/components/ui/following-pointer';
 import type { Product as CartProduct } from '@/types/product';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
@@ -145,10 +146,18 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                 : 0;
 
               return (
-                <Card
+                <FollowerPointerCard
                   key={product._id}
-                  className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 border-0 bg-white/80 backdrop-blur-sm overflow-hidden"
-                  onClick={() => {
+                  title={
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="h-3 w-3" />
+                      <p className="text-xs font-semibold">{product.nameEn}</p>
+                    </div>
+                  }
+                >
+                  <Card
+                    className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 border-0 bg-white/80 backdrop-blur-sm overflow-hidden"
+                    onClick={() => {
                     // Track view
                     if (user) {
                       const token = localStorage.getItem('token');
@@ -226,6 +235,7 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                     </Button>
                   </CardContent>
                 </Card>
+                </FollowerPointerCard>
               );
             })}
           </div>

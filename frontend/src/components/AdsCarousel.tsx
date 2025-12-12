@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
+import { Sparkles } from "lucide-react";
 import heroCart from "@/assets/hero-cart.png";
 import heroImage from "@/assets/hero-image.jpg";
 import smartwatch from "@/assets/smartwatch.jpg";
@@ -145,8 +147,14 @@ export const AdsCarousel = () => {
           {orderedSlides.map((slide, index) => {
             const gradientClass = GRADIENTS[index % GRADIENTS.length];
             return (
-              <div
+              <FollowerPointerCard
                 key={slide._id || `slide-${index}`}
+                title={
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="h-3 w-3" />
+                    <p className="text-xs font-semibold">{slide.title}</p>
+                  </div>
+                }
                 className="flex w-full flex-col items-start justify-between gap-10 p-8 md:flex-row md:items-center md:gap-12 lg:p-12"
               >
                 <div className="flex-1 space-y-4">
@@ -181,7 +189,7 @@ export const AdsCarousel = () => {
                     className="relative z-10 h-full max-h-[320px] w-full max-w-[420px] object-contain drop-shadow-2xl"
                   />
                 </div>
-              </div>
+              </FollowerPointerCard>
             );
           })}
         </div>

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BalancingLoader } from "@/components/BalancingLoader";
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const PLACEHOLDER_IMG = "https://placehold.co/80x80";
@@ -138,41 +139,48 @@ export const CategoryCarousel = () => {
                     const gradient = categoryGradients[(groupIdx * 10 + index) % categoryGradients.length];
                     
                     return (
-                      <div
+                      <FollowerPointerCard
                         key={category._id}
+                        title={
+                          <div className="flex items-center space-x-2">
+                            <Sparkles className="h-3 w-3" />
+                            <p className="text-xs font-semibold">{category.name}</p>
+                          </div>
+                        }
                         className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${
                           isSelected ? 'scale-105' : 'hover:scale-105'
                         }`}
-                        onClick={() => handleCategoryClick(category)}
                       >
-                        {/* Category Card */}
-                        <div className="relative w-full">
-                          <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
-                            isSelected ? 'ring-2 ring-blue-500' : ''
-                          }`}>
-                            <div className="relative w-full h-full">
-                              <img 
-                                src={category.imageUrl} 
-                                alt={category.name} 
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
-                              />
-                              {/* Overlay gradient on hover */}
-                              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
+                        <div onClick={() => handleCategoryClick(category)}>
+                          {/* Category Card */}
+                          <div className="relative w-full">
+                            <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
+                              isSelected ? 'ring-2 ring-blue-500' : ''
+                            }`}>
+                              <div className="relative w-full h-full">
+                                <img 
+                                  src={category.imageUrl} 
+                                  alt={category.name} 
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                                />
+                                {/* Overlay gradient on hover */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
+                              </div>
                             </div>
                           </div>
+                          
+                          {/* Category name */}
+                          <div className="text-center w-full">
+                            <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
+                              isSelected 
+                                ? 'text-blue-600' 
+                                : 'text-gray-700 group-hover:text-blue-600'
+                            }`}>
+                              {category.name}
+                            </span>
+                          </div>
                         </div>
-                        
-                        {/* Category name */}
-                        <div className="text-center w-full">
-                          <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
-                            isSelected 
-                              ? 'text-blue-600' 
-                              : 'text-gray-700 group-hover:text-blue-600'
-                          }`}>
-                            {category.name}
-                          </span>
-                        </div>
-                      </div>
+                      </FollowerPointerCard>
                     );
                   })}
                 </div>

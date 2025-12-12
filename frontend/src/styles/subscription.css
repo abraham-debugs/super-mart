@@ -1,206 +1,333 @@
-/* Subscription Plans Styles - From Uiverse.io by Yaya12085 */
+/* From Uiverse.io by Manish-Tamang - Adapted for Subscription Plans */
 
-.plan-card {
+.subscription-wrapper {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  background: #fff;
   border-radius: 16px;
-  box-shadow: 0 30px 30px -25px rgba(0, 38, 255, 0.205);
-  padding: 10px;
-  background-color: #fff;
-  color: #697e91;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  padding: 30px;
+  box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.05);
 }
 
-.dark .plan-card {
-  background-color: #1e293b;
-  color: #94a3b8;
-}
-
-.plan-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 40px 50px -30px rgba(0, 38, 255, 0.3);
-}
-
-.plan-card strong {
-  font-weight: 600;
-  color: #425275;
-}
-
-.dark .plan-card strong {
-  color: #cbd5e1;
-}
-
-.plan-inner {
+.subscription-wrapper header {
+  height: 55px;
+  display: flex;
   align-items: center;
-  padding: 20px;
-  padding-top: 40px;
-  background-color: #ecf0ff;
-  border-radius: 12px;
+  border: 1px solid #ccc;
+  border-radius: 30px;
   position: relative;
-  min-height: 520px;
+  margin-bottom: 30px;
+}
+
+.subscription-wrapper header label {
+  height: 100%;
+  z-index: 2;
+  width: 33.33%;
   display: flex;
-  flex-direction: column;
-}
-
-.dark .plan-inner {
-  background-color: #0f172a;
-}
-
-.plan-pricing {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background-color: #bed6fb;
-  border-radius: 99em 0 0 99em;
-  display: flex;
-  align-items: center;
-  padding: 0.625em 0.75em;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #425475;
-}
-
-.dark .plan-pricing {
-  background-color: #1e40af;
-  color: #dbeafe;
-}
-
-.plan-pricing small {
-  color: #707a91;
-  font-size: 0.75em;
-  margin-left: 0.25em;
-}
-
-.dark .plan-pricing small {
-  color: #93c5fd;
-}
-
-.plan-title {
-  font-weight: 600;
-  font-size: 1.5rem;
-  color: #425675;
-  margin-bottom: 0.75rem;
-}
-
-.dark .plan-title {
-  color: #f1f5f9;
-}
-
-.plan-info {
-  margin-top: 0.75rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  line-height: 1.5;
-  min-height: 60px;
-}
-
-.plan-features {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  margin-bottom: 1.25rem;
-  flex: 1;
-  width: 100%;
-}
-
-.plan-features li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-align: left;
-}
-
-.plan-icon {
-  background-color: #1fcac5;
-  display: inline-flex;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.dark .plan-icon {
-  background-color: #06b6d4;
-}
-
-.plan-icon svg {
-  width: 14px;
-  height: 14px;
-}
-
-.plan-action {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: auto;
-}
-
-.plan-button {
-  background-color: #6558d3 !important;
-  border-radius: 6px;
-  color: #fff !important;
+  transition: color 0.3s ease;
   font-weight: 500;
-  font-size: 1.125rem;
-  text-align: center;
-  border: 0;
-  outline: 0;
+}
+
+.subscription-wrapper input[type="radio"] {
+  display: none;
+}
+
+.subscription-wrapper header .slider {
+  position: absolute;
+  height: 85%;
+  border-radius: inherit;
+  background: linear-gradient(145deg, #d5a3ff 0%, #77a5f8 100%);
+  transition: all 0.3s ease;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Dynamic slider positioning for 2 plans */
+.subscription-wrapper.plan-count-2 header label {
+  width: 50%;
+}
+
+.subscription-wrapper.plan-count-2 #plan-tab-1:checked ~ header .slider {
+  left: 0%;
+  width: calc(50% - 10px);
+  transform: translateY(-50%) translateX(5%);
+}
+
+.subscription-wrapper.plan-count-2 #plan-tab-2:checked ~ header .slider {
+  left: 50%;
+  width: calc(50% - 10px);
+  transform: translateY(-50%) translateX(-5%);
+}
+
+/* Dynamic slider positioning for 3 plans */
+.subscription-wrapper.plan-count-3 header label {
+  width: 33.33%;
+}
+
+.subscription-wrapper.plan-count-3 #plan-tab-1:checked ~ header .slider {
+  left: 0%;
+  width: calc(33.33% - 10px);
+  transform: translateY(-50%) translateX(5%);
+}
+
+.subscription-wrapper.plan-count-3 #plan-tab-2:checked ~ header .slider {
+  left: 33.33%;
+  width: calc(33.33% - 10px);
+  transform: translateY(-50%) translateX(-50%);
+}
+
+.subscription-wrapper.plan-count-3 #plan-tab-3:checked ~ header .slider {
+  left: 66.66%;
+  width: calc(33.33% - 10px);
+  transform: translateY(-50%) translateX(-105%);
+}
+
+/* Dynamic slider positioning for 4+ plans */
+.subscription-wrapper.plan-count-4 header label,
+.subscription-wrapper.plan-count-5 header label {
+  width: 25%;
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-1:checked ~ header .slider,
+.subscription-wrapper.plan-count-5 #plan-tab-1:checked ~ header .slider {
+  left: 0%;
+  width: calc(25% - 10px);
+  transform: translateY(-50%) translateX(5%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-2:checked ~ header .slider,
+.subscription-wrapper.plan-count-5 #plan-tab-2:checked ~ header .slider {
+  left: 25%;
+  width: calc(25% - 10px);
+  transform: translateY(-50%) translateX(-50%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-3:checked ~ header .slider,
+.subscription-wrapper.plan-count-5 #plan-tab-3:checked ~ header .slider {
+  left: 50%;
+  width: calc(25% - 10px);
+  transform: translateY(-50%) translateX(-50%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-4:checked ~ header .slider,
+.subscription-wrapper.plan-count-5 #plan-tab-4:checked ~ header .slider {
+  left: 75%;
+  width: calc(25% - 10px);
+  transform: translateY(-50%) translateX(-105%);
+}
+
+.subscription-wrapper #plan-tab-1:checked ~ header .tab-1,
+.subscription-wrapper #plan-tab-2:checked ~ header .tab-2,
+.subscription-wrapper #plan-tab-3:checked ~ header .tab-3,
+.subscription-wrapper #plan-tab-4:checked ~ header .tab-4,
+.subscription-wrapper #plan-tab-5:checked ~ header .tab-5 {
+  color: #fff;
+}
+
+.subscription-wrapper .card-area {
+  overflow: hidden;
+}
+
+.subscription-wrapper .cards {
+  display: flex;
   width: 100%;
-  padding: 0.625em 0.75em;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-.plan-button:hover,
-.plan-button:focus {
-  background-color: #4133b7 !important;
+.subscription-wrapper .row {
+  min-width: 100%;
+  flex-shrink: 0;
+  position: relative;
 }
 
-.plan-button:disabled {
-  background-color: #9ca3af !important;
-  cursor: not-allowed;
+.subscription-wrapper .row > div {
+  position: relative;
+  z-index: 1;
+}
+
+.subscription-wrapper.plan-count-2 #plan-tab-1:checked ~ .card-area .cards {
+  transform: translateX(0%);
+}
+
+.subscription-wrapper.plan-count-2 #plan-tab-2:checked ~ .card-area .cards {
+  transform: translateX(-50%);
+}
+
+.subscription-wrapper.plan-count-3 #plan-tab-1:checked ~ .card-area .cards {
+  transform: translateX(0%);
+}
+
+.subscription-wrapper.plan-count-3 #plan-tab-2:checked ~ .card-area .cards {
+  transform: translateX(-33.33%);
+}
+
+.subscription-wrapper.plan-count-3 #plan-tab-3:checked ~ .card-area .cards {
+  transform: translateX(-66.66%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-1:checked ~ .card-area .cards {
+  transform: translateX(0%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-2:checked ~ .card-area .cards {
+  transform: translateX(-25%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-3:checked ~ .card-area .cards {
+  transform: translateX(-50%);
+}
+
+.subscription-wrapper.plan-count-4 #plan-tab-4:checked ~ .card-area .cards {
+  transform: translateX(-75%);
+}
+
+.subscription-wrapper .price-details {
+  margin: 20px 0;
+  text-align: center;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.subscription-wrapper .price-details .price {
+  font-size: 65px;
+  font-weight: 600;
+  position: relative;
+  font-family: "Noto Sans", sans-serif;
+  display: inline-block;
+}
+
+.subscription-wrapper .price-details .price::before,
+.subscription-wrapper .price-details .price::after {
+  position: absolute;
+  font-weight: 400;
+  font-family: "Poppins", sans-serif;
+}
+
+.subscription-wrapper .price-details .price::before {
+  content: "Rs.";
+  left: -50px;
+  top: 17px;
+  font-size: 28px;
+}
+
+.subscription-wrapper .price-details .price::after {
+  content: "/mon";
+  right: -50px;
+  bottom: 17px;
+  font-size: 13px;
+}
+
+.subscription-wrapper .price-details .price::after {
+  content: "/mon";
+  right: -60px;
+  bottom: 17px;
+  font-size: 13px;
+}
+
+/* Dynamic duration text */
+.subscription-wrapper .price-details .price[data-duration=""]::after {
+  content: "";
+}
+
+.subscription-wrapper .price-details .price[data-duration="/year"]::after {
+  content: "/year";
+}
+
+.subscription-wrapper .price-details .price[data-duration="/forever"]::after {
+  content: "";
+}
+
+.subscription-wrapper .price-details p {
+  font-size: 18px;
+  margin-top: 5px;
+  color: #666;
+}
+
+.subscription-wrapper .features {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.subscription-wrapper .features li {
+  display: flex;
+  font-size: 15px;
+  margin-bottom: 12px;
+  align-items: center;
+  gap: 10px;
+}
+
+.subscription-wrapper .features li svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.subscription-wrapper .features li.included svg {
+  color: #10b981;
+}
+
+.subscription-wrapper .features li:not(.included) svg {
+  color: #d1d5db;
+  opacity: 0.5;
+}
+
+.subscription-wrapper .features li:not(.included) span {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.subscription-wrapper button {
+  width: 100%;
+  border-radius: 25px;
+  border: none;
+  outline: none;
+  height: 50px;
+  font-size: 18px;
+  color: #fff;
+  cursor: pointer;
+  margin-top: 20px;
+  background: linear-gradient(145deg, #d5a3ff 0%, #77a5f8 100%);
+  transition: transform 0.3s ease;
+  font-weight: 500;
+}
+
+.subscription-wrapper button:hover:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.subscription-wrapper button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.dark .plan-button {
-  background-color: #7c3aed !important;
-}
-
-.dark .plan-button:hover,
-.dark .plan-button:focus {
-  background-color: #6d28d9 !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .plan-inner {
-    min-height: auto;
+/* Responsive */
+@media (max-width: 640px) {
+  .subscription-wrapper {
+    padding: 20px;
   }
-
-  .plan-title {
-    font-size: 1.25rem;
+  
+  .subscription-wrapper header label {
+    font-size: 14px;
   }
-
-  .plan-pricing {
-    font-size: 1rem;
+  
+  .subscription-wrapper .price-details .price {
+    font-size: 50px;
+  }
+  
+  .subscription-wrapper .price-details .price::before {
+    font-size: 20px;
+    left: -40px;
+  }
+  
+  .subscription-wrapper .price-details .price::after {
+    font-size: 11px;
+    right: -50px;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

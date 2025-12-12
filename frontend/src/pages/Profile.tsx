@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 

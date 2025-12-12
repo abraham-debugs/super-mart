@@ -102,6 +102,44 @@ const Admin = () => {
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
 
+  // Subscription Plans state
+  const [subscriptionPlans, setSubscriptionPlans] = useState<Array<{
+    _id: string;
+    planId: string;
+    name: string;
+    price: number;
+    duration: string;
+    description: string;
+    features: Array<{ text: string; included: boolean }>;
+    popular: boolean;
+    isActive: boolean;
+    maxOrders: number;
+    freeDelivery: boolean;
+    prioritySupport: boolean;
+    exclusiveDeals: boolean;
+    cashbackPercentage: number;
+    order: number;
+  }>>([]);
+  const [isAddPlanOpen, setIsAddPlanOpen] = useState(false);
+  const [planSubmitting, setPlanSubmitting] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [planId, setPlanId] = useState("");
+  const [planName, setPlanName] = useState("");
+  const [planPrice, setPlanPrice] = useState("");
+  const [planDuration, setPlanDuration] = useState("month");
+  const [planDescription, setPlanDescription] = useState("");
+  const [planFeatures, setPlanFeatures] = useState<Array<{ text: string; included: boolean }>>([]);
+  const [planPopular, setPlanPopular] = useState(false);
+  const [planIsActive, setPlanIsActive] = useState(true);
+  const [planMaxOrders, setPlanMaxOrders] = useState("10");
+  const [planFreeDelivery, setPlanFreeDelivery] = useState(false);
+  const [planPrioritySupport, setPlanPrioritySupport] = useState(false);
+  const [planExclusiveDeals, setPlanExclusiveDeals] = useState(false);
+  const [planCashbackPercentage, setPlanCashbackPercentage] = useState("0");
+  const [planOrder, setPlanOrder] = useState("0");
+  const [newFeatureText, setNewFeatureText] = useState("");
+
   type AdminPoster = {
     _id: string;
     title: string;
@@ -482,6 +520,159 @@ const Admin = () => {
     } catch (err: any) {
       console.error("Toggle promo code error:", err);
       alert("Failed to toggle promo code");
+    }
+  }
+
+  // Subscription Plans functions
+  async function loadSubscriptionPlans() {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/subscription-plans`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to load subscription plans");
+      const data = await res.json();
+      setSubscriptionPlans(data);
+    } catch (err: any) {
+      console.error("Load subscription plans error:", err);
+    }
+  }
+
+  function resetPlanForm() {
+    setPlanId("");
+    setPlanName("");
+    setPlanPrice("");
+    setPlanDuration("month");
+    setPlanDescription("");
+    setPlanFeatures([]);
+    setPlanPopular(false);
+    setPlanIsActive(true);
+    setPlanMaxOrders("10");
+    setPlanFreeDelivery(false);
+    setPlanPrioritySupport(false);
+    setPlanExclusiveDeals(false);
+    setPlanCashbackPercentage("0");
+    setPlanOrder("0");
+    setNewFeatureText("");
+    setEditingPlan(null);
+  }
+
+  function openPlanDialog(plan?: any) {
+    if (plan) {
+      setEditingPlan(plan);
+      setPlanId(plan.planId || "");
+      setPlanName(plan.name || "");
+      setPlanPrice(plan.price?.toString() || "0");
+      setPlanDuration(plan.duration || "month");
+      setPlanDescription(plan.description || "");
+      setPlanFeatures(plan.features || []);
+      setPlanPopular(plan.popular || false);
+      setPlanIsActive(plan.isActive !== false);
+      setPlanMaxOrders(plan.maxOrders?.toString() || "10");
+      setPlanFreeDelivery(plan.freeDelivery || false);
+      setPlanPrioritySupport(plan.prioritySupport || false);
+      setPlanExclusiveDeals(plan.exclusiveDeals || false);
+      setPlanCashbackPercentage(plan.cashbackPercentage?.toString() || "0");
+      setPlanOrder(plan.order?.toString() || "0");
+    } else {
+      resetPlanForm();
+    }
+    setIsAddPlanOpen(true);
+  }
+
+  function addFeature() {
+    if (!newFeatureText.trim()) return;
+    setPlanFeatures([...planFeatures, { text: newFeatureText.trim(), included: true }]);
+    setNewFeatureText("");
+  }
+
+  function removeFeature(index: number) {
+    setPlanFeatures(planFeatures.filter((_, i) => i !== index));
+  }
+
+  function toggleFeatureIncluded(index: number) {
+    const updated = [...planFeatures];
+    updated[index].included = !updated[index].included;
+    setPlanFeatures(updated);
+  }
+
+  async function handleSubmitPlan(e: React.FormEvent) {
+    e.preventDefault();
+    setPlanError(null);
+    setPlanSubmitting(true);
+    try {
+      const payload = {
+        planId: planId.toLowerCase(),
+        name: planName,
+        price: Number(planPrice) || 0,
+        duration: planDuration,
+        description: planDescription,
+        features: planFeatures,
+        popular: planPopular,
+        isActive: planIsActive,
+        maxOrders: planMaxOrders === "-1" ? -1 : Number(planMaxOrders) || 10,
+        freeDelivery: planFreeDelivery,
+        prioritySupport: planPrioritySupport,
+        exclusiveDeals: planExclusiveDeals,
+        cashbackPercentage: Number(planCashbackPercentage) || 0,
+        order: Number(planOrder) || 0
+      };
+
+      const url = editingPlan
+        ? `${API_BASE}/api/admin/subscription-plans/${editingPlan._id}`
+        : `${API_BASE}/api/admin/subscription-plans`;
+      const method = editingPlan ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to save subscription plan");
+      }
+
+      await loadSubscriptionPlans();
+      setIsAddPlanOpen(false);
+      resetPlanForm();
+    } catch (err: any) {
+      setPlanError(err.message);
+    } finally {
+      setPlanSubmitting(false);
+    }
+  }
+
+  async function handleDeletePlan(id: string) {
+    if (!confirm("Are you sure you want to delete this subscription plan?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/subscription-plans/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to delete subscription plan");
+      await loadSubscriptionPlans();
+    } catch (err: any) {
+      console.error("Delete subscription plan error:", err);
+      alert("Failed to delete subscription plan");
+    }
+  }
+
+  async function handleTogglePlan(id: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/subscription-plans/${id}/toggle`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to toggle subscription plan");
+      await loadSubscriptionPlans();
+    } catch (err: any) {
+      console.error("Toggle subscription plan error:", err);
+      alert("Failed to toggle subscription plan");
     }
   }
   const availableStatuses = ["placed", "shipped", "delivered", "cancelled"] as const;
@@ -992,6 +1183,9 @@ const Admin = () => {
     if (activeTab === "promo-codes") {
       loadPromoCodes();
     }
+    if (activeTab === "subscription-plans") {
+      loadSubscriptionPlans();
+    }
     if (activeTab === "home-sections") {
       loadHomeSections();
       loadProducts();
@@ -1054,6 +1248,7 @@ const Admin = () => {
     { id: "user-management", label: "Users", icon: Users, color: "text-pink-600", bgColor: "bg-pink-50" },
     { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-cyan-600", bgColor: "bg-cyan-50" },
     { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-yellow-600", bgColor: "bg-yellow-50" },
+    { id: "subscription-plans", label: "Subscription Plans", icon: CreditCard, color: "text-purple-600", bgColor: "bg-purple-50" },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -3953,6 +4148,388 @@ const Admin = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDeletePromoCode(promo.id)}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Subscription Plans */}
+        {activeTab === "subscription-plans" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Subscription Plans</h1>
+                <p className="text-gray-600 mt-1">Create and manage subscription plans for your customers</p>
+              </div>
+              <Dialog open={isAddPlanOpen} onOpenChange={setIsAddPlanOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    onClick={() => openPlanDialog()}
+                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Plan
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingPlan ? "Edit Subscription Plan" : "Create New Subscription Plan"}</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmitPlan} className="space-y-4">
+                    {planError && (
+                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                        {planError}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="planId">Plan ID * (lowercase, no spaces)</Label>
+                        <Input
+                          id="planId"
+                          placeholder="e.g., basic, premium"
+                          value={planId}
+                          onChange={(e) => setPlanId(e.target.value.toLowerCase().replace(/\s/g, '-'))}
+                          disabled={!!editingPlan}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="planName">Plan Name *</Label>
+                        <Input
+                          id="planName"
+                          placeholder="e.g., Basic Plan"
+                          value={planName}
+                          onChange={(e) => setPlanName(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="planPrice">Price (Rs.) *</Label>
+                        <Input
+                          id="planPrice"
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={planPrice}
+                          onChange={(e) => setPlanPrice(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="planDuration">Duration *</Label>
+                        <Select value={planDuration} onValueChange={setPlanDuration}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="forever">Forever</SelectItem>
+                            <SelectItem value="month">Month</SelectItem>
+                            <SelectItem value="year">Year</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="planDescription">Description *</Label>
+                      <Textarea
+                        id="planDescription"
+                        placeholder="Describe the plan benefits..."
+                        value={planDescription}
+                        onChange={(e) => setPlanDescription(e.target.value)}
+                        rows={3}
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="planMaxOrders">Max Orders (-1 for unlimited)</Label>
+                        <Input
+                          id="planMaxOrders"
+                          type="number"
+                          min="-1"
+                          placeholder="10"
+                          value={planMaxOrders}
+                          onChange={(e) => setPlanMaxOrders(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="planCashback">Cashback Percentage (%)</Label>
+                        <Input
+                          id="planCashback"
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="0"
+                          value={planCashbackPercentage}
+                          onChange={(e) => setPlanCashbackPercentage(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="planFreeDelivery"
+                          checked={planFreeDelivery}
+                          onCheckedChange={(checked) => setPlanFreeDelivery(checked === true)}
+                        />
+                        <Label htmlFor="planFreeDelivery">Free Delivery</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="planPrioritySupport"
+                          checked={planPrioritySupport}
+                          onCheckedChange={(checked) => setPlanPrioritySupport(checked === true)}
+                        />
+                        <Label htmlFor="planPrioritySupport">Priority Support</Label>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="planExclusiveDeals"
+                          checked={planExclusiveDeals}
+                          onCheckedChange={(checked) => setPlanExclusiveDeals(checked === true)}
+                        />
+                        <Label htmlFor="planExclusiveDeals">Exclusive Deals</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="planPopular"
+                          checked={planPopular}
+                          onCheckedChange={(checked) => setPlanPopular(checked === true)}
+                        />
+                        <Label htmlFor="planPopular">Mark as Popular</Label>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="planOrder">Display Order</Label>
+                        <Input
+                          id="planOrder"
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={planOrder}
+                          onChange={(e) => setPlanOrder(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox
+                          id="planIsActive"
+                          checked={planIsActive}
+                          onCheckedChange={(checked) => setPlanIsActive(checked === true)}
+                        />
+                        <Label htmlFor="planIsActive">Active</Label>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Features</Label>
+                      <div className="space-y-2 mt-2">
+                        {planFeatures.map((feature, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={feature.included}
+                              onCheckedChange={() => toggleFeatureIncluded(index)}
+                            />
+                            <Input
+                              value={feature.text}
+                              onChange={(e) => {
+                                const updated = [...planFeatures];
+                                updated[index].text = e.target.value;
+                                setPlanFeatures(updated);
+                              }}
+                              placeholder="Feature description"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFeature(index)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add new feature"
+                            value={newFeatureText}
+                            onChange={(e) => setNewFeatureText(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addFeature();
+                              }
+                            }}
+                          />
+                          <Button type="button" onClick={addFeature} variant="outline">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={planSubmitting || !planId || !planName}
+                      className="w-full"
+                    >
+                      {planSubmitting ? "Saving..." : editingPlan ? "Update Plan" : "Create Plan"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Subscription Plans Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Total Plans</CardTitle>
+                  <CreditCard className="h-4 w-4 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">{subscriptionPlans.length}</div>
+                  <p className="text-xs text-gray-600 mt-1">All subscription plans</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Active Plans</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {subscriptionPlans.filter(p => p.isActive).length}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Currently active</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Popular Plans</CardTitle>
+                  <Star className="h-4 w-4 text-yellow-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {subscriptionPlans.filter(p => p.popular).length}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Marked as popular</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-700">Avg. Price</CardTitle>
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    Rs.{subscriptionPlans.length > 0 
+                      ? Math.round(subscriptionPlans.reduce((sum, p) => sum + p.price, 0) / subscriptionPlans.length)
+                      : 0}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Average plan price</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Subscription Plans Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>All Subscription Plans</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {subscriptionPlans.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Subscription Plans Yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first subscription plan to start offering subscriptions</p>
+                    <Button onClick={() => openPlanDialog()}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Plan
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Plan ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead>Features</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {subscriptionPlans.map((plan) => (
+                        <TableRow key={plan._id}>
+                          <TableCell className="font-semibold text-gray-900">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4 text-purple-600" />
+                              {plan.planId}
+                              {plan.popular && (
+                                <Badge className="bg-yellow-100 text-yellow-800 text-xs">Popular</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{plan.name}</TableCell>
+                          <TableCell>
+                            <Badge className="bg-green-100 text-green-800">
+                              Rs.{plan.price} / {plan.duration}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{plan.duration}</TableCell>
+                          <TableCell>
+                            <div className="text-sm text-gray-600">
+                              {plan.features?.length || 0} features
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {plan.isActive ? (
+                              <Badge className="bg-green-100 text-green-800">Active</Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openPlanDialog(plan)}
+                                className="text-blue-600 hover:bg-blue-50"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleTogglePlan(plan._id)}
+                                className={plan.isActive ? "text-yellow-600 hover:bg-yellow-50" : "text-green-600 hover:bg-green-50"}
+                              >
+                                {plan.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeletePlan(plan._id)}
                                 className="text-red-600 hover:bg-red-50"
                               >
                                 <Trash2 className="h-4 w-4" />
