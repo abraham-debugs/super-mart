@@ -88,16 +88,19 @@ export const AdminLogin = () => {
 
     setLoading(true);
     try {
-      console.log('Attempting admin login to:', `${API_BASE}/api/auth/admin/login`);
+      const loginUrl = `${API_BASE}/api/auth/admin/login`;
+      console.log('Attempting admin login to:', loginUrl);
       console.log('Email:', email);
+      console.log('API_BASE:', API_BASE);
       
-      const res = await fetch(`${API_BASE}/api/auth/admin/login`, {
+      const res = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
 
       console.log('Response status:', res.status);
+      console.log('Response URL:', res.url);
       
       let data;
       try {
