@@ -17,13 +17,34 @@ router.post("/register", async (req, res) => {
   try {
     const { name, email, password, preferredCategoryId } = req.body;
     if (!name || !email || !password) return res.status(400).json({ message: "name, email, password required" });
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ message: "Email already registered" });
+    
+    // Normalize email to lowercase and trim whitespace
+    const normalizedEmail = String(email).toLowerCase().trim();
+    
+    // Check if user already exists (case-insensitive)
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
+      console.log(`❌ Registration failed: Email "${normalizedEmail}" already registered`);
+      return res.status(409).json({ message: "Email already registered" });
+    }
     const passwordHash = await bcrypt.hash(password, 10);
     // generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-    const user = await User.create({ name, email, passwordHash, preferredCategoryId, isProfileComplete: false, emailVerified: false, emailOtpCode: otp, emailOtpExpiresAt: otpExpires });
+    
+    // Create user with normalized email
+    const user = await User.create({ 
+      name, 
+      email: normalizedEmail, 
+      passwordHash, 
+      preferredCategoryId, 
+      isProfileComplete: false, 
+      emailVerified: false, 
+      emailOtpCode: otp, 
+      emailOtpExpiresAt: otpExpires 
+    });
+    
+    console.log(`✅ User created: ${normalizedEmail}, OTP: ${otp}`);
 
     // create personalization record if preferredCategoryId provided
     if (preferredCategoryId) {
@@ -35,23 +56,64 @@ router.post("/register", async (req, res) => {
       }
     }
     // send OTP email
+    console.log(`📧 Attempting to send OTP email to ${normalizedEmail}...`);
     const mailer = createMailer();
     if (mailer) {
       try {
-        await mailer.sendMail({
-          from: process.env.MAIL_FROM || process.env.SMTP_USER,
-          to: email,
+        const fromEmail = process.env.MAIL_FROM || process.env.SMTP_USER;
+        console.log(`📧 Sending email from: ${fromEmail} to: ${normalizedEmail}`);
+        
+        const mailOptions = {
+          from: fromEmail,
+          to: normalizedEmail,
           subject: "Your verification code",
           text: `Your OTP is ${otp}. It expires in 10 minutes.`,
-        });
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">Email Verification Code</h2>
+              <p>Your verification code is:</p>
+              <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+                <h1 style="color: #e74c3c; font-size: 32px; letter-spacing: 5px; margin: 0;">${otp}</h1>
+              </div>
+              <p>This code will expire in 10 minutes.</p>
+              <p style="color: #666; font-size: 12px;">If you didn't request this code, please ignore this email.</p>
+            </div>
+          `
+        };
+        
+        const info = await mailer.sendMail(mailOptions);
+        console.log(`✅ OTP email sent successfully to ${normalizedEmail}`);
+        console.log(`   Message ID: ${info.messageId}`);
+        console.log(`   Response: ${info.response}`);
       } catch (e) {
-        console.warn("Failed to send OTP email:", e?.message || e);
+        console.error("❌ Failed to send OTP email:", e?.message || e);
+        console.error("   Error details:", e);
+        // Log OTP to console as fallback
+        console.log(`\n📧 [FALLBACK] OTP for ${normalizedEmail}: ${otp}`);
+        console.log(`   This OTP expires in 10 minutes.`);
+        console.log(`   Email sending failed, but user can still verify using this OTP.\n`);
       }
+    } else {
+      // If mailer is not configured, log OTP to console for development
+      console.log(`\n📧 [DEVELOPMENT MODE] OTP for ${normalizedEmail}: ${otp}`);
+      console.log(`   This OTP expires in 10 minutes.`);
+      console.log(`   SMTP not configured - email not sent.\n`);
     }
     const token = signToken(user);
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, preferredCategoryId: user.preferredCategoryId || null, isProfileComplete: user.isProfileComplete, role: user.role || "user" } });
+    res.status(201).json({ 
+      token, 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        preferredCategoryId: user.preferredCategoryId || null, 
+        isProfileComplete: user.isProfileComplete, 
+        role: user.role || "user" 
+      } 
+    });
   } catch (err) {
     if (err && err.code === 11000) {
+      console.log(`❌ Registration failed: Duplicate key error for email`);
       return res.status(409).json({ message: "Email already registered" });
     }
     console.error("/api/auth/register error:", err);
@@ -64,18 +126,106 @@ router.post("/verify-email", async (req, res) => {
   try {
     const { email, code } = req.body;
     if (!email || !code) return res.status(400).json({ message: "email and code required" });
-    const user = await User.findOne({ email });
+    
+    // Normalize email
+    const normalizedEmail = String(email).toLowerCase().trim();
+    
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.emailOtpCode || !user.emailOtpExpiresAt) return res.status(400).json({ message: "No OTP requested" });
-    if (user.emailOtpExpiresAt.getTime() < Date.now()) return res.status(400).json({ message: "OTP expired" });
-    if (user.emailOtpCode !== code) return res.status(400).json({ message: "Invalid OTP" });
+    
+    if (!user.emailOtpCode || !user.emailOtpExpiresAt) {
+      return res.status(400).json({ message: "No OTP requested. Please request a new OTP." });
+    }
+    
+    if (user.emailOtpExpiresAt.getTime() < Date.now()) {
+      return res.status(400).json({ message: "OTP expired. Please request a new OTP." });
+    }
+    
+    if (user.emailOtpCode !== code) {
+      return res.status(400).json({ message: "Invalid OTP code" });
+    }
+    
     user.emailVerified = true;
     user.emailOtpCode = null;
     user.emailOtpExpiresAt = null;
     await user.save();
-    res.json({ message: "Email verified" });
+    
+    console.log(`✅ Email verified for ${normalizedEmail}`);
+    res.json({ message: "Email verified successfully" });
   } catch (err) {
+    console.error("Verify email error:", err);
     res.status(500).json({ message: "Verification failed", error: err?.message || String(err) });
+  }
+});
+
+// Resend OTP
+router.post("/resend-otp", async (req, res) => {
+  console.log("📧 Resend OTP endpoint called");
+  try {
+    const { email } = req.body;
+    if (!email) {
+      console.log("❌ Resend OTP: email missing");
+      return res.status(400).json({ message: "email required" });
+    }
+    
+    // Normalize email
+    const normalizedEmail = String(email).toLowerCase().trim();
+    console.log(`📧 Resend OTP: Processing request for ${normalizedEmail}`);
+    
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      console.log(`❌ Resend OTP: User not found for ${normalizedEmail}`);
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    
+    user.emailOtpCode = otp;
+    user.emailOtpExpiresAt = otpExpires;
+    await user.save();
+    console.log(`✅ Resend OTP: New OTP generated for ${normalizedEmail}`);
+    
+    // Send OTP email
+    const mailer = createMailer();
+    if (mailer) {
+      try {
+        const fromEmail = process.env.MAIL_FROM || process.env.SMTP_USER;
+        await mailer.sendMail({
+          from: fromEmail,
+          to: normalizedEmail,
+          subject: "Your verification code",
+          text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">Email Verification Code</h2>
+              <p>Your verification code is:</p>
+              <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+                <h1 style="color: #e74c3c; font-size: 32px; letter-spacing: 5px; margin: 0;">${otp}</h1>
+              </div>
+              <p>This code will expire in 10 minutes.</p>
+              <p style="color: #666; font-size: 12px;">If you didn't request this code, please ignore this email.</p>
+            </div>
+          `
+        });
+        console.log(`✅ OTP email resent to ${normalizedEmail} from ${fromEmail}`);
+      } catch (e) {
+        console.error("Failed to send OTP email:", e?.message || e);
+        // Log OTP to console as fallback
+        console.log(`\n📧 [FALLBACK] Resent OTP for ${normalizedEmail}: ${otp}`);
+        console.log(`   This OTP expires in 10 minutes.\n`);
+      }
+    } else {
+      // If mailer is not configured, log OTP to console for development
+      console.log(`\n📧 [DEVELOPMENT MODE] Resent OTP for ${normalizedEmail}: ${otp}`);
+      console.log(`   This OTP expires in 10 minutes.\n`);
+    }
+    
+    res.json({ message: "OTP has been resent to your email" });
+  } catch (err) {
+    console.error("Resend OTP error:", err);
+    res.status(500).json({ message: "Failed to resend OTP", error: err?.message || String(err) });
   }
 });
 
@@ -124,6 +274,11 @@ router.post("/login", async (req, res) => {
     console.error("Login error:", err);
     res.status(500).json({ message: "Login failed", error: err?.message || String(err) });
   }
+});
+
+// Test endpoint to verify route is accessible
+router.get("/admin/test", (_req, res) => {
+  res.json({ message: "Admin route is accessible", timestamp: new Date().toISOString() });
 });
 
 // Admin login - validates admin/superadmin role

@@ -5,6 +5,59 @@ import { Order } from "../models/Order.js";
 
 const router = express.Router();
 
+// Get all products (public endpoint)
+// Supports optional category filter: /api/products?category=categoryName
+router.get("/", async (req, res) => {
+  try {
+    const categoryName = req.query.category;
+    let query = {};
+    
+    // If category filter is provided, find products by category name
+    if (categoryName) {
+      const category = await Category.findOne({ 
+        $or: [
+          { nameEn: new RegExp(categoryName, "i") },
+          { nameTa: new RegExp(categoryName, "i") },
+          { name: new RegExp(categoryName, "i") }
+        ]
+      });
+      
+      if (category) {
+        query.categoryId = category._id;
+      } else {
+        // If category not found, return empty array
+        return res.json([]);
+      }
+    }
+
+    const products = await Product.find(query)
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .populate({ path: "categoryId", select: "name nameEn nameTa" });
+
+    const mapped = products.map((p) => ({
+      id: String(p._id),
+      name: p.nameEn || "",
+      description: "",
+      price: p.price,
+      originalPrice: p.originalPrice || undefined,
+      category: p.categoryId?.name || p.categoryId?.nameEn || "",
+      image: p.imageUrl,
+      rating: 5,
+      reviews: 0,
+      inStock: (p.stock || 0) > 0,
+      stock: p.stock || 0,
+      isNew: false,
+      isBestSeller: false,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("Failed to fetch products:", err);
+    res.status(500).json({ message: "Failed to fetch products", error: err?.message || String(err) });
+  }
+});
+
 // Public search endpoint: /api/products/search?q=milk
 router.get("/search", async (req, res) => {
   try {

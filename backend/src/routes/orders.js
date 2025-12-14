@@ -134,6 +134,9 @@ router.post("/", requireAuth, async (req, res) => {
       promoCode: promoCodeData,
       subtotalBeforeDiscount
     });
+    
+    // Populate items for response
+    await order.populate('items.productId');
     // attempt SMS notify (non-fatal)
     try {
       const phone = customerDetails?.mobile || customerDetails?.phone || address?.phone;
