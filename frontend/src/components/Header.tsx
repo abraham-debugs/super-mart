@@ -90,15 +90,6 @@ export const Header = () => {
                   >
                     <User className="h-4 w-4 lg:h-5 lg:w-5" />
                   </Button>
-                  {(user.role === "admin" || user.role === "superadmin") && (
-                    <Button
-                      size="sm"
-                      className="hidden lg:flex rounded-lg bg-white text-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-gray-50"
-                      onClick={() => navigate(user.role === "superadmin" ? '/superadmin' : '/admin')}
-                    >
-                      Admin
-                    </Button>
-                  )}
                 </>
               ) : (
                 <Button
@@ -181,15 +172,6 @@ export const Header = () => {
                     >
                       Logout
                     </button>
-                    {(user.role === "admin" || user.role === "superadmin") && (
-                      <Link
-                        to={user.role === "superadmin" ? '/superadmin' : '/admin'}
-                        className="px-4 py-3 text-base font-semibold text-gray-900 rounded-lg hover:bg-orange-300 transition-all duration-200"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Admin Panel
-                      </Link>
-                    )}
                   </>
                 ) : (
                   <>
