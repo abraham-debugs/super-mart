@@ -34,18 +34,18 @@ const fallbackCategories: BackendCategory[] = [
   { _id: "frozen-food", name: "Frozen Food", imageUrl: PLACEHOLDER_IMG }
 ];
 
-// Gradient color schemes for each category
+// Gradient color schemes for each category - Orange/Red/Blue
 const categoryGradients = [
-  "from-emerald-500 to-green-600",
-  "from-blue-500 to-cyan-600",
-  "from-amber-500 to-orange-600",
-  "from-red-500 to-pink-600",
-  "from-purple-500 to-violet-600",
-  "from-yellow-500 to-amber-600",
-  "from-indigo-500 to-blue-600",
-  "from-teal-500 to-emerald-600",
-  "from-pink-500 to-rose-600",
-  "from-cyan-500 to-blue-600",
+  "from-orange-500 to-red-500",
+  "from-orange-400 to-orange-600",
+  "from-red-500 to-orange-500",
+  "from-orange-600 to-red-600",
+  "from-red-400 to-orange-400",
+  "from-orange-500 to-yellow-500",
+  "from-blue-500 to-indigo-500",
+  "from-orange-500 to-red-500",
+  "from-red-500 to-pink-500",
+  "from-orange-400 to-red-400",
 ];
 
 export const CategoryCarousel = () => {
@@ -126,7 +126,7 @@ export const CategoryCarousel = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleCategoryClick(group.parent)}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 text-xs px-2"
+                    className="text-black hover:text-gray-800 hover:bg-gray-50 h-6 text-xs px-2"
                   >
                     See all <ChevronRight className="h-3 w-3 ml-0.5" />
                   </Button>
@@ -155,7 +155,7 @@ export const CategoryCarousel = () => {
                           {/* Category Card */}
                           <div className="relative w-full">
                             <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
-                              isSelected ? 'ring-2 ring-blue-500' : ''
+                              isSelected ? 'ring-2 ring-black' : ''
                             }`}>
                               <div className="relative w-full h-full">
                                 <img 
@@ -173,8 +173,8 @@ export const CategoryCarousel = () => {
                           <div className="text-center w-full">
                             <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
                               isSelected 
-                                ? 'text-blue-600' 
-                                : 'text-gray-700 group-hover:text-blue-600'
+                                ? 'text-black' 
+                                : 'text-gray-700 group-hover:text-black'
                             }`}>
                               {category.name}
                             </span>
@@ -193,7 +193,7 @@ export const CategoryCarousel = () => {
                 <Button
                   onClick={() => setShowAllCategories(true)}
                   variant="outline"
-                  className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400"
+                  className="text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                 >
                   View More Categories
                   <ChevronRight className="h-4 w-4 ml-1" />
@@ -207,7 +207,7 @@ export const CategoryCarousel = () => {
                 <Button
                   onClick={() => setShowAllCategories(false)}
                   variant="outline"
-                  className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400"
+                  className="text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                 >
                   View Less
                   <ChevronLeft className="h-4 w-4 mr-1" />
@@ -235,7 +235,7 @@ export const CategoryCarousel = () => {
                         {/* Category Card */}
                         <div className="relative w-full">
                           <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
-                            isSelected ? 'ring-2 ring-blue-500' : ''
+                              isSelected ? 'ring-2 ring-black' : ''
                           }`}>
                             <div className="relative w-full h-full">
                               <img 
@@ -253,8 +253,8 @@ export const CategoryCarousel = () => {
                         <div className="text-center w-full">
                           <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
                             isSelected 
-                              ? 'text-blue-600' 
-                              : 'text-gray-700 group-hover:text-blue-600'
+                              ? 'text-black' 
+                              : 'text-gray-700 group-hover:text-black'
                           }`}>
                             {category.name}
                           </span>

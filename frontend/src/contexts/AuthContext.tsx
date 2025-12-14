@@ -22,8 +22,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [user, setUser] = useState<User>(() => {
     // Check both 'user' and 'auth_user' for compatibility
-    const raw = localStorage.getItem("user") || localStorage.getItem("auth_user");
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem("user") || localStorage.getItem("auth_user");
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage:", e);
+      // Clear invalid data
+      localStorage.removeItem("user");
+      localStorage.removeItem("auth_user");
+    }
+    return null;
   });
 
   useEffect(() => {
@@ -37,40 +47,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   useEffect(() => {
-    if (user) localStorage.setItem("auth_user", JSON.stringify(user));
-    else localStorage.removeItem("auth_user");
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("auth_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("user");
+      localStorage.removeItem("auth_user");
+    }
   }, [user]);
 
   async function login(email: string, password: string) {
     // Normalize email input (lowercase, trim)
     const normalizedEmail = email.toLowerCase().trim();
     
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: normalizedEmail, password })
-    });
-    
-    const data = await res.json().catch(() => ({ message: "Network error or invalid response" }));
-    
-    if (!res.ok) {
-      const message = data?.message || `Login failed (${res.status})`;
-      console.error("Login error:", {
-        status: res.status,
-        statusText: res.statusText,
-        message: data?.message,
-        error: data?.error
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, password })
       });
-      throw new Error(message);
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        console.error("Failed to parse login response:", parseError);
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
+      }
+      
+      if (!res.ok) {
+        const message = data?.message || data?.error || `Login failed (${res.status})`;
+        console.error("Login error:", {
+          status: res.status,
+          statusText: res.statusText,
+          message: data?.message,
+          error: data?.error,
+          data
+        });
+        throw new Error(message);
+      }
+      
+      if (!data.token || !data.user) {
+        console.error("Login response missing token or user:", data);
+        throw new Error("Invalid response from server - missing token or user data");
+      }
+      
+      // Set token and user - this will trigger useEffects to store in localStorage
+      setToken(data.token);
+      setUser(data.user);
+      
+      // Also explicitly store in localStorage for immediate access
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("auth_token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("auth_user", JSON.stringify(data.user));
+      
+      console.log("Login successful, user data stored");
+    } catch (err: any) {
+      console.error("Login function error:", err);
+      throw err;
     }
-    
-    if (!data.token || !data.user) {
-      console.error("Login response missing token or user:", data);
-      throw new Error("Invalid response from server");
-    }
-    
-    setToken(data.token);
-    setUser(data.user);
   }
 
   async function register(name: string, email: string, password: string, preferredCategoryId?: string) {

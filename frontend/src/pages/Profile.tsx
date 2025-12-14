@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp, Crown, CreditCard } from "lucide-react";
+import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp, Crown, CreditCard, Download, FileText } from "lucide-react";
 import { AddressBook } from "@/components/AddressBook";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,10 +118,10 @@ const Profile: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "delivered": return "bg-green-100 text-green-700 border-green-300";
-      case "shipped": return "bg-blue-100 text-blue-700 border-blue-300";
-      case "cancelled": return "bg-red-100 text-red-700 border-red-300";
-      default: return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      case "delivered": return "bg-gray-200 text-black border-gray-400";
+      case "shipped": return "bg-gray-300 text-black border-gray-500";
+      case "cancelled": return "bg-gray-100 text-black border-gray-300";
+      default: return "bg-gray-200 text-black border-gray-400";
     }
   };
 
@@ -129,14 +129,14 @@ const Profile: React.FC = () => {
   const deliveredOrders = orders.filter(o => o.status === "delivered").length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#fff8f0] via-[#fff2dc] to-[#ffe4c7]">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-[#ff8c42] via-[#ff7043] to-[#ff5e62] text-white py-12">
+      <div className="bg-gradient-to-r from-orange-500 via-red-500 to-blue-500 text-white py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-              <p className="mt-2 text-blue-100">Manage your account and view your orders</p>
+              <p className="mt-2 text-gray-300">Manage your account and view your orders</p>
                 </div>
             <Button
               variant="outline"
@@ -160,7 +160,7 @@ const Profile: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">Total Orders</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{orders.length}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#ff9f43] to-[#ff6f61] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
                   <ShoppingBag className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -174,7 +174,7 @@ const Profile: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">Delivered</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{deliveredOrders}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#2ecc71] to-[#27ae60] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
                   <Package className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -188,7 +188,7 @@ const Profile: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600">Total Spent</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">Rs.{totalSpent.toFixed(0)}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#a554ff] to-[#6c2dff] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -203,16 +203,16 @@ const Profile: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center">
                   <div className="relative">
-                    <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-[#ff9f43] to-[#ff5e62] flex items-center justify-center">
+                    <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-orange-500 via-red-500 to-blue-500 flex items-center justify-center">
                       <span className="text-3xl font-bold text-white">
                         {name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || "U"}
                       </span>
                     </div>
-                    <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-green-500 border-2 border-white"></div>
+                    <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-orange-500 border-2 border-white"></div>
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-gray-900">{name || user?.name || "User"}</h3>
                   <p className="text-sm text-gray-500">{email}</p>
-                  <Badge className="mt-3 bg-gradient-to-r from-[#ff9f43] to-[#ff5e62]">Premium Member</Badge>
+                  <Badge className="mt-3 bg-gradient-to-r from-orange-500 via-red-500 to-blue-500 text-white">Premium Member</Badge>
                     </div>
 
                 <div className="mt-6 space-y-2">
@@ -239,19 +239,19 @@ const Profile: React.FC = () => {
           <div className="lg:col-span-3">
             <Tabs defaultValue="account" className="space-y-6" onValueChange={(val) => setActiveTab(val as any)}>
               <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1">
-                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
+                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
                   <User className="h-4 w-4 mr-2" />
                   Account
                 </TabsTrigger>
-                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
+                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
                   <Package className="h-4 w-4 mr-2" />
                   Orders
                 </TabsTrigger>
-                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
+                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
                   <MapPin className="h-4 w-4 mr-2" />
                   Addresses
                 </TabsTrigger>
-                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff9f43] data-[state=active]:to-[#ff5e62] data-[state=active]:text-white">
+                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
                   <Crown className="h-4 w-4 mr-2" />
                   Subscription
                 </TabsTrigger>
@@ -262,14 +262,14 @@ const Profile: React.FC = () => {
                 <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <User className="h-5 w-5 text-blue-600" />
+                      <User className="h-5 w-5 text-orange-600" />
                       Personal Information
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={save} className="space-y-4">
                       {error && (
-                        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
                           {error}
                         </div>
                       )}
@@ -340,7 +340,7 @@ const Profile: React.FC = () => {
                         <Button
                           type="submit"
                           disabled={saving}
-                          className="bg-gradient-to-r from-[#ff9f43] to-[#ff5e62] hover:from-[#ff7b42] hover:to-[#ff4b5c] shadow-lg"
+                          className="bg-gradient-to-r from-orange-500 via-red-500 to-blue-500 hover:from-orange-600 hover:via-red-600 hover:to-blue-600 shadow-lg text-white"
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
@@ -353,7 +353,7 @@ const Profile: React.FC = () => {
                 <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <Lock className="h-5 w-5 text-blue-600" />
+                      <Lock className="h-5 w-5 text-orange-600" />
                       Security Settings
                     </CardTitle>
                   </CardHeader>
@@ -379,7 +379,7 @@ const Profile: React.FC = () => {
                 <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <Package className="h-5 w-5 text-blue-600" />
+                      <Package className="h-5 w-5 text-orange-600" />
                       My Orders
                     </CardTitle>
                   </CardHeader>
@@ -435,16 +435,16 @@ const Profile: React.FC = () => {
                                         <React.Fragment key={s}>
                                           <div className="flex flex-col items-center">
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                                              done ? "bg-gradient-to-br from-[#2ecc71] to-[#27ae60] text-white shadow-lg" : "bg-gray-200 text-gray-500"
+                                              done ? "bg-gradient-to-br from-orange-500 via-red-500 to-blue-500 text-white shadow-lg" : "bg-gray-200 text-gray-500"
                                             }`}>
                                               {done ? <Check className="h-5 w-5" /> : <span className="text-sm font-medium">{idx + 1}</span>}
                                             </div>
-                                            <p className={`mt-2 text-xs font-medium ${done ? "text-green-600" : "text-gray-500"}`}>
+                                            <p className={`mt-2 text-xs font-medium ${done ? "text-orange-600" : "text-gray-500"}`}>
                                               {s.charAt(0).toUpperCase() + s.slice(1)}
                                             </p>
                                       </div>
                                           {!isLast && (
-                                            <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${currentIndex > idx ? "bg-green-500" : "bg-gray-200"}`} />
+                                            <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${currentIndex > idx ? "bg-gradient-to-r from-orange-500 via-red-500 to-blue-500" : "bg-gray-200"}`} />
                                       )}
                                         </React.Fragment>
                                   );
@@ -471,6 +471,24 @@ const Profile: React.FC = () => {
                                 ))}
               </div>
             </div>
+
+                              {/* Invoice Download Button */}
+                              <div className="mt-4 pt-4 border-t border-gray-200">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full bg-gradient-to-r from-orange-500 via-red-500 to-blue-500 text-white hover:from-orange-600 hover:via-red-600 hover:to-blue-600"
+                                  onClick={() => {
+                                    const orderId = order.orderId || order._id;
+                                    const mobile = order.customerDetails?.mobile || '';
+                                    const invoiceUrl = `${API_BASE}/api/invoices/${orderId}?token=${token || ''}&mobile=${encodeURIComponent(mobile)}`;
+                                    window.open(invoiceUrl, '_blank');
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Download Invoice
+                                </Button>
+                              </div>
                           </div>
                         );
                       })}
@@ -484,7 +502,7 @@ const Profile: React.FC = () => {
                 <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <MapPin className="h-5 w-5 text-blue-600" />
+                      <MapPin className="h-5 w-5 text-orange-600" />
                       Saved Addresses
                     </CardTitle>
                   </CardHeader>
@@ -498,7 +516,7 @@ const Profile: React.FC = () => {
                 <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <Crown className="h-5 w-5 text-blue-600" />
+                      <Crown className="h-5 w-5 text-orange-600" />
                       Subscription Plan
                     </CardTitle>
                   </CardHeader>
@@ -510,7 +528,7 @@ const Profile: React.FC = () => {
                     ) : subscription ? (
                       <div className="space-y-6">
                         {/* Current Plan Card */}
-                        <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white">
+                        <div className="bg-gradient-to-br from-orange-500 via-red-500 to-blue-500 rounded-xl p-6 text-white">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                               <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -522,7 +540,7 @@ const Profile: React.FC = () => {
                               </div>
                             </div>
                             <Badge className={`${
-                              subscription.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                              subscription.status === 'active' ? 'bg-orange-600' : 'bg-gray-500'
                             } text-white border-0`}>
                               {subscription.status}
                             </Badge>
@@ -555,7 +573,7 @@ const Profile: React.FC = () => {
                         <div>
                           <h4 className="font-semibold text-gray-900 mb-3">Your Plan Features</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                               <Check className="h-5 w-5 text-green-600" />
                               <span className="text-sm">
                                 {subscription.features.maxOrders === -1 ? 'Unlimited' : subscription.features.maxOrders} orders per month
@@ -592,7 +610,7 @@ const Profile: React.FC = () => {
                         {subscription.billingHistory && subscription.billingHistory.length > 0 && (
                           <div>
                             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                              <CreditCard className="h-5 w-5 text-blue-600" />
+                              <CreditCard className="h-5 w-5 text-orange-600" />
                               Recent Billing History
                             </h4>
                             <div className="space-y-2">
@@ -610,7 +628,7 @@ const Profile: React.FC = () => {
                                   <div className="text-right">
                                     <p className="text-sm font-semibold text-gray-900">Rs.{bill.amount}</p>
                                     <Badge className={`text-xs ${
-                                      bill.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                      bill.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                                     }`}>
                                       {bill.status}
                                     </Badge>

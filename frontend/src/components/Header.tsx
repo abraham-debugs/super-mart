@@ -28,35 +28,45 @@ export const Header = () => {
   const navigation = [
     { name: "Home", href: "/" },
     { name: "Plan", href: "/subscription-plans" },
-    { name: "About Us", href: "/#about" },
+    { name: "About Us", href: "/about-us" },
     { name: "Shop", href: "/#shop" },
   ];
 
   return (
     <>
-      <header className={`sticky top-0 z-50 transition-all duration-300 bg-[#f7aa29]/95 backdrop-blur-md shadow-[0_8px_24px_rgba(247,170,41,0.25)] border-none`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      {/* Dynamic Island Navbar */}
+      <header className="fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500">
+        <div 
+          className={`
+            relative mx-auto transition-all duration-500 ease-out
+            ${isScrolled 
+              ? 'bg-orange-400 shadow-lg py-3' 
+              : 'bg-orange-400 py-4'
+            }
+          `}
+        >
+          
+          <div className="relative flex items-center justify-between px-4 lg:px-8 max-w-7xl mx-auto">
             {/* Logo Section */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-4 lg:gap-8">
               <Link to="/" className="flex items-center gap-3 group">
                 <div className="relative">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/70 ring-2  text-white ring-white/60 transition-all duration-300 group-hover:scale-105">
-                    <span className="text-[#132c5f] font-bold text-white text-xl">M</span>
+                  <div className="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-orange-500 transition-all duration-300 group-hover:scale-110 shadow-md">
+                    <span className="text-orange-100 font-bold text-lg lg:text-xl">M</span>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-[#132c5f] group-hover:scale-105 transition-transform duration-300">
+                <span className="text-lg lg:text-xl font-bold text-gray-900 group-hover:scale-105 transition-transform duration-300">
                   MDMart
                 </span>
               </Link>
 
               {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-3">
+              <nav className="hidden lg:flex items-center gap-1">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#1c2f61] rounded-full transition-colors duration-200 hover:bg-white/40"
+                    className="px-4 py-2 text-sm font-semibold text-gray-900 uppercase transition-all duration-200 hover:text-gray-700"
                   >
                     {item.name}
                   </Link>
@@ -65,28 +75,26 @@ export const Header = () => {
             </div>
 
             {/* Actions Section */}
-            <div className="flex items-center gap-2">
-              <div className="hidden md:block w-64 xl:w-80">
-                <div className="rounded-full bg-white/70 px-4 py-1 shadow-inner shadow-white/40">
-                  <SearchBar />
-                </div>
+            <div className="flex items-center gap-2 lg:gap-3">
+              <div className="hidden md:block w-48 lg:w-64 xl:w-80">
+                <SearchBar />
               </div>
 
               {user ? (
                 <>
                   <Button
                     size="icon"
-                    className="hidden sm:flex h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                    className="hidden sm:flex h-9 w-9 lg:h-10 lg:w-10 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
                     onClick={() => navigate('/profile')}
                     title="Profile"
                   >
-                    <User className="h-5 w-5" />
+                    <User className="h-4 w-4 lg:h-5 lg:w-5" />
                   </Button>
                   {(user.role === "admin" || user.role === "superadmin") && (
                     <Button
                       size="sm"
-                      className="hidden lg:flex rounded-full bg-[#f7aa29] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
-                      onClick={() => navigate(user.role === "superadmin" ? '/superadmin/login' : '/admin/login')}
+                      className="hidden lg:flex rounded-lg bg-white text-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-gray-50"
+                      onClick={() => navigate(user.role === "superadmin" ? '/superadmin' : '/admin')}
                     >
                       Admin
                     </Button>
@@ -95,7 +103,7 @@ export const Header = () => {
               ) : (
                 <Button
                   size="sm"
-                  className="hidden sm:flex rounded-full bg-[#f7aa29] px-5 py-2 text-sm font-semibold uppercase tracking-wide text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                  className="hidden sm:flex rounded-lg bg-white text-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-gray-50"
                   onClick={() => navigate('/login')}
                 >
                   Login
@@ -104,13 +112,13 @@ export const Header = () => {
 
               <Button
                 size="icon"
-                className="relative h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                className="relative h-9 w-9 lg:h-10 lg:w-10 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
                 onClick={() => setIsCartOpen(true)}
                 title="Cart"
               >
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="h-4 w-4 lg:h-5 lg:w-5" />
                 {getCartCount() > 0 && (
-                  <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-0 bg-primary p-0 text-xs text-primary-foreground shadow-lg">
+                  <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-orange-400 bg-red-500 text-white p-0 text-xs font-bold shadow-lg">
                     {getCartCount()}
                   </Badge>
                 )}
@@ -118,11 +126,11 @@ export const Header = () => {
 
               <Button
                 size="icon"
-                className="md:hidden h-10 w-10 rounded-full bg-[#f7aa29] text-[#1c2a52] shadow-[0_10px_20px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                className="lg:hidden h-9 w-9 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 title="Menu"
               >
-                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </Button>
             </div>
           </div>
@@ -130,22 +138,28 @@ export const Header = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-white/50 bg-[#f7aa29]/95 backdrop-blur-md">
-            <div className="container mx-auto px-4 py-4 space-y-4">
+          <div 
+            className={`
+              lg:hidden mx-auto transition-all duration-500 ease-out overflow-hidden
+              bg-orange-400 shadow-lg
+              ${isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
+            `}
+          >
+            <div className="px-6 py-6 space-y-4">
               {/* Mobile Search */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 rounded-full bg-white/80 px-4 py-1">
+              <div className="flex items-center gap-2 px-4">
+                <div className="flex-1">
                   <SearchBar />
                 </div>
               </div>
 
               {/* Mobile Navigation Links */}
-              <nav className="flex flex-col space-y-2 border-t border-white/50 pt-4">
-                  {navigation.map((item) => (
+              <nav className="flex flex-col space-y-2 border-t border-orange-500 pt-4 px-4">
+                {navigation.map((item) => (
                   <Link
-                      key={item.name}
+                    key={item.name}
                     to={item.href}
-                    className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200"
+                    className="px-4 py-3 text-base font-semibold text-gray-900 uppercase rounded-lg hover:bg-orange-300 transition-all duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
@@ -155,7 +169,7 @@ export const Header = () => {
                   <>
                     <Link
                       to="/profile"
-                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200 flex items-center gap-2"
+                      className="px-4 py-3 text-base font-semibold text-gray-900 rounded-lg hover:bg-orange-300 transition-all duration-200 flex items-center gap-2"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <User className="h-5 w-5" />
@@ -163,14 +177,14 @@ export const Header = () => {
                     </Link>
                     <button
                       onClick={() => { logout(); navigate('/login'); setIsMenuOpen(false); }}
-                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200 text-left w-full"
+                      className="px-4 py-3 text-base font-semibold text-gray-900 rounded-lg hover:bg-orange-300 transition-all duration-200 text-left w-full"
                     >
                       Logout
                     </button>
                     {(user.role === "admin" || user.role === "superadmin") && (
                       <Link
                         to={user.role === "superadmin" ? '/superadmin' : '/admin'}
-                        className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200"
+                        className="px-4 py-3 text-base font-semibold text-gray-900 rounded-lg hover:bg-orange-300 transition-all duration-200"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Admin Panel
@@ -181,24 +195,24 @@ export const Header = () => {
                   <>
                     <Link
                       to="/login"
-                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg hover:bg-white/40 transition-all duration-200"
+                      className="px-4 py-3 text-base font-semibold text-gray-900 rounded-lg hover:bg-orange-300 transition-all duration-200"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
-                      className="px-4 py-3 text-base font-semibold uppercase tracking-wide text-[#132c5f] rounded-lg bg-white/80 hover:bg-white transition-all duration-200 text-center"
+                      className="px-4 py-3 text-base font-semibold bg-white text-gray-900 rounded-lg hover:bg-gray-50 transition-all duration-200 text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Register
                     </Link>
                   </>
                 )}
-                </nav>
-              </div>
+              </nav>
             </div>
-          )}
+          </div>
+        )}
       </header>
       <CartSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>

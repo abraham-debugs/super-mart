@@ -1,9 +1,10 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Mail, Twitter, Instagram, Facebook, Youtube, Linkedin, Star, Shield } from "lucide-react";
 
 export function Footer(): JSX.Element {
 	return (
-		<footer className="w-full border-t bg-gradient-to-b from-primary/5 via-background to-secondary/5 relative overflow-hidden">
+		<footer className="w-full border-t bg-gradient-to-b from-orange-50 via-white to-orange-50 relative overflow-hidden border-orange-200">
 			{/* Background Pattern */}
 			<div className="absolute inset-0 bg-pattern opacity-5"></div>
 			
@@ -14,12 +15,12 @@ export function Footer(): JSX.Element {
 					<div className="col-span-1 lg:col-span-2">
 						<div className="flex items-center gap-3 mb-6">
 							<div className="relative">
-								<div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center font-bold text-white text-xl shadow-lg">
+								<div className="h-12 w-12 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-orange-100 text-xl shadow-lg">
 									M
 								</div>
-								<div className="absolute inset-0 rounded-2xl bg-blue-600 opacity-20 blur-lg"></div>
+								<div className="absolute inset-0 rounded-lg bg-orange-500 opacity-20 blur-lg"></div>
 							</div>
-							<span className="text-2xl font-bold text-blue-600">
+							<span className="text-2xl font-bold text-gray-900">
 								MDMart
 							</span>
 						</div>
@@ -35,19 +36,19 @@ export function Footer(): JSX.Element {
 						<div>
 							<h3 className="text-lg font-semibold text-foreground mb-4">Follow Us</h3>
 							<div className="flex items-center gap-3">
-								<a className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300" href="#">
+								<a className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 hover:bg-orange-600 transition-all duration-300" href="#">
 									<Twitter className="w-5 h-5" />
 								</a>
-								<a className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300" href="#">
+								<a className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 hover:bg-orange-600 transition-all duration-300" href="#">
 									<Instagram className="w-5 h-5" />
 								</a>
-								<a className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300" href="#">
+								<a className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 hover:bg-orange-600 transition-all duration-300" href="#">
 									<Facebook className="w-5 h-5" />
 								</a>
-								<a className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300" href="#">
+								<a className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 hover:bg-orange-600 transition-all duration-300" href="#">
 									<Youtube className="w-5 h-5" />
 								</a>
-								<a className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300" href="#">
+								<a className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-110 hover:bg-orange-600 transition-all duration-300" href="#">
 									<Linkedin className="w-5 h-5" />
 								</a>
 							</div>
@@ -58,32 +59,76 @@ export function Footer(): JSX.Element {
 					<div>
 						<h3 className="text-lg font-semibold text-foreground mb-6">Shop</h3>
 						<ul className="space-y-3 text-muted-foreground">
-							<li><a className="hover:text-primary transition-colors duration-200 flex items-center gap-2" href="#">
-								<span className="w-1 h-1 bg-primary rounded-full"></span>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
 								All Products
 							</a></li>
-							<li><a className="hover:text-primary transition-colors duration-200 flex items-center gap-2" href="#">
-								<span className="w-1 h-1 bg-primary rounded-full"></span>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
 								Fresh Produce
 							</a></li>
-							<li><a className="hover:text-primary transition-colors duration-200 flex items-center gap-2" href="#">
-								<span className="w-1 h-1 bg-primary rounded-full"></span>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
 								Dairy & Eggs
 							</a></li>
-							<li><a className="hover:text-primary transition-colors duration-200 flex items-center gap-2" href="#">
-								<span className="w-1 h-1 bg-primary rounded-full"></span>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
 								Snacks & Beverages
 							</a></li>
-							<li><a className="hover:text-primary transition-colors duration-200 flex items-center gap-2" href="#">
-								<span className="w-1 h-1 bg-primary rounded-full"></span>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
 								Personal Care
 							</a></li>
 						</ul>
 					</div>
 
 					{/* Company */}
+					<div>
+						<h3 className="text-lg font-semibold text-foreground mb-6">Company</h3>
+						<ul className="space-y-3 text-muted-foreground">
+							<li>
+								<Link className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" to="/about-us">
+									<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+									About Us
+								</Link>
+							</li>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								Careers
+							</a></li>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								Blog
+							</a></li>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								Contact
+							</a></li>
+						</ul>
+					</div>
 					
 					{/* Support */}
+					<div>
+						<h3 className="text-lg font-semibold text-foreground mb-6">Support</h3>
+						<ul className="space-y-3 text-muted-foreground">
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								Help Center
+							</a></li>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								Shipping Info
+							</a></li>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								Returns
+							</a></li>
+							<li><a className="hover:text-orange-600 transition-colors duration-200 flex items-center gap-2" href="#">
+								<span className="w-1 h-1 bg-orange-500 rounded-full"></span>
+								FAQs
+							</a></li>
+						</ul>
+					</div>
 				
 				</div>
 

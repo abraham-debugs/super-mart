@@ -51,6 +51,11 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
   const fetchRecommendations = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/api/recommendations/personalized?limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -62,6 +67,12 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
         setProducts(data.recommendations || []);
         setStrategy(data.strategy || '');
         setMessage(data.message || '');
+      } else if (response.status === 401) {
+        // Token expired or invalid - clear it and don't show recommendations
+        console.warn('Authentication failed for recommendations');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setProducts([]);
       }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
@@ -198,7 +209,7 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                         {product.nameEn}
                       </h3>
                       <div className="flex items-center gap-1">
-                        <span className="text-sm font-bold text-blue-600">
+                        <span className="text-sm font-bold text-black">
                           Rs.{product.price}
                         </span>
                         {product.originalPrice && product.originalPrice > product.price && (
@@ -212,7 +223,7 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                     {/* Add to Cart Button */}
                     <Button
                       size="sm"
-                      className="w-full mt-2 h-7 text-[11px] rounded-md bg-[#f7aa29] text-[#1c2a52] font-semibold shadow-[0_10px_18px_rgba(247,170,41,0.25)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#e49a21]"
+                      className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 shadow-[0_10px_22px_rgba(239,68,68,0.35)] transition-transform duration-200 hover:-translate-y-0.5 disabled:translate-y-0 disabled:bg-gray-400 disabled:text-white/50 disabled:shadow-none"
                       onClick={(e) => {
                         e.stopPropagation();
                         const cartProduct: CartProduct = {
@@ -247,7 +258,7 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
             <Button
               variant="outline"
               size="lg"
-              className="text-purple-600 border-purple-300 hover:bg-purple-50 hover:border-purple-400"
+              className="text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400"
               onClick={() => navigate('/recommended')}
             >
               View All Recommendations

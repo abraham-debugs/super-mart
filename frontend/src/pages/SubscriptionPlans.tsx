@@ -147,7 +147,7 @@ export default function SubscriptionPlans() {
             Select the perfect subscription plan for your shopping needs. Upgrade anytime to unlock more benefits.
           </p>
           {currentSubscription && (
-            <div className="mt-4 inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-full">
+            <div className="mt-4 inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 text-black dark:text-white px-4 py-2 rounded-full">
               <Crown className="h-4 w-4" />
               <span className="text-sm font-medium">
                 Current Plan: {currentSubscription.planType.charAt(0).toUpperCase() + currentSubscription.planType.slice(1)}
@@ -195,7 +195,7 @@ export default function SubscriptionPlans() {
                     key={plan.id}
                     title={
                       <div className="flex items-center space-x-2">
-                        <Crown className="h-4 w-4 text-yellow-500" />
+                        <Crown className="h-4 w-4 text-black" />
                         <p className="text-sm font-semibold">{plan.name} Plan</p>
                       </div>
                     }
@@ -282,7 +282,7 @@ export default function SubscriptionPlans() {
           <p className="text-sm text-slate-600 dark:text-slate-400">
             All plans include secure payments and can be cancelled anytime. 
             <br />
-            Need help choosing? <button className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Contact Support</button>
+            Need help choosing? <button className="text-black dark:text-white hover:underline font-medium">Contact Support</button>
           </p>
         </div>
       </div>

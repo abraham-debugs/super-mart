@@ -40,7 +40,8 @@ import {
   MoreHorizontal,
   Heart,
   Image,
-  Warehouse
+  Warehouse,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -231,24 +232,35 @@ const Admin = () => {
   // Product filter state
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
-  // Redirect to admin login if not authenticated or not admin
+  // Strict authentication check - clear cache and redirect if not authenticated
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
+    const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
     
-    if (!storedToken || !storedUser) {
-      navigate("/admin/login");
+    // If no token or user data, clear everything and redirect
+    if (!storedToken || !storedUserRaw || storedToken.trim() === "" || storedUserRaw.trim() === "") {
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate("/admin/login", { replace: true });
       return;
     }
     
+    // Validate user data
     try {
-      const parsedUser = JSON.parse(storedUser);
+      const parsedUser = JSON.parse(storedUserRaw);
+      // Check if user has admin or superadmin role
       if (parsedUser.role !== "admin" && parsedUser.role !== "superadmin") {
-        navigate("/admin/login");
+        // Invalid role - clear cache and redirect
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate("/admin/login", { replace: true });
         return;
       }
     } catch (e) {
-      navigate("/admin/login");
+      // Invalid user data - clear cache and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate("/admin/login", { replace: true });
       return;
     }
   }, [navigate, user, token]);
@@ -1019,6 +1031,11 @@ const Admin = () => {
   }
 
   function openDeleteProduct(product: { _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }) {
+    // Only superadmin can delete products
+    if (!isSuperAdmin) {
+      alert("Only superadmin can delete products. This action is restricted.");
+      return;
+    }
     setSelectedProduct(product);
     setDeleteProductOpen(true);
   }
@@ -1076,6 +1093,13 @@ const Admin = () => {
 
   async function handleDeleteProduct() {
     if (!selectedProduct) return;
+
+    // Only superadmin can delete products
+    if (!isSuperAdmin) {
+      alert("Only superadmin can delete products. This action is restricted.");
+      setDeleteProductOpen(false);
+      return;
+    }
 
     setDeleteProductLoading(true);
 
@@ -1238,28 +1262,28 @@ const Admin = () => {
   // removed dummy payments and delivery persons; using real data from backend
 
   const navigationItems = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-blue-600", bgColor: "bg-blue-50" },
-    { id: "add-product", label: "Add Product", icon: Plus, color: "text-green-600", bgColor: "bg-green-50" },
-    { id: "product-management", label: "Products", icon: Package, color: "text-purple-600", bgColor: "bg-purple-50" },
-    { id: "inventory", label: "Inventory", icon: Warehouse, color: "text-teal-600", bgColor: "bg-teal-50" },
-    { id: "home-sections", label: "Home Sections", icon: Home, color: "text-indigo-600", bgColor: "bg-indigo-50" },
-    { id: "categories", label: "Categories", icon: Tag, color: "text-orange-600", bgColor: "bg-orange-50" },
-    { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
-    { id: "user-management", label: "Users", icon: Users, color: "text-pink-600", bgColor: "bg-pink-50" },
-    { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-cyan-600", bgColor: "bg-cyan-50" },
-    { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-yellow-600", bgColor: "bg-yellow-50" },
-    { id: "subscription-plans", label: "Subscription Plans", icon: CreditCard, color: "text-purple-600", bgColor: "bg-purple-50" },
+    { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "add-product", label: "Add Product", icon: Plus, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "product-management", label: "Products", icon: Package, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "inventory", label: "Inventory", icon: Warehouse, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "home-sections", label: "Home Sections", icon: Home, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "categories", label: "Categories", icon: Tag, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "user-management", label: "Users", icon: Users, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "subscription-plans", label: "Subscription Plans", icon: CreditCard, color: "text-black", bgColor: "bg-gray-50" },
   ];
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      active: { color: "bg-green-100 text-green-800", label: "Active" },
+      active: { color: "bg-gray-200 text-black", label: "Active" },
       inactive: { color: "bg-gray-100 text-gray-800", label: "Inactive" },
-      out_of_stock: { color: "bg-red-100 text-red-800", label: "Out of Stock" },
-      pending: { color: "bg-yellow-100 text-yellow-800", label: "Pending" },
-      shipped: { color: "bg-blue-100 text-blue-800", label: "Shipped" },
-      delivered: { color: "bg-green-100 text-green-800", label: "Delivered" },
-      cancelled: { color: "bg-red-100 text-red-800", label: "Cancelled" },
+      out_of_stock: { color: "bg-gray-100 text-black", label: "Out of Stock" },
+      pending: { color: "bg-gray-200 text-black", label: "Pending" },
+      shipped: { color: "bg-gray-300 text-black", label: "Shipped" },
+      delivered: { color: "bg-gray-200 text-black", label: "Delivered" },
+      cancelled: { color: "bg-gray-100 text-black", label: "Cancelled" },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.inactive;
@@ -1535,7 +1559,7 @@ const Admin = () => {
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+              <span className="absolute -top-1 -right-1 h-3 w-3 bg-black rounded-full"></span>
             </Button>
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
@@ -1590,9 +1614,9 @@ const Admin = () => {
             </div>
             
             <div className="mt-auto p-6">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200/50">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200/50">
                 <div className="flex items-center gap-3 mb-2">
-                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  <Star className="h-4 w-4 text-black fill-current" />
                   <span className="text-sm font-semibold text-gray-900">Pro Plan</span>
                 </div>
                 <p className="text-xs text-gray-600">Advanced analytics & features</p>
@@ -1636,64 +1660,64 @@ const Admin = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-700">Total Revenue</CardTitle>
-                  <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                    <DollarSign className="h-4 w-4 text-blue-600" />
+                  <CardTitle className="text-sm font-medium text-black">Total Revenue</CardTitle>
+                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                    <DollarSign className="h-4 w-4 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">Rs.{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className="text-3xl font-bold text-black">Rs.{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <ShoppingCart className="h-3 w-3 text-blue-600" />
-                    <p className="text-xs text-blue-600 font-medium">{deliveredOrdersCount} delivered orders</p>
+                    <ShoppingCart className="h-3 w-3 text-black" />
+                    <p className="text-xs text-black font-medium">{deliveredOrdersCount} delivered orders</p>
                   </div>
                 </CardContent>
               </Card>
               
               <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-green-100/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700">Total Orders</CardTitle>
-                  <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                    <ShoppingCart className="h-4 w-4 text-green-600" />
+                  <CardTitle className="text-sm font-medium text-black">Total Orders</CardTitle>
+                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                    <ShoppingCart className="h-4 w-4 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-900">{totalOrdersCount}</div>
+                  <div className="text-3xl font-bold text-black">{totalOrdersCount}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <CheckCircle className="h-3 w-3 text-green-600" />
-                    <p className="text-xs text-green-600 font-medium">{deliveredOrdersCount} completed</p>
+                    <CheckCircle className="h-3 w-3 text-black" />
+                    <p className="text-xs text-black font-medium">{deliveredOrdersCount} completed</p>
                   </div>
                 </CardContent>
               </Card>
               
               <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-700">Total Products</CardTitle>
-                  <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                    <Package className="h-4 w-4 text-purple-600" />
+                  <CardTitle className="text-sm font-medium text-black">Total Products</CardTitle>
+                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                    <Package className="h-4 w-4 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-900">{products.length}</div>
+                  <div className="text-3xl font-bold text-black">{products.length}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <Tag className="h-3 w-3 text-purple-600" />
-                    <p className="text-xs text-purple-600 font-medium">{categoryRows.length} categories</p>
+                    <Tag className="h-3 w-3 text-black" />
+                    <p className="text-xs text-black font-medium">{categoryRows.length} categories</p>
                   </div>
                 </CardContent>
               </Card>
               
               <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-700">Active Users</CardTitle>
-                  <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-                    <Users className="h-4 w-4 text-orange-600" />
+                  <CardTitle className="text-sm font-medium text-black">Active Users</CardTitle>
+                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                    <Users className="h-4 w-4 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-900">{activeUsersCount}</div>
+                  <div className="text-3xl font-bold text-black">{activeUsersCount}</div>
                   <div className="flex items-center gap-1 mt-1">
-                    <Users className="h-3 w-3 text-orange-600" />
-                    <p className="text-xs text-orange-600 font-medium">{adminUsers.length} total users</p>
+                    <Users className="h-3 w-3 text-black" />
+                    <p className="text-xs text-black font-medium">{adminUsers.length} total users</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1708,7 +1732,7 @@ const Admin = () => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-black hover:text-gray-700"
                       onClick={() => setActiveTab("order-management")}
                     >
                       View All
@@ -1754,7 +1778,7 @@ const Admin = () => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-black hover:text-gray-700"
                       onClick={() => setActiveTab("categories")}
                     >
                       Manage
@@ -1808,7 +1832,7 @@ const Admin = () => {
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="h-20 flex-col gap-2 hover:bg-green-50 hover:border-green-200"
+                    className="h-20 flex-col gap-2 hover:bg-gray-50 hover:border-gray-200"
                     onClick={() => setActiveTab("order-management")}
                   >
                     <ShoppingCart className="h-5 w-5 text-green-600" />
@@ -1844,7 +1868,7 @@ const Admin = () => {
                 <h1 className="text-3xl font-bold text-gray-900">Delivery Partners</h1>
                 <p className="text-gray-600 mt-1">Manage your delivery team and track performance</p>
               </div>
-              <Button onClick={openCreatePartner} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+              <Button onClick={openCreatePartner} className="bg-black hover:bg-gray-800 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Partner
               </Button>
@@ -2272,7 +2296,7 @@ const Admin = () => {
                     </Button>
                     <Button 
                       type="submit" 
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-black hover:bg-gray-800 text-white"
                       disabled={editProductLoading}
                     >
                       {editProductLoading ? (
@@ -2289,59 +2313,61 @@ const Admin = () => {
               </DialogContent>
             </Dialog>
 
-            {/* Delete Product Dialog */}
-            <Dialog open={deleteProductOpen} onOpenChange={setDeleteProductOpen}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-3 text-red-600">
-                    <div className="h-8 w-8 rounded-lg bg-red-500 flex items-center justify-center">
-                      <Trash2 className="h-4 w-4 text-white" />
-                    </div>
-                    Delete Product
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                    {selectedProduct && (
-                      <>
-                        <img src={selectedProduct.imageUrl} alt={selectedProduct.nameEn} className="h-12 w-12 rounded-lg object-cover border" />
-                        <div>
-                          <p className="font-semibold text-gray-900">{selectedProduct.nameEn}</p>
-                          <p className="text-sm text-gray-600">Rs.{selectedProduct.price}</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-gray-600">
-                    Are you sure you want to delete this product? This action cannot be undone.
-                  </p>
-                  <div className="flex justify-end gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setDeleteProductOpen(false)}
-                      disabled={deleteProductLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleDeleteProduct}
-                      className="bg-red-600 hover:bg-red-700"
-                      disabled={deleteProductLoading}
-                    >
-                      {deleteProductLoading ? (
+            {/* Delete Product Dialog - Only visible for superadmin */}
+            {isSuperAdmin && (
+              <Dialog open={deleteProductOpen} onOpenChange={setDeleteProductOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3 text-red-600">
+                      <div className="h-8 w-8 rounded-lg bg-red-500 flex items-center justify-center">
+                        <Trash2 className="h-4 w-4 text-white" />
+                      </div>
+                      Delete Product
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                      {selectedProduct && (
                         <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Deleting...
+                          <img src={selectedProduct.imageUrl} alt={selectedProduct.nameEn} className="h-12 w-12 rounded-lg object-cover border" />
+                          <div>
+                            <p className="font-semibold text-gray-900">{selectedProduct.nameEn}</p>
+                            <p className="text-sm text-gray-600">Rs.{selectedProduct.price}</p>
+                          </div>
                         </>
-                      ) : (
-                        "Delete Product"
                       )}
-                    </Button>
+                    </div>
+                    <p className="text-gray-600">
+                      Are you sure you want to delete this product? This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-3">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setDeleteProductOpen(false)}
+                        disabled={deleteProductLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteProduct}
+                        className="bg-black hover:bg-gray-800 text-white"
+                        disabled={deleteProductLoading}
+                      >
+                        {deleteProductLoading ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete Product"
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            )}
 
             {/* Order detail modal */}
             <Dialog open={orderDetailOpen} onOpenChange={(o) => { setOrderDetailOpen(o); if (!o) { setSelectedOrderId(null); setOrderDetail(null); } }}>
@@ -2383,6 +2409,23 @@ const Admin = () => {
                         </TableBody>
                       </Table>
                     </div>
+                    {orderDetail && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-black text-white hover:bg-gray-800"
+                          onClick={() => {
+                            const orderId = orderDetail.id || selectedOrderId;
+                            const invoiceUrl = `${API_BASE}/api/invoices/${orderId}?token=${token || ''}`;
+                            window.open(invoiceUrl, '_blank');
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Download Invoice
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </DialogContent>
@@ -2890,7 +2933,7 @@ const Admin = () => {
                       <Button
                         size="sm"
                         onClick={() => openAdDialog()}
-                        className="bg-[#f7aa29] text-[#1c2a52] hover:bg-[#e49a21]"
+                        className="bg-black text-white hover:bg-gray-800"
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Poster
@@ -2914,7 +2957,7 @@ const Admin = () => {
                       <Image className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                       <h3 className="text-lg font-semibold text-gray-900">No posters yet</h3>
                       <p className="text-sm text-gray-600 mb-4">Add promotional posters to highlight offers on the home page.</p>
-                      <Button onClick={() => openAdDialog()} className="bg-[#f7aa29] text-[#1c2a52] hover:bg-[#e49a21]">
+                      <Button onClick={() => openAdDialog()} className="bg-black text-white hover:bg-gray-800">
                         <Plus className="h-4 w-4 mr-2" />
                         Create Poster
                       </Button>
@@ -3134,7 +3177,7 @@ const Admin = () => {
                       <Button
                         type="submit"
                         disabled={adSubmitting}
-                        className="bg-[#f7aa29] text-[#1c2a52] hover:bg-[#e49a21]"
+                        className="bg-black text-white hover:bg-gray-800"
                       >
                         {adSubmitting ? (
                           <span className="flex items-center">
@@ -3498,7 +3541,7 @@ const Admin = () => {
                                     
                                     <div className="flex justify-end gap-3 pt-4">
                                     <Button type="button" variant="outline" onClick={() => setEditOpenForId(null)}>Cancel</Button>
-                                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                                      <Button type="submit" className="bg-black hover:bg-gray-800 text-white">
                                         <CheckCircle className="h-4 w-4 mr-2" />
                                         Save Changes
                                       </Button>
@@ -3579,7 +3622,7 @@ const Admin = () => {
 
                 <div className="flex gap-2 mb-4 flex-wrap">
                   {orderStatuses.map((s) => (
-                    <button key={s.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${orderStatusFilter === s.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'}`} onClick={() => setOrderStatusFilter(s.value as any)}>
+                    <button key={s.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${orderStatusFilter === s.value ? 'bg-black text-white border-black' : 'bg-white text-black border-gray-200 hover:bg-gray-50'}`} onClick={() => setOrderStatusFilter(s.value as any)}>
                       {s.label}
                     </button>
                   ))}

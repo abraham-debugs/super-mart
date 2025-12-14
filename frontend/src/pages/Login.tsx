@@ -16,9 +16,13 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await login(email, password);
-      navigate("/");
+      // Small delay to ensure state is updated before navigation
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     } catch (err: any) {
       setError(err.message || "Login failed");
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }

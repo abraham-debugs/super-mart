@@ -24,23 +24,49 @@ import { DeliveryLogin } from "./pages/DeliveryLogin";
 import { DeliveryDashboard } from "./pages/DeliveryDashboard";
 import { AdminLogin } from "./pages/AdminLogin";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
+import VerifyEmail from "./pages/VerifyEmail";
+import AboutUs from "./pages/AboutUs";
 
 const queryClient = new QueryClient();
 
-// Simple admin guard using AuthContext + localStorage as fallback
+// Strict admin guard - always requires fresh authentication
+// Clears cache and redirects to login if not authenticated
 const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  // Always check authentication - don't rely on cached data
   const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
   const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
+  
   let hasAdmin = false;
-  if (token && storedUserRaw) {
+  
+  // Validate token and user data exist
+  if (token && storedUserRaw && token.trim() !== "" && storedUserRaw.trim() !== "") {
     try {
       const u = JSON.parse(storedUserRaw);
+      // Check if user has admin or superadmin role
       hasAdmin = u?.role === "admin" || u?.role === "superadmin";
+      
+      // If invalid role, clear cache
+      if (!hasAdmin) {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
     } catch {
+      // Invalid user data - clear cache
+      localStorage.clear();
+      sessionStorage.clear();
       hasAdmin = false;
     }
+  } else {
+    // No token or user data - clear any stale data
+    localStorage.clear();
+    sessionStorage.clear();
   }
-  if (!hasAdmin) return <Navigate to="/admin/login" replace />;
+  
+  // Always redirect to login if not authenticated
+  if (!hasAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  
   return children;
 };
 
@@ -64,10 +90,12 @@ const App = () => (
                 <Route path="/order-success" element={<Layout><OrderSuccess /></Layout>} />
                 <Route path="/track-order" element={<Layout><TrackOrder /></Layout>} />
                 <Route path="/subscription-plans" element={<Layout><SubscriptionPlans /></Layout>} />
+                <Route path="/about-us" element={<Layout><AboutUs /></Layout>} />
                 
                 {/* Auth pages (no navbar/footer) */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 
                 {/* Admin pages - login route must come BEFORE /admin route */}
                 <Route path="/admin/login" element={<AdminLogin />} />

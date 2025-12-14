@@ -218,7 +218,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             onClick={() => addToCart(product)}
             disabled={!product.inStock}
-            className="w-full rounded-lg bg-[#f7aa29] text-[#1c2a52] font-semibold py-2 shadow-[0_10px_22px_rgba(247,170,41,0.35)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#e49a21] disabled:translate-y-0 disabled:bg-[#f7aa29]/60 disabled:text-[#1c2a52]/50 disabled:shadow-none"
+            className="w-full rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold py-2 shadow-[0_10px_22px_rgba(239,68,68,0.35)] transition-transform duration-200 hover:-translate-y-0.5 disabled:translate-y-0 disabled:bg-gray-400 disabled:text-white/50 disabled:shadow-none"
             size="sm"
           >
             <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />

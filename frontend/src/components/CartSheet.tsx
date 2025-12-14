@@ -38,7 +38,7 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
             <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
             <p className="text-muted-foreground mb-4">Add some products to get started!</p>
-            <Button onClick={onClose} className="bg-primary hover:bg-primary-dark">
+            <Button onClick={onClose} className="bg-black hover:bg-gray-800 text-white">
               Continue Shopping
             </Button>
           </div>
@@ -135,7 +135,7 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
             {/* Actions */}
             <div className="space-y-2">
               <Button 
-                className="w-full bg-primary hover:bg-primary-dark text-primary-foreground"
+                className="w-full bg-black hover:bg-gray-800 text-white"
                 size="lg"
                 onClick={() => {
                   onClose();

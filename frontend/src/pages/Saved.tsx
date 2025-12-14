@@ -260,7 +260,7 @@ const Saved: React.FC = () => {
                       <div className="flex gap-2 pt-2">
                         <Button
                           onClick={() => handleAddToCart(item)}
-                          className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                          className="flex-1 bg-black hover:bg-gray-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
                           size="sm"
                         >
                           <ShoppingCart className="h-4 w-4 mr-1.5" />

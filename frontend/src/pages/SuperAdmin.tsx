@@ -60,24 +60,35 @@ const SuperAdmin = () => {
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   
-  // Redirect to admin login if not authenticated or not superadmin
+  // Strict authentication check - clear cache and redirect if not authenticated as superadmin
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
+    const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
     
-    if (!storedToken || !storedUser) {
-      navigate("/admin/login");
+    // If no token or user data, clear everything and redirect
+    if (!storedToken || !storedUserRaw || storedToken.trim() === "" || storedUserRaw.trim() === "") {
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate("/admin/login", { replace: true });
       return;
     }
     
+    // Validate user data
     try {
-      const parsedUser = JSON.parse(storedUser);
+      const parsedUser = JSON.parse(storedUserRaw);
+      // Check if user has superadmin role
       if (parsedUser.role !== "superadmin") {
-        navigate("/admin/login");
+        // Invalid role - clear cache and redirect
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate("/admin/login", { replace: true });
         return;
       }
     } catch (e) {
-      navigate("/admin/login");
+      // Invalid user data - clear cache and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate("/admin/login", { replace: true });
       return;
     }
   }, [navigate, user, token]);

@@ -259,7 +259,7 @@ const Wishlist: React.FC = () => {
                       <div className="flex gap-2 pt-2">
                         <Button
                           onClick={() => handleAddToCart(item)}
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                          className="flex-1 bg-black hover:bg-gray-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
                           size="sm"
                         >
                           <ShoppingCart className="h-4 w-4 mr-1.5" />

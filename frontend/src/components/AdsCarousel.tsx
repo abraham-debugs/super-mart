@@ -53,10 +53,10 @@ const FALLBACK_SLIDES: PosterSlide[] = [
 ];
 
 const GRADIENTS = [
-  "from-[#fff2d8] via-[#ffe8ef] to-[#e2f3ff]",
-  "from-[#e0f1ff] via-[#f4f8ff] to-[#fbe9ff]",
-  "from-[#fff7e0] via-[#fff0f2] to-[#e9f4ff]",
-  "from-[#f3f9ff] via-[#fff4f4] to-[#fffaf0]",
+  "from-gray-100 via-gray-50 to-white",
+  "from-gray-200 via-gray-100 to-white",
+  "from-gray-50 via-white to-gray-100",
+  "from-white via-gray-50 to-gray-100",
 ];
 
 const AUTOPLAY_DELAY = 5500;
@@ -163,17 +163,17 @@ export const AdsCarousel = () => {
                       {slide.subtitle}
                     </span>
                   )}
-                  <h3 className="text-3xl font-bold text-[#1c2a52] md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                  <h3 className="text-3xl font-bold text-black md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
                     {slide.title}
                   </h3>
                   {slide.description && (
-                    <p className="max-w-xl text-base text-[#445075] md:text-lg">
+                    <p className="max-w-xl text-base text-gray-700 md:text-lg">
                       {slide.description}
                     </p>
                   )}
                   {slide.ctaText && (
                     <Button
-                      className="rounded-full bg-[#f7aa29] px-6 py-5 text-sm font-semibold uppercase tracking-wide text-[#1c2a52] shadow-[0_15px_30px_rgba(247,170,41,0.35)] transition-colors duration-200 hover:bg-[#e49a21]"
+                      className="rounded-full bg-black px-6 py-5 text-sm font-semibold uppercase tracking-wide text-white shadow-[0_15px_30px_rgba(0,0,0,0.35)] transition-colors duration-200 hover:bg-gray-800"
                       onClick={() => handleCtaClick(slide.ctaLink)}
                     >
                       {slide.ctaText}
@@ -201,8 +201,8 @@ export const AdsCarousel = () => {
               onClick={() => setActiveIndex(index)}
               className={`h-2.5 rounded-full transition-all duration-300 ${
                 index === activeIndex
-                  ? "w-8 bg-[#f7aa29]"
-                  : "w-2.5 bg-[#f7aa29]/40 hover:bg-[#f7aa29]/70"
+                  ? "w-8 bg-black"
+                  : "w-2.5 bg-black/40 hover:bg-black/70"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />

@@ -19,54 +19,16 @@ export const AdminLogin = () => {
   const [error, setError] = useState("");
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Check authentication and redirect if already logged in as admin
+  // Always show login form - don't auto-redirect even if logged in
+  // This ensures admin must explicitly log in each time
   useEffect(() => {
-    const checkAuth = () => {
-      // Check localStorage directly first
-      const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
-      const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
-      
-      // If no token or user data, show login form
-      if (!storedToken || !storedUserRaw) {
-        setIsCheckingAuth(false);
-        return;
-      }
-      
-      // Validate user data
-      try {
-        const storedUser = JSON.parse(storedUserRaw);
-        // Only redirect if user has admin or superadmin role
-        if (storedUser && storedUser.role && (storedUser.role === "admin" || storedUser.role === "superadmin")) {
-          // User is already logged in as admin, redirect to dashboard
-          navigate("/admin", { replace: true });
-          return;
-        }
-      } catch (e) {
-        // Invalid user data, show login form
-        setIsCheckingAuth(false);
-        return;
-      }
-      
-      // Also check AuthContext when available
-      if (token && user && user.role && (user.role === "admin" || user.role === "superadmin")) {
-        navigate("/admin", { replace: true });
-        return;
-      }
-      
-      // Not logged in as admin, show login form
-      setIsCheckingAuth(false);
-    };
-    
-    // Run check immediately
-    checkAuth();
-    
-    // Also set a timeout to ensure we show the form even if something goes wrong
+    // Small delay to prevent flash
     const timeout = setTimeout(() => {
       setIsCheckingAuth(false);
-    }, 500);
+    }, 100);
     
     return () => clearTimeout(timeout);
-  }, [token, user, navigate]);
+  }, []);
   
   // Show loading spinner only briefly while checking
   if (isCheckingAuth) {
@@ -115,6 +77,10 @@ export const AdminLogin = () => {
         throw new Error(data.message || data.error || `Login failed: ${res.status}`);
       }
 
+      // Clear all cache/localStorage before storing new credentials
+      localStorage.clear();
+      sessionStorage.clear();
+      
       // Store token in localStorage (both formats for compatibility)
       localStorage.setItem("token", data.token);
       localStorage.setItem("auth_token", data.token);

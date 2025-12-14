@@ -194,7 +194,7 @@ export default function ImageSearch({ open, onOpenChange }: ImageSearchProps) {
                 <Button
                   onClick={handleSearch}
                   disabled={searching}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-black hover:bg-gray-800 text-white"
                   size="lg"
                 >
                   {searching ? (

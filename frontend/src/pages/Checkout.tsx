@@ -218,9 +218,14 @@ const Checkout = () => {
         }
         throw new Error(errMsg);
       }
+      
+      // Get order ID from response
+      const orderData = await res.json();
+      const orderId = orderData?.orderId || orderData?._id || null;
+      
   // Clear cart and navigate to order success page
   clearCart();
-  navigate("/order-success");
+  navigate("/order-success", { state: { orderId } });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Order failed. Please try again.");
     }
@@ -264,7 +269,7 @@ const Checkout = () => {
                       <div className="flex items-center">
                         <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 ${
                           currentStep >= step.id 
-                            ? 'bg-blue-600 border-blue-600 text-white' 
+                            ? 'bg-black border-black text-white' 
                             : 'border-gray-300 text-gray-500'
                         }`}>
                           {currentStep > step.id ? (
@@ -275,7 +280,7 @@ const Checkout = () => {
                         </div>
                         <div className="ml-2 sm:ml-3">
                           <p className={`text-xs sm:text-sm font-medium ${
-                            currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
+                            currentStep >= step.id ? 'text-black' : 'text-gray-500'
                           }`}>
                             {step.title}
                           </p>
@@ -284,7 +289,7 @@ const Checkout = () => {
                       </div>
                       {index < steps.length - 1 && (
                         <div className={`w-10 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
-                          currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
+                          currentStep > step.id ? 'bg-black' : 'bg-gray-300'
                         }`} />
                       )}
                     </div>
@@ -314,7 +319,7 @@ const Checkout = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-sm flex items-center">
-                          <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                          <CheckCircle className="h-4 w-4 mr-2 text-black" />
                           Selected Delivery Address
                         </CardTitle>
                       </CardHeader>
@@ -383,8 +388,8 @@ const Checkout = () => {
                         <RadioGroupItem value="upi" id="upi" />
                         <div className="flex-1">
                           <Label htmlFor="upi" className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                              <span className="text-xs font-bold text-blue-600">UPI</span>
+                            <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                              <span className="text-xs font-bold text-black">UPI</span>
                             </div>
                             <span>UPI Payment</span>
                           </Label>
@@ -407,8 +412,8 @@ const Checkout = () => {
                         <RadioGroupItem value="wallet" id="wallet" />
                         <div className="flex-1">
                           <Label htmlFor="wallet" className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
-                              <span className="text-xs font-bold text-green-600">Rs.</span>
+                            <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                              <span className="text-xs font-bold text-black">Rs.</span>
                             </div>
                             <span>Digital Wallet</span>
                           </Label>
@@ -492,7 +497,7 @@ const Checkout = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeFromCart(item.id)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-black hover:text-gray-700"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -511,7 +516,7 @@ const Checkout = () => {
                     </Button>
                     <Button 
                       onClick={handlePlaceOrder}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      className="flex-1 bg-black hover:bg-gray-800 text-white"
                     >
                       Place Order
                     </Button>
@@ -534,7 +539,7 @@ const Checkout = () => {
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                   {appliedPromoCode && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-black">
                       <span>Discount ({appliedPromoCode.code})</span>
                       <span>-{formatPrice(discountAmount)}</span>
                     </div>
@@ -570,16 +575,16 @@ const Checkout = () => {
                 <div className="space-y-2 pt-4 border-t">
                   {appliedPromoCode ? (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                         <div>
-                          <p className="text-sm font-medium text-green-700">{appliedPromoCode.code}</p>
-                          <p className="text-xs text-green-600">{appliedPromoCode.discountPercent}% discount applied</p>
+                          <p className="text-sm font-medium text-black">{appliedPromoCode.code}</p>
+                          <p className="text-xs text-black">{appliedPromoCode.discountPercent}% discount applied</p>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={handleRemovePromoCode}
-                          className="h-6 w-6 p-0 text-green-700 hover:text-green-900"
+                          className="h-6 w-6 p-0 text-black hover:text-gray-900"
                         >
                           <X className="h-4 w-4" />
                         </Button>
