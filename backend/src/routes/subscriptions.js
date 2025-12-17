@@ -57,13 +57,20 @@ router.get('/plans', async (req, res) => {
 // Get current user subscription
 router.get('/my-subscription', requireAuth, async (req, res) => {
   try {
-    let subscription = await Subscription.findOne({ userId: req.user._id });
+    // Resolve user id from JWT payload (supports old and new token shapes)
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    if (!userId) {
+      console.error('Get subscription error: Missing user id in token payload', req.user);
+      return res.status(401).json({ message: 'Invalid auth token: missing user id' });
+    }
+
+    let subscription = await Subscription.findOne({ userId });
     
     // If no subscription exists, create a free one
     if (!subscription) {
       const features = Subscription.getPlanFeatures('free');
       subscription = await Subscription.create({
-        userId: req.user._id,
+        userId,
         planType: 'free',
         status: 'active',
         startDate: new Date(),
@@ -84,6 +91,13 @@ router.post('/subscribe', requireAuth, async (req, res) => {
   try {
     const { planType, paymentMethod, transactionId } = req.body;
 
+    // Resolve user id from JWT payload (supports old and new token shapes)
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    if (!userId) {
+      console.error('Subscribe error: Missing user id in token payload', req.user);
+      return res.status(401).json({ message: 'Invalid auth token: missing user id' });
+    }
+
     // Validate plan type
     const validPlans = ['free', 'basic', 'professional', 'enterprise'];
     if (!validPlans.includes(planType)) {
@@ -99,7 +113,7 @@ router.post('/subscribe', requireAuth, async (req, res) => {
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     // Check if user already has a subscription
-    let subscription = await Subscription.findOne({ userId: req.user._id });
+    let subscription = await Subscription.findOne({ userId });
 
     if (subscription) {
       // Update existing subscription
@@ -132,7 +146,7 @@ router.post('/subscribe', requireAuth, async (req, res) => {
     } else {
       // Create new subscription
       subscription = await Subscription.create({
-        userId: req.user._id,
+        userId,
         planType,
         status: 'active',
         startDate: new Date(),
@@ -157,7 +171,7 @@ router.post('/subscribe', requireAuth, async (req, res) => {
     }
 
     // Update user's subscription reference
-    await User.findByIdAndUpdate(req.user._id, { 
+    await User.findByIdAndUpdate(userId, { 
       subscriptionId: subscription._id,
       subscriptionPlan: planType
     });
@@ -175,7 +189,13 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 // Cancel subscription
 router.post('/cancel', requireAuth, async (req, res) => {
   try {
-    const subscription = await Subscription.findOne({ userId: req.user._id });
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    if (!userId) {
+      console.error('Cancel subscription error: Missing user id in token payload', req.user);
+      return res.status(401).json({ message: 'Invalid auth token: missing user id' });
+    }
+
+    const subscription = await Subscription.findOne({ userId });
 
     if (!subscription) {
       return res.status(404).json({ message: 'No subscription found' });
@@ -204,7 +224,13 @@ router.post('/cancel', requireAuth, async (req, res) => {
 router.post('/auto-renew', requireAuth, async (req, res) => {
   try {
     const { autoRenew } = req.body;
-    const subscription = await Subscription.findOne({ userId: req.user._id });
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    if (!userId) {
+      console.error('Auto-renew error: Missing user id in token payload', req.user);
+      return res.status(401).json({ message: 'Invalid auth token: missing user id' });
+    }
+
+    const subscription = await Subscription.findOne({ userId });
 
     if (!subscription) {
       return res.status(404).json({ message: 'No subscription found' });
@@ -226,7 +252,13 @@ router.post('/auto-renew', requireAuth, async (req, res) => {
 // Get billing history
 router.get('/billing-history', requireAuth, async (req, res) => {
   try {
-    const subscription = await Subscription.findOne({ userId: req.user._id });
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    if (!userId) {
+      console.error('Billing history error: Missing user id in token payload', req.user);
+      return res.status(401).json({ message: 'Invalid auth token: missing user id' });
+    }
+
+    const subscription = await Subscription.findOne({ userId });
 
     if (!subscription) {
       return res.status(404).json({ message: 'No subscription found' });

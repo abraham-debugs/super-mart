@@ -7,6 +7,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { User } from "../models/User.js";
 import { Order } from "../models/Order.js";
 import { DeliveryPartner } from "../models/DeliveryPartner.js";
+import { DeliveryChargeRule } from "../models/DeliveryChargeRule.js";
 import { SubscriptionPlan } from "../models/SubscriptionPlan.js";
 import { requireAuth, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
@@ -852,6 +853,101 @@ router.put("/subscription-plans/:id/toggle", requireAuth, requireAdmin, async (r
   } catch (err) {
     console.error("Toggle subscription plan error:", err);
     res.status(500).json({ message: "Failed to toggle subscription plan", error: err?.message || String(err) });
+  }
+});
+
+// ==================== Delivery Charge Rules Management ====================
+
+// Get all delivery charge rules
+router.get("/delivery-charges", requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const rules = await DeliveryChargeRule.find()
+      .sort({ minAmount: 1, sortOrder: 1, createdAt: 1 });
+    res.json(rules);
+  } catch (err) {
+    console.error("Get delivery charge rules error:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch delivery charge rules", error: err?.message || String(err) });
+  }
+});
+
+// Create a new delivery charge rule
+router.post("/delivery-charges", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { minAmount, fee, label, isActive, sortOrder } = req.body;
+
+    if (minAmount === undefined || fee === undefined) {
+      return res
+        .status(400)
+        .json({ message: "minAmount and fee are required" });
+    }
+
+    const rule = await DeliveryChargeRule.create({
+      minAmount: Number(minAmount),
+      fee: Number(fee),
+      label: label || "",
+      isActive: isActive !== false && isActive !== "false",
+      sortOrder: sortOrder !== undefined ? Number(sortOrder) : 0
+    });
+
+    res.status(201).json(rule);
+  } catch (err) {
+    console.error("Create delivery charge rule error:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to create delivery charge rule", error: err?.message || String(err) });
+  }
+});
+
+// Update a delivery charge rule
+router.put("/delivery-charges/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { minAmount, fee, label, isActive, sortOrder } = req.body;
+
+    const updateData = {};
+    if (minAmount !== undefined) updateData.minAmount = Number(minAmount);
+    if (fee !== undefined) updateData.fee = Number(fee);
+    if (label !== undefined) updateData.label = label;
+    if (isActive !== undefined) updateData.isActive = isActive !== false && isActive !== "false";
+    if (sortOrder !== undefined) updateData.sortOrder = Number(sortOrder);
+
+    const rule = await DeliveryChargeRule.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!rule) {
+      return res.status(404).json({ message: "Delivery charge rule not found" });
+    }
+
+    res.json(rule);
+  } catch (err) {
+    console.error("Update delivery charge rule error:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to update delivery charge rule", error: err?.message || String(err) });
+  }
+});
+
+// Delete a delivery charge rule
+router.delete("/delivery-charges/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const rule = await DeliveryChargeRule.findByIdAndDelete(id);
+
+    if (!rule) {
+      return res.status(404).json({ message: "Delivery charge rule not found" });
+    }
+
+    res.json({ message: "Delivery charge rule deleted successfully", rule });
+  } catch (err) {
+    console.error("Delete delivery charge rule error:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to delete delivery charge rule", error: err?.message || String(err) });
   }
 });
 
