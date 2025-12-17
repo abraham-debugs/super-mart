@@ -81,8 +81,38 @@ const Checkout = () => {
     return `Rs. ${price.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const deliveryFee = deliveryMethod === "express" ? 50 : 30;
   const subtotal = getCartTotal();
+  const [dynamicDeliveryFee, setDynamicDeliveryFee] = useState<number>(30);
+  const [deliveryFeeLoading, setDeliveryFeeLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDeliveryFee = async () => {
+      try {
+        setDeliveryFeeLoading(true);
+        const res = await fetch(`${API_BASE}/api/delivery/calculate-fee?amount=${subtotal}`);
+        if (!res.ok) {
+          console.error("Failed to calculate delivery fee", res.status);
+          return;
+        }
+        const data = await res.json();
+        if (typeof data.fee === "number") {
+          setDynamicDeliveryFee(data.fee);
+        }
+      } catch (err) {
+        console.error("Delivery fee fetch error:", err);
+      } finally {
+        setDeliveryFeeLoading(false);
+      }
+    };
+
+    if (subtotal > 0) {
+      fetchDeliveryFee();
+    } else {
+      setDynamicDeliveryFee(0);
+    }
+  }, [subtotal]);
+
+  const deliveryFee = dynamicDeliveryFee;
   const discountAmount = appliedPromoCode ? Math.round((subtotal * appliedPromoCode.discountPercent) / 100) : 0;
   const totalAmount = subtotal - discountAmount + deliveryFee;
 
@@ -346,7 +376,11 @@ const Checkout = () => {
                             <Truck className="h-4 w-4" />
                             <span>Standard Delivery (2-3 days)</span>
                           </Label>
-                          <p className="text-sm text-gray-500">Rs.30 delivery fee</p>
+                          <p className="text-sm text-gray-500">
+                            {deliveryFeeLoading
+                              ? "Calculating delivery fee..."
+                              : `Approx. ${formatPrice(deliveryFee)} based on order total`}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 p-4 border rounded-lg">
@@ -356,7 +390,11 @@ const Checkout = () => {
                             <Clock className="h-4 w-4" />
                             <span>Express Delivery (Same day)</span>
                           </Label>
-                          <p className="text-sm text-gray-500">Rs.50 delivery fee</p>
+                          <p className="text-sm text-gray-500">
+                            {deliveryFeeLoading
+                              ? "Calculating delivery fee..."
+                              : `Approx. ${formatPrice(deliveryFee)} (may be higher for express)`}
+                          </p>
                         </div>
                       </div>
                     </RadioGroup>

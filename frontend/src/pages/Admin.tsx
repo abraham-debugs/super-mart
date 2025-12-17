@@ -41,7 +41,8 @@ import {
   Heart,
   Image,
   Warehouse,
-  FileText
+  FileText,
+  Route as RouteIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,23 @@ const Admin = () => {
   const [promoMinAmount, setPromoMinAmount] = useState("");
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
+
+  // Delivery charge rules state
+  const [deliveryRules, setDeliveryRules] = useState<Array<{
+    _id: string;
+    minAmount: number;
+    fee: number;
+    label?: string;
+    isActive: boolean;
+  }>>([]);
+  const [deliveryRulesLoading, setDeliveryRulesLoading] = useState(false);
+  const [editingDeliveryRule, setEditingDeliveryRule] = useState<{
+    _id?: string;
+    minAmount: string;
+    fee: string;
+    label: string;
+    isActive: boolean;
+  } | null>(null);
 
   // Subscription Plans state
   const [subscriptionPlans, setSubscriptionPlans] = useState<Array<{
@@ -467,6 +485,83 @@ const Admin = () => {
       setPromoCodes(data);
     } catch (err: any) {
       console.error("Load promo codes error:", err);
+    }
+  }
+
+  async function loadDeliveryRules() {
+    try {
+      setDeliveryRulesLoading(true);
+      const res = await fetch(`${API_BASE}/api/admin/delivery-charges`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+        throw new Error(errorData.message || "Failed to load delivery charge rules");
+      }
+      const data = await res.json();
+      setDeliveryRules(data);
+    } catch (err) {
+      console.error("Load delivery rules error:", err);
+    } finally {
+      setDeliveryRulesLoading(false);
+    }
+  }
+
+  async function handleSaveDeliveryRule() {
+    if (!editingDeliveryRule) return;
+
+    try {
+      const { _id, minAmount, fee, label, isActive } = editingDeliveryRule;
+      const body = {
+        minAmount: Number(minAmount),
+        fee: Number(fee),
+        label,
+        isActive
+      };
+
+      const url = _id
+        ? `${API_BASE}/api/admin/delivery-charges/${_id}`
+        : `${API_BASE}/api/admin/delivery-charges`;
+      const method = _id ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to save delivery rule");
+      }
+
+      setEditingDeliveryRule(null);
+      await loadDeliveryRules();
+    } catch (err: any) {
+      console.error("Save delivery rule error:", err);
+      alert(err?.message || "Failed to save delivery rule");
+    }
+  }
+
+  async function handleDeleteDeliveryRule(id: string) {
+    if (!window.confirm("Are you sure you want to delete this delivery rule?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/delivery-charges/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to delete delivery rule");
+      }
+      await loadDeliveryRules();
+    } catch (err: any) {
+      console.error("Delete delivery rule error:", err);
+      alert(err?.message || "Failed to delete delivery rule");
     }
   }
 
@@ -1210,6 +1305,9 @@ const Admin = () => {
     if (activeTab === "subscription-plans") {
       loadSubscriptionPlans();
     }
+    if (activeTab === "delivery-charges") {
+      loadDeliveryRules();
+    }
     if (activeTab === "home-sections") {
       loadHomeSections();
       loadProducts();
@@ -1270,7 +1368,8 @@ const Admin = () => {
     { id: "categories", label: "Categories", icon: Tag, color: "text-black", bgColor: "bg-gray-50" },
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-black", bgColor: "bg-gray-50" },
     { id: "user-management", label: "Users", icon: Users, color: "text-black", bgColor: "bg-gray-50" },
-    { id: "delivery-partners", label: "Delivery", icon: Truck, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "delivery-partners", label: "Delivery Partners", icon: Truck, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "delivery-charges", label: "Delivery Charges", icon: RouteIcon, color: "text-black", bgColor: "bg-gray-50" },
     { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-black", bgColor: "bg-gray-50" },
     { id: "subscription-plans", label: "Subscription Plans", icon: CreditCard, color: "text-black", bgColor: "bg-gray-50" },
   ];
@@ -4204,6 +4303,225 @@ const Admin = () => {
                 )}
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Delivery Charges */}
+        {activeTab === "delivery-charges" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Delivery Charges</h1>
+                <p className="text-gray-600 mt-1">
+                  Configure delivery fees based on order amount (e.g. above Rs.200 → Rs.30, above Rs.500 → Rs.20)
+                </p>
+              </div>
+              <Button
+                onClick={() =>
+                  setEditingDeliveryRule({
+                    _id: undefined,
+                    minAmount: "",
+                    fee: "",
+                    label: "",
+                    isActive: true
+                  })
+                }
+                className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Rule
+              </Button>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Delivery Charge Rules</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {deliveryRulesLoading ? (
+                  <div className="py-12 flex justify-center">
+                    <BalancingLoader />
+                  </div>
+                ) : deliveryRules.length === 0 ? (
+                  <div className="text-center py-12">
+                    <RouteIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Delivery Rules Yet</h3>
+                    <p className="text-gray-600 mb-4">
+                      Create rules like "Minimum Rs.200 → Rs.30 fee" or "Minimum Rs.500 → Rs.20 fee".
+                    </p>
+                    <Button
+                      onClick={() =>
+                        setEditingDeliveryRule({
+                          _id: undefined,
+                          minAmount: "",
+                          fee: "",
+                          label: "",
+                          isActive: true
+                        })
+                      }
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Rule
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Minimum Order Amount (Rs.)</TableHead>
+                        <TableHead>Delivery Fee (Rs.)</TableHead>
+                        <TableHead>Label</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {deliveryRules.map((rule) => (
+                        <TableRow key={rule._id}>
+                          <TableCell>Rs.{rule.minAmount}</TableCell>
+                          <TableCell>Rs.{rule.fee}</TableCell>
+                          <TableCell>{rule.label || "-"}</TableCell>
+                          <TableCell>
+                            {rule.isActive ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800">
+                                <Ban className="h-3 w-3 mr-1" />
+                                Inactive
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setEditingDeliveryRule({
+                                    _id: rule._id,
+                                    minAmount: String(rule.minAmount),
+                                    fee: String(rule.fee),
+                                    label: rule.label || "",
+                                    isActive: rule.isActive
+                                  })
+                                }
+                                className="hover:bg-blue-50 hover:border-blue-200"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteDeliveryRule(rule._id)}
+                                className="hover:bg-red-50 hover:border-red-200 text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Create / Edit Rule Dialog */}
+            <Dialog
+              open={!!editingDeliveryRule}
+              onOpenChange={(open) => {
+                if (!open) setEditingDeliveryRule(null);
+              }}
+            >
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingDeliveryRule?._id ? "Edit Delivery Rule" : "Add Delivery Rule"}
+                  </DialogTitle>
+                </DialogHeader>
+                {editingDeliveryRule && (
+                  <form
+                    className="space-y-4"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveDeliveryRule();
+                    }}
+                  >
+                    <div>
+                      <Label htmlFor="dc-min">Minimum Order Amount (Rs.) *</Label>
+                      <Input
+                        id="dc-min"
+                        type="number"
+                        min="0"
+                        value={editingDeliveryRule.minAmount}
+                        onChange={(e) =>
+                          setEditingDeliveryRule((prev) =>
+                            prev ? { ...prev, minAmount: e.target.value } : prev
+                          )
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dc-fee">Delivery Fee (Rs.) *</Label>
+                      <Input
+                        id="dc-fee"
+                        type="number"
+                        min="0"
+                        value={editingDeliveryRule.fee}
+                        onChange={(e) =>
+                          setEditingDeliveryRule((prev) =>
+                            prev ? { ...prev, fee: e.target.value } : prev
+                          )
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dc-label">Label (optional)</Label>
+                      <Input
+                        id="dc-label"
+                        placeholder='e.g., "Above 200", "Above 500"'
+                        value={editingDeliveryRule.label}
+                        onChange={(e) =>
+                          setEditingDeliveryRule((prev) =>
+                            prev ? { ...prev, label: e.target.value } : prev
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="dc-active"
+                        checked={editingDeliveryRule.isActive}
+                        onCheckedChange={(checked) =>
+                          setEditingDeliveryRule((prev) =>
+                            prev ? { ...prev, isActive: !!checked } : prev
+                          )
+                        }
+                      />
+                      <Label htmlFor="dc-active">Active</Label>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditingDeliveryRule(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit">
+                        {editingDeliveryRule._id ? "Save Changes" : "Create Rule"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 

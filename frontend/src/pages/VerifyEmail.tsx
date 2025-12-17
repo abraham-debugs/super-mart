@@ -250,3 +250,5 @@ const VerifyEmail: React.FC = () => {
 
 export default VerifyEmail;
 
+
+
