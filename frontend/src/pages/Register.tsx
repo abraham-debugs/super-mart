@@ -244,11 +244,6 @@ const Register: React.FC = () => {
           Already have an account?{" "}
           <Link className="span" to="/login">Sign In</Link>
         </p>
-        <p className="p line">Or With</p>
-
-        <div className="flex-row">
-         
-        </div>
       </form>
     </div>
   );

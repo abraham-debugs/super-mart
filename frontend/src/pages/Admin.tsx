@@ -198,6 +198,8 @@ const Admin = () => {
   // Products and Orders state
   const [products, setProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }>>([]);
   const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
+  const [ordersCurrentPage, setOrdersCurrentPage] = useState(1);
+  const ordersPerPage = 10;
   
   // Home Page Sections state
   const [freshPicksProducts, setFreshPicksProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
@@ -237,6 +239,8 @@ const Admin = () => {
   const [searchOrderId, setSearchOrderId] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "placed" | "confirmed" | "payment_verified" | "booked" | "shipped" | "delivered" | "cancelled">("all");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [deliveryConfirmOpen, setDeliveryConfirmOpen] = useState(false);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{ order: { id: string; status: string } & any; nextStatus: string } | null>(null);
 
   // Delivery partners state
   const [partners, setPartners] = useState<Array<{ id: string; name: string; phone: string; status: "active" | "inactive" }>>([]);
@@ -785,6 +789,18 @@ const Admin = () => {
   const availableStatuses = ["placed", "shipped", "delivered", "cancelled"] as const;
 
   async function handleOrderStatusUpdate(order: { id: string; status: string } & any, nextStatus: string) {
+    // If changing to "delivered", show confirmation dialog
+    if (nextStatus === "delivered") {
+      setPendingStatusUpdate({ order, nextStatus });
+      setDeliveryConfirmOpen(true);
+      return;
+    }
+    
+    // For other statuses, update directly
+    await performStatusUpdate(order, nextStatus);
+  }
+
+  async function performStatusUpdate(order: { id: string; status: string } & any, nextStatus: string) {
     try {
       if (!availableStatuses.includes(nextStatus as any)) return;
       const orderKey = (order as any).orderId || order.id;
@@ -804,6 +820,15 @@ const Admin = () => {
       loadAdminOrders();
     } catch (e) {
       console.error("Order status update error:", e);
+      alert("Failed to update order status. Please try again.");
+    }
+  }
+
+  async function confirmDeliveryStatusUpdate() {
+    if (pendingStatusUpdate) {
+      await performStatusUpdate(pendingStatusUpdate.order, pendingStatusUpdate.nextStatus);
+      setDeliveryConfirmOpen(false);
+      setPendingStatusUpdate(null);
     }
   }
 
@@ -1295,6 +1320,11 @@ const Admin = () => {
     loadPartners();
   }, []);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setOrdersCurrentPage(1);
+  }, [searchDate, searchOrderId, orderStatusFilter]);
+
   useEffect(() => {
     if (activeTab === "delivery-partners") {
       loadPartners();
@@ -1354,6 +1384,12 @@ const Admin = () => {
     const statusMatch = orderStatusFilter === "all" || String(o.status) === orderStatusFilter;
     return dateMatch && idMatch && statusMatch;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const startIndex = (ordersCurrentPage - 1) * ordersPerPage;
+  const endIndex = startIndex + ordersPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
   // no dummy arrays; UI uses adminOrders/adminUsers
 
@@ -3798,9 +3834,16 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredOrders.map((order) => (
-                      <>
-                        <TableRow
+                    {paginatedOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          No orders found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedOrders.map((order) => (
+                        <>
+                          <TableRow
                           className="cursor-pointer hover:bg-blue-50/30 transition-colors group"
                           onClick={() => {
                           setSelectedOrderId(order.id);
@@ -3974,11 +4017,121 @@ const Admin = () => {
                           </TableRow>
                         )}
                       </>
-                    ))}
+                    ))
+                  )}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Pagination Controls */}
+            {filteredOrders.length > ordersPerPage && (
+              <div className="flex items-center justify-between px-4 py-4 bg-white rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrdersCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={ordersCurrentPage === 1}
+                  >
+                    <ChevronDown className="h-4 w-4 mr-1 rotate-90" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (ordersCurrentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (ordersCurrentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = ordersCurrentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={ordersCurrentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setOrdersCurrentPage(pageNum)}
+                          className={ordersCurrentPage === pageNum ? "bg-black text-white" : ""}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrdersCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={ordersCurrentPage === totalPages}
+                  >
+                    Next
+                    <ChevronDown className="h-4 w-4 ml-1 -rotate-90" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Confirmation Dialog */}
+            <Dialog open={deliveryConfirmOpen} onOpenChange={(open) => {
+              setDeliveryConfirmOpen(open);
+              if (!open) {
+                // Reset pending update when dialog is closed
+                setPendingStatusUpdate(null);
+              }
+            }}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-3 text-orange-600">
+                    <CheckCircle className="h-6 w-6" />
+                    Confirm Order Delivery
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  {pendingStatusUpdate && (
+                    <>
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <p className="text-sm text-gray-700 mb-2">
+                          Are you sure you want to mark this order as <strong className="text-orange-600">delivered</strong>?
+                        </p>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p><strong>Order ID:</strong> #{(pendingStatusUpdate.order as any).orderId || pendingStatusUpdate.order.id}</p>
+                          <p><strong>Customer:</strong> {pendingStatusUpdate.order.customer}</p>
+                          <p><strong>Total:</strong> Rs.{pendingStatusUpdate.order.total}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        This action will mark the order as completed. Make sure the order has been successfully delivered to the customer.
+                      </p>
+                    </>
+                  )}
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setDeliveryConfirmOpen(false);
+                        setPendingStatusUpdate(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={confirmDeliveryStatusUpdate}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Confirm Delivery
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 

@@ -131,70 +131,71 @@ const Profile: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-orange-500 via-red-500 to-blue-500 text-white py-12">
+      <div className="bg-gradient-to-r from-orange-500 via-red-500 to-blue-500 text-white py-8 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-              <p className="mt-2 text-gray-300">Manage your account and view your orders</p>
-                </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Profile</h1>
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-300">Manage your account and view your orders</p>
+            </div>
             <Button
               variant="outline"
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              size="sm"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-sm sm:text-base"
               onClick={() => { logout(); navigate("/login"); }}
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Logout
             </Button>
-              </div>
+          </div>
             </div>
           </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mt-16 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 -mt-12 sm:-mt-16 mb-6 sm:mb-8">
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{orders.length}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Total Orders</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">{orders.length}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                  <ShoppingBag className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+                  <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Delivered</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{deliveredOrders}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Delivered</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">{deliveredOrders}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-                  <Package className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center flex-shrink-0">
+                  <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm sm:col-span-2 md:col-span-1">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">Rs.{totalSpent.toFixed(0)}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Total Spent</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">Rs.{totalSpent.toFixed(0)}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
-                    </div>
+        </div>
 
         <div className="grid gap-8 lg:grid-cols-4">
           {/* Sidebar */}
@@ -238,21 +239,21 @@ const Profile: React.FC = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="account" className="space-y-6" onValueChange={(val) => setActiveTab(val as any)}>
-              <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1">
-                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-                  <User className="h-4 w-4 mr-2" />
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg border-0 p-1 gap-1">
+                <TabsTrigger value="account" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-xs sm:text-sm py-2">
+                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Account
                 </TabsTrigger>
-                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-                  <Package className="h-4 w-4 mr-2" />
+                <TabsTrigger value="orders" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-xs sm:text-sm py-2">
+                  <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Orders
                 </TabsTrigger>
-                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-                  <MapPin className="h-4 w-4 mr-2" />
+                <TabsTrigger value="addresses" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-xs sm:text-sm py-2">
+                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Addresses
                 </TabsTrigger>
-                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-                  <Crown className="h-4 w-4 mr-2" />
+                <TabsTrigger value="subscription" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:via-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-xs sm:text-sm py-2">
+                  <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Subscription
                 </TabsTrigger>
               </TabsList>

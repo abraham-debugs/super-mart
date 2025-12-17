@@ -184,31 +184,31 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         {/* Product Info */}
-        <div className="p-3 space-y-2">
-          <div className="space-y-1">
-            <h3 className="font-semibold text-base leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
+        <div className="p-2.5 sm:p-3 space-y-1.5 sm:space-y-2">
+          <div className="space-y-0.5 sm:space-y-1">
+            <h3 className="font-semibold text-sm sm:text-base leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
               {product.name}
             </h3>
-            <p className="text-xs text-muted-foreground line-clamp-1">
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
               {product.category}
             </p>
           </div>
 
           {/* Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-foreground">
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-base sm:text-lg font-bold text-foreground">
                 Rs.{Number(product.price).toFixed(0)}
               </span>
               {product.originalPrice && (
-                <span className="text-xs text-muted-foreground line-through">
+                <span className="text-[10px] sm:text-xs text-muted-foreground line-through">
                   Rs.{Number(product.originalPrice).toFixed(0)}
                 </span>
               )}
             </div>
             
             {product.originalPrice && (
-              <div className="text-xs text-green-600 font-semibold bg-green-50 px-1.5 py-0.5 rounded-full">
+              <div className="text-[9px] sm:text-xs text-green-600 font-semibold bg-green-50 px-1 sm:px-1.5 py-0.5 rounded-full whitespace-nowrap">
                 Save Rs.{Number(product.originalPrice - product.price).toFixed(0)}
               </div>
             )}
@@ -218,11 +218,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button
             onClick={() => addToCart(product)}
             disabled={!product.inStock}
-            className="w-full rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold py-2 shadow-[0_10px_22px_rgba(239,68,68,0.35)] transition-transform duration-200 hover:-translate-y-0.5 disabled:translate-y-0 disabled:bg-gray-400 disabled:text-white/50 disabled:shadow-none"
+            className="w-full rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold py-1.5 sm:py-2 text-xs sm:text-sm shadow-[0_10px_22px_rgba(239,68,68,0.35)] transition-transform duration-200 hover:-translate-y-0.5 disabled:translate-y-0 disabled:bg-gray-400 disabled:text-white/50 disabled:shadow-none"
             size="sm"
           >
-            <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-            {product.inStock ? "Add to Cart" : "Out of Stock"}
+            <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5" />
+            <span className="hidden sm:inline">{product.inStock ? "Add to Cart" : "Out of Stock"}</span>
+            <span className="sm:hidden">{product.inStock ? "Add" : "Out"}</span>
           </Button>
         </div>
       </CardContent>

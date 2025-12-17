@@ -45,56 +45,56 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
         ) : (
           <>
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto py-4">
-              <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto py-3 sm:py-4">
+              <div className="space-y-3 sm:space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex gap-3 p-3 rounded-lg border">
+                  <div key={item.id} className="flex gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-16 h-16 object-cover rounded-md"
+                      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-md flex-shrink-0"
                     />
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium line-clamp-2 mb-1">
+                      <h4 className="text-xs sm:text-sm font-medium line-clamp-2 mb-1">
                         {item.name}
                       </h4>
-                      <p className="text-sm font-bold text-price mb-2">
+                      <p className="text-xs sm:text-sm font-bold text-price mb-2">
                         {formatPrice(item.price)}
                       </p>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
-                            <Minus className="h-3 w-3" />
+                            <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           </Button>
                           
-                          <span className="text-sm font-medium min-w-[2rem] text-center">
+                          <span className="text-xs sm:text-sm font-medium min-w-[1.5rem] sm:min-w-[2rem] text-center">
                             {item.quantity}
                           </span>
                           
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           </Button>
                         </div>
                         
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive flex-shrink-0"
                           onClick={() => removeFromCart(item.id)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         </Button>
                       </div>
                     </div>
@@ -106,27 +106,27 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
             <Separator />
 
             {/* Cart Summary */}
-            <div className="space-y-3 py-4">
-              <div className="flex justify-between text-sm">
+            <div className="space-y-2 sm:space-y-3 py-3 sm:py-4">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
               
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Shipping</span>
                 <span className={shipping === 0 ? "text-success" : ""}>
                   {shipping === 0 ? "Free" : formatPrice(shipping)}
                 </span>
               </div>
               
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Tax</span>
                 <span>{formatPrice(tax)}</span>
               </div>
               
               <Separator />
               
-              <div className="flex justify-between font-semibold">
+              <div className="flex justify-between font-semibold text-sm sm:text-base">
                 <span>Total</span>
                 <span>{formatPrice(total)}</span>
               </div>
@@ -135,7 +135,7 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
             {/* Actions */}
             <div className="space-y-2">
               <Button 
-                className="w-full bg-black hover:bg-gray-800 text-white"
+                className="w-full bg-black hover:bg-gray-800 text-white text-sm sm:text-base"
                 size="lg"
                 onClick={() => {
                   onClose();
@@ -147,7 +147,8 @@ export const CartSheet = ({ isOpen, onClose }: CartSheetProps) => {
               
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full text-sm sm:text-base"
+                size="sm"
                 onClick={clearCart}
               >
                 Clear Cart

@@ -292,33 +292,33 @@ const Checkout = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Progress Steps */}
             <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="flex items-center justify-between overflow-x-auto pb-2">
                   {steps.map((step, index) => (
-                    <div key={step.id} className="flex items-center">
+                    <div key={step.id} className="flex items-center flex-shrink-0">
                       <div className="flex items-center">
-                        <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 ${
+                        <div className={`flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full border-2 flex-shrink-0 ${
                           currentStep >= step.id 
                             ? 'bg-black border-black text-white' 
                             : 'border-gray-300 text-gray-500'
                         }`}>
                           {currentStep > step.id ? (
-                            <CheckCircle className="h-4 w-4" />
+                            <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                           ) : (
-                            <span className="text-xs sm:text-sm font-medium">{step.id}</span>
+                            <span className="text-[10px] sm:text-xs md:text-sm font-medium">{step.id}</span>
                           )}
                         </div>
-                        <div className="ml-2 sm:ml-3">
-                          <p className={`text-xs sm:text-sm font-medium ${
+                        <div className="ml-1.5 sm:ml-2 md:ml-3 min-w-0">
+                          <p className={`text-[10px] sm:text-xs md:text-sm font-medium truncate ${
                             currentStep >= step.id ? 'text-black' : 'text-gray-500'
                           }`}>
                             {step.title}
                           </p>
-                          <p className="text-xs text-gray-500">{step.description}</p>
+                          <p className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 hidden sm:block">{step.description}</p>
                         </div>
                       </div>
                       {index < steps.length - 1 && (
-                        <div className={`w-10 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
+                        <div className={`w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 mx-1 sm:mx-2 md:mx-3 lg:mx-4 flex-shrink-0 ${
                           currentStep > step.id ? 'bg-black' : 'bg-gray-300'
                         }`} />
                       )}

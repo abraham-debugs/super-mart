@@ -82,19 +82,19 @@ export const Hero = () => {
                 transform: `translate3d(${mousePos.x * -0.05}px, ${scrollY * -0.05}px, 0)`,
               }}
             >
-              <div className="space-y-6">
-                <span className="inline-flex items-center gap-2 rounded-lg bg-orange-100 border border-orange-300 px-5 py-2 text-sm font-semibold text-orange-700 shadow-sm">
-                  <ShoppingBag className="h-4 w-4" />
+              <div className="space-y-4 sm:space-y-6">
+                <span className="inline-flex items-center gap-2 rounded-lg bg-orange-100 border border-orange-300 px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-orange-700 shadow-sm">
+                  <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Smart Grocery Delivery
                 </span>
 
-                <h1 className="text-4xl font-bold leading-[1.05] text-blue-900 sm:text-5xl lg:text-6xl">
+                <h1 className="text-3xl sm:text-4xl font-bold leading-[1.05] text-blue-900 lg:text-5xl xl:text-6xl">
                   Online Shopping
                   <br className="hidden sm:block" />
                   Made Effortless
                 </h1>
 
-                <p className="max-w-xl text-base text-gray-700 sm:text-lg lg:text-xl">
+                <p className="max-w-xl text-sm sm:text-base text-gray-700 lg:text-lg xl:text-xl">
                   Shop the latest essentials, track deliveries, and enjoy rewards across every order—all from the comfort of your home.
                 </p>
               </div>

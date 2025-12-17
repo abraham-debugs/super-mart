@@ -46,16 +46,16 @@ export const Header = () => {
           `}
         >
           
-          <div className="relative flex items-center justify-between px-4 lg:px-8 max-w-7xl mx-auto">
+          <div className="relative flex items-center justify-between px-3 sm:px-4 lg:px-8 max-w-7xl mx-auto">
             {/* Logo Section */}
-            <div className="flex items-center gap-4 lg:gap-8">
-              <Link to="/" className="flex items-center gap-3 group">
+            <div className="flex items-center gap-2 sm:gap-4 lg:gap-8">
+              <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
                 <div className="relative">
-                  <div className="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-orange-500 transition-all duration-300 group-hover:scale-110 shadow-md">
-                    <span className="text-orange-100 font-bold text-lg lg:text-xl">M</span>
+                  <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg bg-orange-500 transition-all duration-300 group-hover:scale-110 shadow-md">
+                    <span className="text-orange-100 font-bold text-base sm:text-lg lg:text-xl">M</span>
                   </div>
                 </div>
-                <span className="text-lg lg:text-xl font-bold text-gray-900 group-hover:scale-105 transition-transform duration-300">
+                <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 group-hover:scale-105 transition-transform duration-300">
                   MDMart
                 </span>
               </Link>
@@ -75,8 +75,8 @@ export const Header = () => {
             </div>
 
             {/* Actions Section */}
-            <div className="flex items-center gap-2 lg:gap-3">
-              <div className="hidden md:block w-48 lg:w-64 xl:w-80">
+            <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
+              <div className="hidden md:block w-40 lg:w-64 xl:w-80">
                 <SearchBar />
               </div>
 
@@ -84,7 +84,7 @@ export const Header = () => {
                 <>
                   <Button
                     size="icon"
-                    className="hidden sm:flex h-9 w-9 lg:h-10 lg:w-10 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
+                    className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
                     onClick={() => navigate('/profile')}
                     title="Profile"
                   >
@@ -94,7 +94,7 @@ export const Header = () => {
               ) : (
                 <Button
                   size="sm"
-                  className="hidden sm:flex rounded-lg bg-white text-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-gray-50"
+                  className="hidden sm:flex rounded-lg bg-white text-gray-900 px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold uppercase tracking-wide transition-all duration-200 hover:bg-gray-50"
                   onClick={() => navigate('/login')}
                 >
                   Login
@@ -103,21 +103,21 @@ export const Header = () => {
 
               <Button
                 size="icon"
-                className="relative h-9 w-9 lg:h-10 lg:w-10 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
+                className="relative h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
                 onClick={() => setIsCartOpen(true)}
                 title="Cart"
               >
                 <ShoppingCart className="h-4 w-4 lg:h-5 lg:w-5" />
                 {getCartCount() > 0 && (
-                  <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-orange-400 bg-red-500 text-white p-0 text-xs font-bold shadow-lg">
-                    {getCartCount()}
+                  <Badge className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full border-2 border-orange-400 bg-red-500 text-white p-0 text-[10px] sm:text-xs font-bold shadow-lg">
+                    {getCartCount() > 9 ? '9+' : getCartCount()}
                   </Badge>
                 )}
               </Button>
 
               <Button
                 size="icon"
-                className="lg:hidden h-9 w-9 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
+                className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 title="Menu"
               >
@@ -136,21 +136,21 @@ export const Header = () => {
               ${isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
             `}
           >
-            <div className="px-6 py-6 space-y-4">
+            <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4">
               {/* Mobile Search */}
-              <div className="flex items-center gap-2 px-4">
+              <div className="flex items-center gap-2 px-2 sm:px-4">
                 <div className="flex-1">
                   <SearchBar />
                 </div>
               </div>
 
               {/* Mobile Navigation Links */}
-              <nav className="flex flex-col space-y-2 border-t border-orange-500 pt-4 px-4">
+              <nav className="flex flex-col space-y-1.5 sm:space-y-2 border-t border-orange-500 pt-3 sm:pt-4 px-2 sm:px-4">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="px-4 py-3 text-base font-semibold text-gray-900 uppercase rounded-lg hover:bg-orange-300 transition-all duration-200"
+                    className="px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-gray-900 uppercase rounded-lg hover:bg-orange-300 transition-all duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}

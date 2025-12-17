@@ -80,30 +80,30 @@ const Category = () => {
       <div className="relative z-10">
         {/* Enhanced Category Header */}
         <section className="bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/30 border-b border-gray-200/50">
-          <div className="container mx-auto px-4 py-8">
-            <div className="mb-4">
+          <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+            <div className="mb-3 sm:mb-4">
               <Link 
                 to="/" 
-                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium hover:gap-3 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium hover:gap-2 sm:hover:gap-3 transition-all duration-200"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 Back to Home
               </Link>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 truncate">
                   {loading ? "Loading..." : (categoryName || "Category")}
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-sm sm:text-base text-gray-600 mt-1">
                   {loading ? "Please wait..." : `${categoryProducts.length} ${categoryProducts.length === 1 ? 'product' : 'products'} available`}
                 </p>
               </div>

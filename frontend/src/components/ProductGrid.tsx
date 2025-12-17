@@ -94,8 +94,8 @@ export const ProductGrid = ({
 
         {/* Filters and Sort */}
         {showFilters && (
-          <div className="mb-8 p-4 bg-card rounded-lg border shadow-card">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-card rounded-lg border shadow-card">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-stretch lg:items-center justify-between">
               {/* Search */}
               <div className="flex-1 w-full lg:max-w-md">
                 <Input
@@ -105,17 +105,18 @@ export const ProductGrid = ({
                     setSearchTerm(e.target.value);
                     handleFilter();
                   }}
+                  className="text-sm sm:text-base"
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full lg:w-auto">
                 {/* Price Filter */}
                 <Select value={priceRange} onValueChange={(value) => {
                   setPriceRange(value);
                   handleFilter();
                 }}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <Filter className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="w-full sm:w-[160px] lg:w-[180px] text-sm">
+                    <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
                     <SelectValue placeholder="Price Range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -131,8 +132,8 @@ export const ProductGrid = ({
                   setSortBy(value);
                   handleFilter();
                 }}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="w-full sm:w-[160px] lg:w-[180px] text-sm">
+                    <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
                     <SelectValue placeholder="Sort By" />
                   </SelectTrigger>
                   <SelectContent>
@@ -149,7 +150,7 @@ export const ProductGrid = ({
         )}
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />

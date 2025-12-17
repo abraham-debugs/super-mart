@@ -38,7 +38,8 @@ import {
   ArrowDownRight,
   MoreHorizontal,
   Heart,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -790,6 +791,108 @@ const SuperAdmin = () => {
     loadPartners();
   }, []);
 
+  // Inventory Management state
+  const [inventory, setInventory] = useState<Array<{
+    _id: string;
+    nameEn: string;
+    nameTa?: string;
+    categoryName: string;
+    price: number;
+    imageUrl: string;
+    stock: number;
+    isLowStock: boolean;
+  }>>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventorySearch, setInventorySearch] = useState("");
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>("all");
+  const [inventoryLowStockFilter, setInventoryLowStockFilter] = useState(false);
+  const [editingStock, setEditingStock] = useState<{ productId: string; stock: number } | null>(null);
+  const [stockUpdateReason, setStockUpdateReason] = useState("");
+  const [stockUpdateType, setStockUpdateType] = useState<"manual" | "restock" | "adjustment">("manual");
+  const [inventoryHistory, setInventoryHistory] = useState<Array<{
+    id: string;
+    productName: string;
+    previousStock: number;
+    newStock: number;
+    change: number;
+    changeType: string;
+    reason: string | null;
+    changedBy: { id: string; name: string };
+    createdAt: string;
+  }>>([]);
+  const [historyProductId, setHistoryProductId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
+  async function loadInventory() {
+    try {
+      setInventoryLoading(true);
+      const params = new URLSearchParams();
+      if (inventoryCategoryFilter !== "all") params.append("categoryId", inventoryCategoryFilter);
+      if (inventoryLowStockFilter) params.append("lowStock", "true");
+      if (inventorySearch) params.append("search", inventorySearch);
+      
+      const res = await fetch(`${API_BASE}/api/admin/inventory?${params.toString()}`, {
+        headers: {
+          "Authorization": `Bearer ${token || localStorage.getItem("token") || localStorage.getItem("auth_token")}`
+        }
+      });
+      if (!res.ok) throw new Error("Failed to load inventory");
+      const data = await res.json();
+      setInventory(data);
+    } catch (err: any) {
+      console.error("Load inventory error:", err);
+      alert("Failed to load inventory");
+    } finally {
+      setInventoryLoading(false);
+    }
+  }
+
+  async function updateStock(productId: string, newStock: number) {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/products/stock`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token || localStorage.getItem("token") || localStorage.getItem("auth_token")}`
+        },
+        body: JSON.stringify({
+          productId,
+          stock: newStock,
+          reason: stockUpdateReason || null,
+          changeType: stockUpdateType
+        })
+      });
+      if (!res.ok) throw new Error("Failed to update stock");
+      await loadInventory();
+      setEditingStock(null);
+      setStockUpdateReason("");
+      setStockUpdateType("manual");
+    } catch (err: any) {
+      console.error("Update stock error:", err);
+      alert("Failed to update stock: " + (err.message || String(err)));
+    }
+  }
+
+  async function loadInventoryHistory(productId: string) {
+    try {
+      setHistoryLoading(true);
+      const res = await fetch(`${API_BASE}/api/admin/inventory/${productId}/history`, {
+        headers: {
+          "Authorization": `Bearer ${token || localStorage.getItem("token") || localStorage.getItem("auth_token")}`
+        }
+      });
+      if (!res.ok) throw new Error("Failed to load history");
+      const data = await res.json();
+      setInventoryHistory(data);
+    } catch (err: any) {
+      console.error("Load inventory history error:", err);
+      alert("Failed to load inventory history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (activeTab === "delivery-partners") {
       loadPartners();
@@ -804,7 +907,19 @@ const SuperAdmin = () => {
     if (activeTab === "admin-management") {
       loadAdmins();
     }
+    if (activeTab === "inventory") {
+      loadInventory();
+    }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "inventory") {
+      const timeoutId = setTimeout(() => {
+        loadInventory();
+      }, 500); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [inventorySearch, inventoryCategoryFilter, inventoryLowStockFilter]);
 
   // Derived order stats for Order Management
   const pendingCount = adminOrders.filter(o => ["placed", "pending", "confirmed", "payment_verified"].includes(String(o.status))).length;
@@ -852,6 +967,7 @@ const SuperAdmin = () => {
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-blue-600", bgColor: "bg-blue-50" },
     { id: "add-product", label: "Add Product", icon: Plus, color: "text-green-600", bgColor: "bg-green-50" },
     { id: "product-management", label: "Products", icon: Package, color: "text-purple-600", bgColor: "bg-purple-50" },
+    { id: "inventory", label: "Inventory", icon: Package, color: "text-teal-600", bgColor: "bg-teal-50" },
     { id: "home-sections", label: "Home Sections", icon: Home, color: "text-indigo-600", bgColor: "bg-indigo-50" },
     { id: "categories", label: "Categories", icon: Tag, color: "text-orange-600", bgColor: "bg-orange-50" },
     { id: "order-management", label: "Orders", icon: ShoppingCart, color: "text-indigo-600", bgColor: "bg-indigo-50" },
@@ -2686,6 +2802,347 @@ const SuperAdmin = () => {
                 )}
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Inventory Management */}
+        {activeTab === "inventory" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+                <p className="text-gray-600 mt-1">Track and manage product stock levels</p>
+              </div>
+              <Button onClick={loadInventory} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Search Products</Label>
+                    <div className="relative mt-2">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by name..."
+                        value={inventorySearch}
+                        onChange={(e) => setInventorySearch(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Category</Label>
+                    <Select value={inventoryCategoryFilter} onValueChange={setInventoryCategoryFilter}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categoryRows.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <div className="flex items-center space-x-2 w-full">
+                      <input
+                        type="checkbox"
+                        id="lowStockFilter"
+                        checked={inventoryLowStockFilter}
+                        onChange={(e) => setInventoryLowStockFilter(e.target.checked)}
+                        className="h-4 w-4 text-teal-600 rounded border-gray-300"
+                      />
+                      <Label htmlFor="lowStockFilter" className="cursor-pointer">
+                        Show Low Stock Only (&lt; 10)
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Inventory Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Products</p>
+                      <p className="text-2xl font-bold text-gray-900">{inventory.length}</p>
+                    </div>
+                    <Package className="h-8 w-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Low Stock</p>
+                      <p className="text-2xl font-bold text-red-600">
+                        {inventory.filter(p => p.isLowStock).length}
+                      </p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-red-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Out of Stock</p>
+                      <p className="text-2xl font-bold text-orange-600">
+                        {inventory.filter(p => p.stock === 0).length}
+                      </p>
+                    </div>
+                    <XCircle className="h-8 w-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Stock</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {inventory.reduce((sum, p) => sum + p.stock, 0)}
+                      </p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Inventory Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Inventory</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {inventoryLoading ? (
+                  <div className="py-8 text-center">
+                    <BalancingLoader />
+                  </div>
+                ) : inventory.length === 0 ? (
+                  <div className="py-8 text-center text-gray-500">No products found</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Current Stock</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {inventory.map((product) => (
+                          <TableRow key={product._id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={product.imageUrl}
+                                  alt={product.nameEn}
+                                  className="h-12 w-12 rounded-lg object-cover border"
+                                />
+                                <div>
+                                  <p className="font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-sm text-gray-500">Rs.{product.price}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{product.categoryName}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className={`font-semibold ${
+                                  product.stock === 0 ? "text-red-600" :
+                                  product.isLowStock ? "text-orange-600" :
+                                  "text-green-600"
+                                }`}>
+                                  {product.stock}
+                                </span>
+                                {product.isLowStock && (
+                                  <Badge variant="destructive" className="text-xs">Low</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {product.stock === 0 ? (
+                                <Badge className="bg-red-100 text-red-800">Out of Stock</Badge>
+                              ) : product.isLowStock ? (
+                                <Badge className="bg-orange-100 text-orange-800">Low Stock</Badge>
+                              ) : (
+                                <Badge className="bg-green-100 text-green-800">In Stock</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingStock({ productId: product._id, stock: product.stock });
+                                    setStockUpdateReason("");
+                                    setStockUpdateType("manual");
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Update
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setHistoryProductId(product._id);
+                                    setHistoryDialogOpen(true);
+                                    loadInventoryHistory(product._id);
+                                  }}
+                                >
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  History
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Update Stock Dialog */}
+            <Dialog open={editingStock !== null} onOpenChange={(open) => !open && setEditingStock(null)}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Update Stock</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {editingStock && (
+                    <>
+                      <div>
+                        <Label>Product</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {inventory.find(p => p._id === editingStock.productId)?.nameEn}
+                        </p>
+                      </div>
+                      <div>
+                        <Label>New Stock Quantity</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editingStock.stock}
+                          onChange={(e) => setEditingStock({ ...editingStock, stock: Math.max(0, parseInt(e.target.value) || 0) })}
+                          className="mt-2"
+                        />
+                      </div>
+                      <div>
+                        <Label>Change Type</Label>
+                        <Select value={stockUpdateType} onValueChange={(v: any) => setStockUpdateType(v)}>
+                          <SelectTrigger className="mt-2">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="manual">Manual Update</SelectItem>
+                            <SelectItem value="restock">Restock</SelectItem>
+                            <SelectItem value="adjustment">Adjustment</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Reason (Optional)</Label>
+                        <Textarea
+                          placeholder="Enter reason for stock change..."
+                          value={stockUpdateReason}
+                          onChange={(e) => setStockUpdateReason(e.target.value)}
+                          className="mt-2"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setEditingStock(null)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => editingStock && updateStock(editingStock.productId, editingStock.stock)}
+                          className="bg-teal-600 hover:bg-teal-700"
+                        >
+                          Update Stock
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Inventory History Dialog */}
+            <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Inventory History</DialogTitle>
+                </DialogHeader>
+                {historyLoading ? (
+                  <div className="py-8 text-center">
+                    <BalancingLoader />
+                  </div>
+                ) : inventoryHistory.length === 0 ? (
+                  <div className="py-8 text-center text-gray-500">No history available</div>
+                ) : (
+                  <div className="space-y-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Previous</TableHead>
+                          <TableHead>New</TableHead>
+                          <TableHead>Change</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Changed By</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {inventoryHistory.map((entry) => (
+                          <TableRow key={entry.id}>
+                            <TableCell className="text-sm">
+                              {new Date(entry.createdAt).toLocaleString()}
+                            </TableCell>
+                            <TableCell>{entry.previousStock}</TableCell>
+                            <TableCell>{entry.newStock}</TableCell>
+                            <TableCell>
+                              <span className={`font-semibold ${
+                                entry.change > 0 ? "text-green-600" : entry.change < 0 ? "text-red-600" : "text-gray-600"
+                              }`}>
+                                {entry.change > 0 ? "+" : ""}{entry.change}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{entry.changeType}</Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">{entry.changedBy.name}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
