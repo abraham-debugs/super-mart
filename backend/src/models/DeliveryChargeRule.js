@@ -42,3 +42,4 @@ export const DeliveryChargeRule =
   mongoose.model("DeliveryChargeRule", DeliveryChargeRuleSchema);
 
 
+

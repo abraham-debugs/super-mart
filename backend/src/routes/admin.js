@@ -9,6 +9,7 @@ import { Order } from "../models/Order.js";
 import { DeliveryPartner } from "../models/DeliveryPartner.js";
 import { DeliveryChargeRule } from "../models/DeliveryChargeRule.js";
 import { SubscriptionPlan } from "../models/SubscriptionPlan.js";
+import { InventoryHistory } from "../models/InventoryHistory.js";
 import { requireAuth, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -356,14 +357,36 @@ router.post("/products", upload.single("image"), async (req, res) => {
 // Update product stock (bulk update endpoint) - MUST be before /products/:id route
 router.put("/products/stock", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { productId, stock } = req.body;
+    const { productId, stock, reason, changeType } = req.body;
     if (!productId || stock === undefined) {
       return res.status(400).json({ message: "productId and stock are required" });
     }
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    product.stock = Math.max(0, Number(stock));
+    
+    const previousStock = product.stock || 0;
+    const newStock = Math.max(0, Number(stock));
+    const change = newStock - previousStock;
+    
+    product.stock = newStock;
     await product.save();
+    
+    // Create inventory history record
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    const userName = req.user?.name || req.user?.email || "System";
+    
+    await InventoryHistory.create({
+      productId: product._id,
+      productName: product.nameEn,
+      previousStock,
+      newStock,
+      change,
+      changeType: changeType || "manual",
+      reason: reason || null,
+      changedBy: userId,
+      changedByName: userName
+    });
+    
     res.json({ _id: product._id, stock: product.stock });
   } catch (err) {
     console.error("PUT /api/admin/products/stock error:", err);
@@ -948,6 +971,154 @@ router.delete("/delivery-charges/:id", requireAuth, requireAdmin, async (req, re
     res
       .status(500)
       .json({ message: "Failed to delete delivery charge rule", error: err?.message || String(err) });
+  }
+});
+
+// ========== INVENTORY MANAGEMENT ROUTES (SuperAdmin Only) ==========
+
+// Get inventory list with filters
+router.get("/inventory", requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { categoryId, lowStock, search } = req.query;
+    let query = {};
+    
+    if (categoryId && categoryId !== "all") {
+      query.categoryId = categoryId;
+    }
+    
+    if (search) {
+      const searchRegex = new RegExp(String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      query.$or = [{ nameEn: searchRegex }, { nameTa: searchRegex }];
+    }
+    
+    const products = await Product.find(query)
+      .sort({ createdAt: -1 })
+      .populate({ path: "categoryId", select: "name nameEn nameTa" });
+    
+    let mapped = products.map((p) => ({
+      _id: p._id,
+      nameEn: p.nameEn,
+      nameTa: p.nameTa,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      imageUrl: p.imageUrl,
+      categoryId: p.categoryId?._id || null,
+      categoryName: p.categoryId?.name || p.categoryId?.nameEn || "",
+      stock: p.stock || 0,
+      isLowStock: (p.stock || 0) < 10 // Low stock threshold
+    }));
+    
+    // Filter by low stock if requested
+    if (lowStock === "true") {
+      mapped = mapped.filter(p => p.isLowStock);
+    }
+    
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/admin/inventory error:", err);
+    res.status(500).json({ message: "Failed to fetch inventory", error: err?.message || String(err) });
+  }
+});
+
+// Get inventory history for a product
+router.get("/inventory/:productId/history", requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { limit = 50 } = req.query;
+    
+    const history = await InventoryHistory.find({ productId })
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .populate({ path: "changedBy", select: "name email" })
+      .populate({ path: "orderId", select: "orderId" });
+    
+    const mapped = history.map((h) => ({
+      id: String(h._id),
+      productId: String(h.productId),
+      productName: h.productName,
+      previousStock: h.previousStock,
+      newStock: h.newStock,
+      change: h.change,
+      changeType: h.changeType,
+      reason: h.reason || null,
+      changedBy: h.changedBy ? {
+        id: String(h.changedBy._id),
+        name: h.changedBy.name || h.changedBy.email
+      } : {
+        id: null,
+        name: h.changedByName || "System"
+      },
+      orderId: h.orderId ? String(h.orderId._id) : null,
+      orderNumber: h.orderId?.orderId || null,
+      createdAt: h.createdAt
+    }));
+    
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/admin/inventory/:productId/history error:", err);
+    res.status(500).json({ message: "Failed to fetch inventory history", error: err?.message || String(err) });
+  }
+});
+
+// Bulk update inventory
+router.put("/inventory/bulk-update", requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { updates } = req.body; // Array of { productId, stock, reason, changeType }
+    
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ message: "updates array is required" });
+    }
+    
+    const userId = req.user?.uid || req.user?._id || req.user?.id;
+    const userName = req.user?.name || req.user?.email || "System";
+    
+    const results = [];
+    
+    for (const update of updates) {
+      const { productId, stock, reason, changeType } = update;
+      
+      if (!productId || stock === undefined) {
+        results.push({ productId, error: "productId and stock are required" });
+        continue;
+      }
+      
+      try {
+        const product = await Product.findById(productId);
+        if (!product) {
+          results.push({ productId, error: "Product not found" });
+          continue;
+        }
+        
+        const previousStock = product.stock || 0;
+        const newStock = Math.max(0, Number(stock));
+        const change = newStock - previousStock;
+        
+        product.stock = newStock;
+        await product.save();
+        
+        // Create inventory history record
+        await InventoryHistory.create({
+          productId: product._id,
+          productName: product.nameEn,
+          previousStock,
+          newStock,
+          change,
+          changeType: changeType || "manual",
+          reason: reason || null,
+          changedBy: userId,
+          changedByName: userName
+        });
+        
+        results.push({ productId, success: true, stock: newStock });
+      } catch (err) {
+        results.push({ productId, error: err.message || String(err) });
+      }
+    }
+    
+    res.json({ results });
+  } catch (err) {
+    console.error("PUT /api/admin/inventory/bulk-update error:", err);
+    res.status(500).json({ message: "Failed to bulk update inventory", error: err?.message || String(err) });
   }
 });
 
