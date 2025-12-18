@@ -65,7 +65,7 @@ const Checkout = () => {
   }, [navigate, user, token, getCartCount, toast]);
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [paymentMethod] = useState("cod"); // Only Cash on Delivery
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountPercent: number; discountAmount: number } | null>(null);
@@ -410,7 +410,7 @@ const Checkout = () => {
               </Card>
             )}
 
-            {/* Step 2: Payment Method */}
+            {/* Step 2: Payment Method (Cash on Delivery only) */}
             {currentStep === 2 && (
               <Card>
                 <CardHeader>
@@ -420,57 +420,20 @@ const Checkout = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="upi" id="upi" />
-                        <div className="flex-1">
-                          <Label htmlFor="upi" className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                              <span className="text-xs font-bold text-black">UPI</span>
-                            </div>
-                            <span>UPI Payment</span>
-                          </Label>
-                          <p className="text-sm text-gray-500">Pay using UPI ID or QR code</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="card" id="card" />
-                        <div className="flex-1">
-                          <Label htmlFor="card" className="flex items-center space-x-2">
-                            <CreditCard className="h-4 w-4" />
-                            <span>Credit/Debit Card</span>
-                          </Label>
-                          <p className="text-sm text-gray-500">Visa, Mastercard, RuPay accepted</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="wallet" id="wallet" />
-                        <div className="flex-1">
-                          <Label htmlFor="wallet" className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                              <span className="text-xs font-bold text-black">Rs.</span>
-                            </div>
-                            <span>Digital Wallet</span>
-                          </Label>
-                          <p className="text-sm text-gray-500">Paytm, PhonePe, Google Pay</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="cod" id="cod" />
-                        <div className="flex-1">
-                          <Label htmlFor="cod" className="flex items-center space-x-2">
-                            <Truck className="h-4 w-4" />
-                            <span>Cash on Delivery</span>
-                          </Label>
-                          <p className="text-sm text-gray-500">Pay when your order arrives</p>
-                        </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="cod" id="cod" />
+                      <div className="flex-1">
+                        <Label htmlFor="cod" className="flex items-center space-x-2">
+                          <Truck className="h-4 w-4" />
+                          <span>Cash on Delivery</span>
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Pay the full amount in cash when your order is delivered.
+                        </p>
                       </div>
                     </div>
-                  </RadioGroup>
+                  </div>
 
                   <div className="flex space-x-4">
                     <Button 

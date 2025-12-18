@@ -18,7 +18,19 @@ export const FollowerPointerCard = ({
   const y = useMotionValue(0);
   const ref = React.useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const [isInside, setIsInside] = useState<boolean>(false); // Add this line
+  const [isInside, setIsInside] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      if (typeof window === "undefined") return;
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
 
   useEffect(() => {
     if (ref.current) {
@@ -41,6 +53,15 @@ export const FollowerPointerCard = ({
   const handleMouseEnter = () => {
     setIsInside(true);
   };
+
+  // On mobile, render children without custom cursor / pointer animation
+  if (isMobile) {
+    return (
+      <div ref={ref} className={cn("relative", className)}>
+        {children}
+      </div>
+    );
+  }
   return (
     <div
       onMouseLeave={handleMouseLeave}

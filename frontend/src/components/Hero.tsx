@@ -8,6 +8,17 @@ const heroGraphic = "/online-shopping-vector-illustration1-removebg-preview.png"
 export const Hero = () => {
   const [scrollY, setScrollY] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      if (typeof window === "undefined") return;
+      setIsMobile(window.innerWidth < 768);
+    };
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
 
   useEffect(() => {
     let raf = 0;
@@ -27,6 +38,8 @@ export const Hero = () => {
   }, []);
 
   useEffect(() => {
+    if (isMobile) return;
+
     const handleMouseMove = (event: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
       const x = (event.clientX / innerWidth - 0.5) * 120;
@@ -36,7 +49,7 @@ export const Hero = () => {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  }, [isMobile]);
 
   const layerSlow = {
     transform: `translate3d(${mousePos.x * 0.04}px, ${scrollY * 0.08}px, 0)`,
@@ -74,32 +87,32 @@ export const Hero = () => {
       />
 
       <div className="relative z-10">
-        <div className="container mx-auto px-4 py-16 lg:py-24">
-          <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_1fr] lg:gap-20">
+        <div className="container mx-auto px-4 py-16 sm:py-20 lg:py-24">
+          <div className="grid items-center gap-12 lg:gap-20 lg:grid-cols-[1.05fr_1fr] min-h-[70vh]">
             <div
-              className="space-y-10 transition-transform duration-[1000ms] ease-out will-change-transform"
+              className="space-y-8 sm:space-y-10 transition-transform duration-[1000ms] ease-out will-change-transform text-center lg:text-left flex flex-col justify-center"
               style={{
                 transform: `translate3d(${mousePos.x * -0.05}px, ${scrollY * -0.05}px, 0)`,
               }}
             >
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-3 sm:space-y-5">
                 <span className="inline-flex items-center gap-2 rounded-lg bg-orange-100 border border-orange-300 px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-orange-700 shadow-sm">
                   <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Smart Grocery Delivery
                 </span>
 
-                <h1 className="text-3xl sm:text-4xl font-bold leading-[1.05] text-blue-900 lg:text-5xl xl:text-6xl">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] text-blue-900">
                   Online Shopping
                   <br className="hidden sm:block" />
                   Made Effortless
                 </h1>
 
-                <p className="max-w-xl text-sm sm:text-base text-gray-700 lg:text-lg xl:text-xl">
+                <p className="max-w-xl mx-auto lg:mx-0 text-sm sm:text-base md:text-lg text-gray-700 lg:text-xl">
                   Shop the latest essentials, track deliveries, and enjoy rewards across every order—all from the comfort of your home.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <FollowerPointerCard
                   title={
                     <div className="flex items-center space-x-2">
@@ -135,12 +148,12 @@ export const Hero = () => {
                 </FollowerPointerCard>
               </div>
 
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-3 text-sm text-gray-700 sm:text-base">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6">
+                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm md:text-base text-gray-700">
                   <Truck className="h-5 w-5 text-red-500" />
                   Superfast doorstep delivery
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-700 sm:text-base">
+                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm md:text-base text-gray-700">
                   <Shield className="h-5 w-5 text-red-500" />
                   Secure payments & rewards
                 </div>
@@ -148,7 +161,7 @@ export const Hero = () => {
             </div>
 
             <div
-              className="relative transition-transform duration-[1000ms] ease-out will-change-transform"
+              className="relative transition-transform duration-[1000ms] ease-out will-change-transform flex justify-center items-center mt-10 lg:mt-0"
               style={{
                 transform: `translate3d(${mousePos.x * 0.08}px, ${scrollY * 0.06}px, 0)`,
               }}

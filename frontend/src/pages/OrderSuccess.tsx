@@ -23,10 +23,38 @@ const OrderSuccess = () => {
             variant="outline"
             className="px-6 py-3 rounded-full bg-white text-black border-black hover:bg-gray-100"
             onClick={async () => {
-              // Get token from localStorage
-              const token = localStorage.getItem('token') || '';
-              const invoiceUrl = `${API_BASE}/api/invoices/${orderId}?token=${encodeURIComponent(token)}`;
-              window.open(invoiceUrl, '_blank');
+              try {
+                // Get token from localStorage
+                const token = localStorage.getItem("token") || "";
+                const invoiceUrl = `${API_BASE}/api/invoices/${orderId}?token=${encodeURIComponent(
+                  token
+                )}`;
+
+                const res = await fetch(invoiceUrl, {
+                  headers: token
+                    ? {
+                        Authorization: `Bearer ${token}`,
+                      }
+                    : undefined,
+                });
+
+                if (!res.ok) {
+                  console.error("Failed to download invoice", res.status);
+                  return;
+                }
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `invoice-${orderId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+              } catch (err) {
+                console.error("Invoice download error:", err);
+              }
             }}
           >
             <FileText className="h-4 w-4 mr-2" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, User, Menu, X } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -115,6 +116,22 @@ export const Header = () => {
                 )}
               </Button>
 
+              {/* Mobile Search Toggle */}
+              <Button
+                size="icon"
+                className="md:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
+                onClick={() => {
+                  setIsMobileSearchOpen((prev) => !prev);
+                  // Close menu when opening search
+                  if (!isMobileSearchOpen) {
+                    setIsMenuOpen(false);
+                  }
+                }}
+                title="Search"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+
               <Button
                 size="icon"
                 className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-white/90 hover:bg-white text-gray-900 transition-all duration-200 hover:scale-110"
@@ -125,6 +142,13 @@ export const Header = () => {
               </Button>
             </div>
           </div>
+
+          {/* Mobile inline search bar (shown when search icon is tapped) */}
+          {isMobileSearchOpen && (
+            <div className="mt-3 px-3 sm:px-4 md:hidden">
+              <SearchBar />
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu */}
@@ -137,13 +161,6 @@ export const Header = () => {
             `}
           >
             <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4">
-              {/* Mobile Search */}
-              <div className="flex items-center gap-2 px-2 sm:px-4">
-                <div className="flex-1">
-                  <SearchBar />
-                </div>
-              </div>
-
               {/* Mobile Navigation Links */}
               <nav className="flex flex-col space-y-1.5 sm:space-y-2 border-t border-orange-500 pt-3 sm:pt-4 px-2 sm:px-4">
                 {navigation.map((item) => (

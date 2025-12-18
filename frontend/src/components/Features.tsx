@@ -64,50 +64,30 @@ export const Features = () => {
           </p>
         </div>
 
-        {/* Features - ScrollStack on Mobile, Grid on Desktop */}
+        {/* Features - Simple list on Mobile, Interactive cards on Desktop */}
         {isMobile ? (
-          <div className="max-w-4xl mx-auto">
-            <ScrollStack
-              useWindowScroll={true}
-              itemDistance={150}
-              itemStackDistance={40}
-              stackPosition="30%"
-              baseScale={0.9}
-              itemScale={0.05}
-              rotationAmount={2}
-              blurAmount={2}
-            >
-              {items.map(({ icon: Icon, title, desc, color }, i) => (
-                <ScrollStackItem
-                  key={title}
-                  itemClassName="group relative overflow-hidden rounded-3xl border border-border/50 bg-card/80 backdrop-blur-sm text-center hover:shadow-2xl transition-all duration-500 hover:border-primary/20"
-                >
-                  <div className="h-full p-8">
-                    {/* Background Color */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-                    
-                    {/* Icon Container */}
-                    <div className={`relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${color} group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                      <Icon className={`h-8 w-8 text-white group-hover:scale-110 transition-transform duration-300`} />
-                      
-                      {/* Icon Glow Effect */}
-                      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${color} opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300`}></div>
-                    </div>
-                    
-                    {/* Content */}
-                    <h3 className={`text-xl font-bold text-foreground mb-3 group-hover:bg-gradient-to-r ${color} group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300`}>
-                      {title}
-                    </h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {desc}
-                    </p>
-                    
-                    {/* Hover Effect Line */}
-                    <div className={`absolute bottom-0 left-0 h-1 w-0 bg-gradient-to-r ${color} group-hover:w-full transition-all duration-500`}></div>
-                  </div>
-                </ScrollStackItem>
-              ))}
-            </ScrollStack>
+          <div className="max-w-4xl mx-auto space-y-4">
+            {items.map(({ icon: Icon, title, desc, color }) => (
+              <div
+                key={title}
+                className="relative overflow-hidden rounded-2xl border border-border/40 bg-card/90 backdrop-blur-sm px-5 py-6 flex items-start gap-4 shadow-sm"
+              >
+                {/* Icon */}
+                <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${color} shadow-lg flex-shrink-0`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+
+                {/* Text */}
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-foreground mb-1">
+                    {title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {desc}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

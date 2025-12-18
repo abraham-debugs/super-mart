@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, Package, Folder, X } from "lucide-react";
+import { Search, Package, Folder, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
+import type { Product } from "@/types/product";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -35,6 +37,7 @@ export const SearchBar = () => {
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const { addToCart } = useCart();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -127,6 +130,19 @@ export const SearchBar = () => {
 
   const totalResults = (results.products?.length || 0) + (results.categories?.length || 0);
 
+  const mapSearchProductToCartProduct = (p: SearchProduct): Product => ({
+    id: p.id,
+    name: p.name,
+    description: "",
+    price: p.price,
+    originalPrice: p.originalPrice,
+    category: p.category || "",
+    image: p.image,
+    rating: 0,
+    reviews: 0,
+    inStock: true,
+  });
+
   return (
     <div ref={searchRef} className="relative w-full group">
       <form onSubmit={handleSearch}>
@@ -218,41 +234,55 @@ export const SearchBar = () => {
                 {results.products.slice(0, 10).map((product) => (
                   <div
                     key={product.id}
-                    onClick={handleProductClick}
                     className="px-4 py-3 hover:bg-gradient-to-r hover:from-orange-50 hover:via-red-50 hover:to-blue-50 cursor-pointer transition-all duration-200 flex items-center gap-3 group"
                   >
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200 group-hover:border-orange-400 group-hover:shadow-md transition-all duration-200">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight mb-1">
-                        {product.name}
-                      </p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-base font-bold text-orange-600 group-hover:text-orange-700 transition-colors">
-                          Rs.{product.price}
-                        </span>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <>
-                            <span className="text-xs text-gray-400 line-through">
-                              Rs.{product.originalPrice}
-                            </span>
-                            <span className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 py-0.5 rounded font-semibold">
-                              {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                            </span>
-                          </>
+                    <div
+                      onClick={handleProductClick}
+                      className="flex items-center gap-3 flex-1 min-w-0"
+                    >
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200 group-hover:border-orange-400 group-hover:shadow-md transition-all duration-200">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight mb-1">
+                          {product.name}
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-base font-bold text-orange-600 group-hover:text-orange-700 transition-colors">
+                            Rs.{product.price}
+                          </span>
+                          {product.originalPrice && product.originalPrice > product.price && (
+                            <>
+                              <span className="text-xs text-gray-400 line-through">
+                                Rs.{product.originalPrice}
+                              </span>
+                              <span className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 py-0.5 rounded font-semibold">
+                                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {product.category && (
+                          <span className="text-xs text-gray-500 mt-1 inline-block">
+                            in {product.category}
+                          </span>
                         )}
                       </div>
-                      {product.category && (
-                        <span className="text-xs text-gray-500 mt-1 inline-block">
-                          in {product.category}
-                        </span>
-                      )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(mapSearchProductToCartProduct(product));
+                      }}
+                      className="flex items-center justify-center h-9 w-9 rounded-full bg-orange-500 text-white hover:bg-orange-600 shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
                   </div>
                 ))}
               </div>
