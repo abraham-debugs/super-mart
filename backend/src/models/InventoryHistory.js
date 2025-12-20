@@ -38,3 +38,6 @@ InventoryHistorySchema.index({ createdAt: -1 });
 export const InventoryHistory = mongoose.models.InventoryHistory || mongoose.model("InventoryHistory", InventoryHistorySchema);
 
 
+
+
+
