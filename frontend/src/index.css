@@ -1,160 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* MDMart Quick Commerce Design System - All colors MUST be HSL */
-
 @layer base {
   :root {
-    /* Colorful E-commerce Color Scheme - Warm Yellow/Orange & Red */
+    /* Ekomart "Fresh Green" Color Scheme */
     --background: 0 0% 100%;
-    --foreground: 230 35% 15%;
-    /* Dark Blue Text */
+    --foreground: 222 47% 11%;
 
-    /* Primary - Warm Yellow/Orange */
-    --primary: 37 90% 55%;
-    --primary-foreground: 230 35% 15%;
-    --primary-dark: 37 90% 45%;
-    --primary-light: 37 90% 95%;
+    /* Primary - Ekomart Green (#629D23) */
+    --primary: 89 64% 38%;
+    --primary-foreground: 0 0% 100%;
+    /* White text on green */
+    --primary-dark: 89 64% 30%;
+    --primary-light: 89 64% 95%;
 
-    /* Secondary - Reddish Orange */
-    --secondary: 10 85% 60%;
+    /* Secondary - Yellow/Gold for accents (Offers/Stars) */
+    --secondary: 45 93% 47%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-dark: 10 85% 50%;
-    --secondary-light: 10 85% 95%;
 
-    /* Accent - Blue (Complementary) */
-    --accent: 210 90% 50%;
-    --accent-foreground: 0 0% 100%;
-    --accent-light: 210 90% 95%;
-
-    /* Success - Green */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --success-light: 142 76% 95%;
-
-    /* Warning - Orange */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --warning-light: 38 92% 95%;
-
-    /* Neutrals */
-    --card: 0 0% 100%;
-    --card-foreground: 230 35% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 230 35% 15%;
-    --muted: 230 20% 96%;
-    --muted-foreground: 230 15% 46%;
-    --accent-muted: 230 20% 96%;
-    --accent-muted-foreground: 230 25% 10%;
-    --destructive: 0 84.2% 60.2%;
+    /* Danger/Sale - Red */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 230 20% 90%;
-    --input: 230 20% 90%;
-    --ring: 37 90% 55%;
 
-    /* E-commerce accents */
-    --price-color: 142 76% 36%;
-    --discount-color: 10 85% 60%;
-    --rating-color: 37 90% 55%;
+    /* Neutral / Muted */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    /* Premium Gradients - Warm */
-    --gradient-primary: linear-gradient(135deg, hsl(37 90% 55%), hsl(10 85% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(10 85% 60%), hsl(37 90% 55%));
-    --gradient-hero: linear-gradient(135deg, hsl(37 90% 55% / 0.1), hsl(10 85% 60% / 0.1));
-    --gradient-card: linear-gradient(135deg, hsl(37 90% 55% / 0.05), hsl(10 85% 60% / 0.05));
-    --gradient-accent: linear-gradient(135deg, hsl(10 85% 60% / 0.1), hsl(37 90% 55% / 0.1));
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    /* Soft Shadows - Warm */
-    --shadow-card: 0 2px 8px -2px hsl(37 90% 55% / 0.1);
-    --shadow-card-hover: 0 8px 25px -5px hsl(37 90% 55% / 0.2);
-    --shadow-primary: 0 4px 14px -2px hsl(37 90% 55% / 0.3);
-    --shadow-soft: 0 1px 3px 0 hsl(37 90% 55% / 0.08);
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --radius: 0.5rem;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 89 64% 38%;
+    /* Ring matches primary */
 
+    --radius: 0.3rem;
+    /* Ekomart is slightly boxier */
+
+    /* E-commerce Specifics */
+    --price-color: 89 64% 38%;
+    /* Green price often used */
+    --discount-color: 0 84% 60%;
+    /* Red for discount badge */
+    --rating-color: 45 93% 47%;
+    /* Gold stars */
+
+    /* Sidebar - keeping consistent with white/light theme */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    /* Colorful Dark Mode - Warm */
-    --background: 230 35% 10%;
-    --foreground: 0 0% 98%;
+    /* Dark Mode - Muted Green implementation */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    /* Primary - Warm Yellow/Orange */
-    --primary: 37 90% 55%;
-    --primary-foreground: 230 35% 15%;
-    --primary-dark: 37 90% 45%;
-    --primary-light: 37 90% 20%;
+    --primary: 89 54% 45%;
+    --primary-foreground: 222 47% 11%;
+    --primary-dark: 89 54% 35%;
+    --primary-light: 89 54% 15%;
 
-    /* Secondary - Reddish Orange */
-    --secondary: 10 85% 60%;
+    --secondary: 45 93% 47%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-dark: 10 85% 50%;
-    --secondary-light: 10 85% 20%;
 
-    /* Accent - Blue */
-    --accent: 210 90% 60%;
-    --accent-foreground: 0 0% 100%;
-    --accent-light: 210 90% 20%;
-
-    /* Success - Green */
-    --success: 142 76% 46%;
-    --success-foreground: 0 0% 100%;
-    --success-light: 142 76% 20%;
-
-    /* Warning - Orange */
-    --warning: 38 92% 60%;
-    --warning-foreground: 0 0% 100%;
-    --warning-light: 38 92% 20%;
-
-    /* Neutral System - Dark Mode */
-    --card: 230 35% 12%;
-    --card-foreground: 0 0% 98%;
-    --popover: 230 35% 12%;
-    --popover-foreground: 0 0% 98%;
-    --muted: 230 25% 20%;
-    --muted-foreground: 230 15% 70%;
-    --accent-muted: 230 25% 20%;
-    --accent-muted-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 230 25% 20%;
-    --input: 230 25% 20%;
-    --ring: 37 90% 55%;
 
-    /* E-commerce Specific - Colorful */
-    --price-color: 142 76% 46%;
-    --discount-color: 10 85% 60%;
-    --rating-color: 37 90% 55%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    /* Premium Gradients - Colorful Dark Mode */
-    --gradient-primary: linear-gradient(135deg, hsl(37 90% 55%), hsl(10 85% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(10 85% 60%), hsl(37 90% 55%));
-    --gradient-hero: linear-gradient(135deg, hsl(37 90% 55% / 0.15), hsl(10 85% 60% / 0.15));
-    --gradient-card: linear-gradient(135deg, hsl(37 90% 55% / 0.1), hsl(10 85% 60% / 0.1));
-    --gradient-accent: linear-gradient(135deg, hsl(10 85% 60% / 0.15), hsl(37 90% 55% / 0.15));
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    /* Shadows - Dark Mode */
-    --shadow-card: 0 2px 8px -2px hsl(0 0% 0% / 0.5);
-    --shadow-card-hover: 0 8px 25px -5px hsl(37 90% 55% / 0.3);
-    --shadow-primary: 0 4px 14px -2px hsl(37 90% 55% / 0.4);
-    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.3);
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 89 54% 45%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -167,443 +101,58 @@
   }
 }
 
-/* E-commerce Utility Classes */
-@layer components {
-  .gradient-primary {
-    background: var(--gradient-primary);
-  }
-
-  .gradient-secondary {
-    background: var(--gradient-secondary);
-  }
-
-  .gradient-hero {
-    background: var(--gradient-hero);
-  }
-
-  .gradient-card {
-    background: var(--gradient-card);
-  }
-
-  .gradient-accent {
-    background: var(--gradient-accent);
-  }
-
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
-
-  .shadow-card-hover {
-    box-shadow: var(--shadow-card-hover);
-  }
-
-  .shadow-primary {
-    box-shadow: var(--shadow-primary);
-  }
-
-  .shadow-soft {
-    box-shadow: var(--shadow-soft);
-  }
-
-  .price-color {
-    color: hsl(var(--price-color));
-  }
-
-  .discount-color {
-    color: hsl(var(--discount-color));
-  }
-
-  .rating-color {
-    color: hsl(var(--rating-color));
-  }
-
-  /* Unique Visual Elements */
-  .glass-effect {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .soft-border {
-    border: 1px solid hsl(var(--border));
-    border-radius: 0.75rem;
-  }
-
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-orange-500 via-red-500 to-blue-600 bg-clip-text text-transparent;
-  }
-
-  /* Display serif font utility for classic headings */
-  .font-display {
-    font-family: 'Playfair Display', ui-serif, Georgia, serif;
-  }
-
-  /* Ubuntu font utilities (global default) */
-  .ubuntu-light {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 300;
-    font-style: normal;
-  }
-
-  .ubuntu-regular {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 400;
-    font-style: normal;
-  }
-
-  .ubuntu-medium {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 500;
-    font-style: normal;
-  }
-
-  .ubuntu-bold {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 700;
-    font-style: normal;
-  }
-
-  .ubuntu-light-italic {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 300;
-    font-style: italic;
-  }
-
-  .ubuntu-regular-italic {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 400;
-    font-style: italic;
-  }
-
-  .ubuntu-medium-italic {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 500;
-    font-style: italic;
-  }
-
-  .ubuntu-bold-italic {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 700;
-    font-style: italic;
-  }
-
-  /* Make Ubuntu the site default font; specific components (like hero) can override using .font-display or other utilities */
-  body {
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: 400;
-  }
-
-  .bg-pattern {
-    background-image: radial-gradient(circle at 1px 1px, hsl(38 92% 50% / 0.08) 1px, transparent 0);
-    background-size: 24px 24px;
-  }
-  
-  .bg-pattern-dots {
-    background-image: radial-gradient(circle at 2px 2px, hsl(38 92% 50% / 0.06) 1px, transparent 0);
-    background-size: 32px 32px;
-  }
-  
-  .bg-pattern-grid {
-    background-image: 
-      linear-gradient(hsl(38 92% 50% / 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(38 92% 50% / 0.03) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-
-  .floating-animation {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .bounce-in {
-    animation: bounceIn 0.6s ease-out;
-  }
-
-  .slide-up {
-    animation: slideUp 0.5s ease-out;
-  }
-
-  .fade-in {
-    animation: fadeIn 0.8s ease-out;
-  }
-
-  .scale-in {
-    animation: scaleIn 0.4s ease-out;
-  }
-
-  .pulse-glow {
-    animation: pulseGlow 2s ease-in-out infinite;
-  }
-
-  .wiggle {
-    animation: wiggle 0.5s ease-in-out;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .animate-bounce-slow {
-    animation: bounceSlow 2s ease-in-out infinite;
-  }
-
-  .animate-pulse-slow {
-    animation: pulseSlow 3s ease-in-out infinite;
-  }
-
-  .animate-gradient {
-    animation: gradient 3s ease infinite;
-    background-size: 200% 200%;
-  }
-
-  .animate-shimmer {
-    animation: shimmer 2s linear infinite;
-  }
-
-  @keyframes float {
-
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  @keyframes bounceIn {
-    0% {
-      transform: scale(0.3);
-      opacity: 0;
-    }
-
-    50% {
-      transform: scale(1.05);
-    }
-
-    70% {
-      transform: scale(0.9);
-    }
-
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideUp {
-    0% {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-
-  @keyframes scaleIn {
-    0% {
-      transform: scale(0.8);
-      opacity: 0;
-    }
-
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
-  @keyframes pulseGlow {
-
-    0%,
-    100% {
-      box-shadow: 0 0 0 0 hsl(262 83% 58% / 0.4);
-    }
-
-    50% {
-      box-shadow: 0 0 0 10px hsl(262 83% 58% / 0);
-    }
-  }
-
-  @keyframes wiggle {
-
-    0%,
-    100% {
-      transform: rotate(0deg);
-    }
-
-    25% {
-      transform: rotate(-3deg);
-    }
-
-    75% {
-      transform: rotate(3deg);
-    }
-  }
-
-  @keyframes bounceSlow {
-
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-
-    50% {
-      transform: translateY(-5px);
-    }
-  }
-
-  @keyframes pulseSlow {
-
-    0%,
-    100% {
-      opacity: 1;
-    }
-
-    50% {
-      opacity: 0.7;
-    }
-  }
-
-  @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-
-    50% {
-      background-position: 100% 50%;
-    }
-
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  /* Hide scrollbars for category carousel */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Glassmorphism Navbar */
-  .glassmorphism-navbar {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    transition: all 0.3s ease;
-  }
-
-  .glassmorphism-navbar:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
-  }
-
-  /* Dynamic Island Style */
-  .dynamic-island {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .dynamic-island::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.1) 100%);
-    border-radius: inherit;
-    pointer-events: none;
-  }
-
-  /* Enhanced Glassmorphism for Dark Mode */
-  .dark .glassmorphism-navbar {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  }
-
-  .dark .glassmorphism-navbar:hover {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.7);
-  }
-
-  /* Floating Animation for Dynamic Island */
-  .floating-navbar {
-    animation: floatNavbar 6s ease-in-out infinite;
-  }
-
-  @keyframes floatNavbar {
-
-    0%,
-    100% {
-      transform: translateY(0px) scale(1);
-    }
-
-    50% {
-      transform: translateY(-2px) scale(1.01);
-    }
-  }
-
-  /* Enhanced Glassmorphism with Gradient */
-  .glassmorphism-navbar {
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.1) 100%);
-  }
-
-  /* Interactive Hover Effects */
-  .glassmorphism-navbar:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.6);
-  }
-}
-
-/* Smooth Transitions */
 @layer base {
   * {
-    @apply border-border transition-colors duration-200;
+    @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Barlow', sans-serif;
+  }
+
+  /* Heading specific font in case we want to differentiate, but Ekomart uses Barlow universally mostly */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold;
+  }
+}
+
+@layer components {
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Retaining necessary animations */
+@layer utilities {
+  .animate-in {
+    animation-duration: 150ms;
+    --tw-enter-opacity: initial;
+    --tw-enter-scale: initial;
+    --tw-enter-rotate: initial;
+    --tw-enter-translate-x: initial;
+    --tw-enter-translate-y: initial;
+  }
+
+  .fade-in {
+    --tw-enter-opacity: 0;
+    animation-name: enter;
+  }
+
+  .slide-in-from-top-2 {
+    --tw-enter-translate-y: -0.5rem;
+    animation-name: enter;
+  }
+
+  @keyframes enter {
+    from {
+      opacity: var(--tw-enter-opacity, 1);
+      transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), 1) rotate(var(--tw-enter-rotate, 0));
+    }
   }
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
-import { FollowerPointerCard } from '@/components/ui/following-pointer';
+import { ProductCard } from './ProductCard';
 import type { Product as CartProduct } from '@/types/product';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
@@ -150,103 +150,41 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {products.map((product) => {
-              const discount = product.originalPrice 
-                ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-                : 0;
+              const cartProduct: CartProduct = {
+                id: product._id,
+                name: product.nameEn,
+                description: product.nameTa || product.nameEn,
+                price: product.price,
+                originalPrice: product.originalPrice,
+                category: product.categoryId?.nameEn || 'Recommended',
+                image: product.imageUrl,
+                rating: 0,
+                reviews: 0,
+                inStock: true,
+              };
 
               return (
-                <FollowerPointerCard
-                  key={product._id}
-                  title={
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="h-3 w-3" />
-                      <p className="text-xs font-semibold">{product.nameEn}</p>
-                    </div>
+                <div key={product._id} onClick={() => {
+                  // Track view logic if needed here, or handle inside ProductCard if unified
+                  if (user) {
+                    const token = localStorage.getItem('token');
+                    fetch(`${API_BASE}/api/recommendations/track/view`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        productId: product._id,
+                        categoryId: product.categoryId?._id
+                      })
+                    }).catch(console.error);
                   }
-                >
-                  <Card
-                    className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 border-0 bg-white/80 backdrop-blur-sm overflow-hidden"
-                    onClick={() => {
-                    // Track view
-                    if (user) {
-                      const token = localStorage.getItem('token');
-                      fetch(`${API_BASE}/api/recommendations/track/view`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                          productId: product._id,
-                          categoryId: product.categoryId?._id
-                        })
-                      }).catch(err => console.error('Track view error:', err));
-                    }
-                    // Navigate to product details (you can implement this later)
-                  }}
-                >
-                  <CardContent className="p-2">
-                    {/* Product Image */}
-                    <div className="relative mb-2 aspect-square rounded-md overflow-hidden bg-gray-100">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.nameEn}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {discount > 0 && (
-                        <Badge className="absolute top-1 right-1 bg-red-500 text-white border-0 text-[10px] px-1 py-0 h-4">
-                          {discount}%
-                        </Badge>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="space-y-0.5">
-                      <h3 className="font-medium text-[11px] text-gray-900 line-clamp-2 leading-tight">
-                        {product.nameEn}
-                      </h3>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-bold text-black">
-                          Rs.{product.price}
-                        </span>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <span className="text-[10px] text-gray-400 line-through">
-                            Rs.{product.originalPrice}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Add to Cart Button */}
-                    <Button
-                      size="sm"
-                      className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 shadow-[0_10px_22px_rgba(239,68,68,0.35)] transition-transform duration-200 hover:-translate-y-0.5 disabled:translate-y-0 disabled:bg-gray-400 disabled:text-white/50 disabled:shadow-none"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const cartProduct: CartProduct = {
-                          id: product._id,
-                          name: product.nameEn,
-                          description: product.nameTa || product.nameEn,
-                          price: product.price,
-                          originalPrice: product.originalPrice,
-                          category: product.categoryId?.nameEn || 'Recommended',
-                          image: product.imageUrl,
-                          rating: 0,
-                          reviews: 0,
-                          inStock: true,
-                        };
-
-                        addToCart(cartProduct);
-                      }}
-                    >
-                      Add to Cart
-                    </Button>
-                  </CardContent>
-                </Card>
-                </FollowerPointerCard>
+                }}>
+                  <ProductCard product={cartProduct} />
+                </div>
               );
             })}
           </div>

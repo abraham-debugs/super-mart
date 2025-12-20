@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -42,26 +42,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("mdmart-cart", JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
-      
+
       if (existingItem) {
         toast({
           title: "Updated Cart",
-          description: `Increased quantity of ${product.name}`,
+          description: `Added ${quantity} ${product.name}(s) to cart`,
         });
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
         toast({
           title: "Added to Cart",
-          description: `${product.name} has been added to your cart`,
+          description: `${quantity} ${product.name}(s) added to your cart`,
         });
-        return [...prevItems, { ...product, quantity: 1 }];
+        return [...prevItems, { ...product, quantity }];
       }
     });
   };

@@ -69,7 +69,6 @@ export const SearchBar = () => {
         const res = await fetch(`${API_BASE}/api/products/search?q=${encodeURIComponent(query)}`);
         if (res.ok) {
           const data = await res.json();
-          // Ensure the data has the expected structure
           const safeResults = {
             products: Array.isArray(data.products) ? data.products : [],
             categories: Array.isArray(data.categories) ? data.categories : [],
@@ -110,12 +109,10 @@ export const SearchBar = () => {
   };
 
   const handleProductClick = () => {
-    // Navigate to search results page and force refresh
     const searchUrl = `/?q=${encodeURIComponent(query.trim())}`;
     navigate(searchUrl);
     setIsOpen(false);
     setQuery("");
-    // Force page refresh to show results
     window.location.href = searchUrl;
   };
 
@@ -145,49 +142,49 @@ export const SearchBar = () => {
 
   return (
     <div ref={searchRef} className="relative w-full group">
-      <form onSubmit={handleSearch}>
-        <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 z-10 transition-colors duration-200 ${
-          query ? 'text-orange-600' : 'text-white/60 group-hover:text-white'
-        }`} />
+      <form onSubmit={handleSearch} className="relative flex items-center">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search for groceries & essentials..."
-          className={`pl-12 pr-10 w-full h-12 rounded-2xl border-2 transition-all duration-300 ${
-            query 
-              ? 'border-orange-400/60 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 bg-white/95 backdrop-blur-md text-gray-900 placeholder:text-gray-400 shadow-lg shadow-orange-500/10' 
-              : 'border-white/20 focus:border-white/40 focus:ring-4 focus:ring-white/10 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/60 hover:border-white/30'
-          }`}
+          placeholder="Search for items..."
+          className="pl-4 pr-32 w-full h-[50px] rounded-full border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 text-gray-900 placeholder:text-gray-400 transition-all duration-300"
         />
-        {query && (
+
+        {/* Helper Actions inside Search Bar */}
+        <div className="absolute right-1.5 flex items-center gap-1">
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setResults({ products: [], categories: [], query: "" });
+                setIsOpen(false);
+              }}
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              setResults({ products: [], categories: [], query: "" });
-              setIsOpen(false);
-            }}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-orange-600 z-10 transition-colors duration-200 hover:bg-orange-50 rounded-full p-1"
+            type="submit"
+            className="h-[40px] px-6 bg-primary hover:bg-primary-dark text-white rounded-full font-semibold text-sm transition-colors duration-200 flex items-center gap-2"
           >
-            <X className="h-4 w-4" />
+            <Search className="h-4 w-4" />
+            <span>Search</span>
           </button>
-        )}
-        <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300 ${
-          query 
-            ? 'bg-gradient-to-r from-orange-500/5 via-red-500/5 to-blue-500/5 opacity-100' 
-            : 'bg-white/5 opacity-0 group-hover:opacity-100'
-        }`}></div>
+        </div>
       </form>
 
       {/* Search Results Dropdown */}
       {isOpen && totalResults > 0 && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[650px] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 z-50 max-h-[650px] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+
           {/* Categories */}
           {results.categories && results.categories.length > 0 && (
-            <div className="border-b border-gray-100">
-              <div className="px-4 py-2 bg-gradient-to-r from-orange-50 via-red-50 to-blue-50 flex items-center gap-2">
-                <Folder className="h-4 w-4 text-orange-600" />
-                <span className="text-xs font-semibold text-gray-700 uppercase">
+            <div className="border-b border-gray-50">
+              <div className="px-4 py-2 bg-gray-50 flex items-center gap-2">
+                <Folder className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Categories ({results.categories.length})
                 </span>
               </div>
@@ -196,24 +193,19 @@ export const SearchBar = () => {
                   <div
                     key={category.id}
                     onClick={() => handleCategoryClick(category.id)}
-                    className="px-4 py-3 hover:bg-gradient-to-r hover:from-orange-50 hover:via-red-50 hover:to-blue-50 cursor-pointer transition-all duration-200 flex items-center gap-3 group/item"
+                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 group/item border-l-2 border-transparent hover:border-primary"
                   >
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
                       <img
                         src={category.imageUrl}
                         alt={category.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate group-hover/item:text-orange-600 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 group-hover/item:text-primary transition-colors">
                         {category.name}
                       </p>
-                      {category.parentCategory && (
-                        <p className="text-xs text-gray-500 truncate">
-                          in {category.parentCategory.name}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -224,9 +216,9 @@ export const SearchBar = () => {
           {/* Products */}
           {results.products && results.products.length > 0 && (
             <div>
-              <div className="px-4 py-2 bg-gradient-to-r from-orange-50 via-red-50 to-blue-50 flex items-center gap-2">
-                <Package className="h-4 w-4 text-orange-600" />
-                <span className="text-xs font-semibold text-gray-700 uppercase">
+              <div className="px-4 py-2 bg-gray-50 flex items-center gap-2">
+                <Package className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Products ({results.products.length})
                 </span>
               </div>
@@ -234,13 +226,13 @@ export const SearchBar = () => {
                 {results.products.slice(0, 10).map((product) => (
                   <div
                     key={product.id}
-                    className="px-4 py-3 hover:bg-gradient-to-r hover:from-orange-50 hover:via-red-50 hover:to-blue-50 cursor-pointer transition-all duration-200 flex items-center gap-3 group"
+                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 group border-b border-gray-100 last:border-0"
                   >
                     <div
                       onClick={handleProductClick}
                       className="flex items-center gap-3 flex-1 min-w-0"
                     >
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200 group-hover:border-orange-400 group-hover:shadow-md transition-all duration-200">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
                         <img
                           src={product.image}
                           alt={product.name}
@@ -248,29 +240,19 @@ export const SearchBar = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight mb-1">
+                        <p className="text-sm font-medium text-gray-900 line-clamp-1 mb-0.5 group-hover:text-primary transition-colors">
                           {product.name}
                         </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-base font-bold text-orange-600 group-hover:text-orange-700 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-primary">
                             Rs.{product.price}
                           </span>
                           {product.originalPrice && product.originalPrice > product.price && (
-                            <>
-                              <span className="text-xs text-gray-400 line-through">
-                                Rs.{product.originalPrice}
-                              </span>
-                              <span className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 py-0.5 rounded font-semibold">
-                                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                              </span>
-                            </>
+                            <span className="text-xs text-gray-400 line-through">
+                              Rs.{product.originalPrice}
+                            </span>
                           )}
                         </div>
-                        {product.category && (
-                          <span className="text-xs text-gray-500 mt-1 inline-block">
-                            in {product.category}
-                          </span>
-                        )}
                       </div>
                     </div>
                     <button
@@ -279,7 +261,7 @@ export const SearchBar = () => {
                         e.stopPropagation();
                         addToCart(mapSearchProductToCartProduct(product));
                       }}
-                      className="flex items-center justify-center h-9 w-9 rounded-full bg-orange-500 text-white hover:bg-orange-600 shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0"
+                      className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 text-gray-600 hover:bg-primary hover:text-white transition-all duration-200"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -289,50 +271,27 @@ export const SearchBar = () => {
             </div>
           )}
 
-          {/* View All Results */}
+          {/* View All */}
           {totalResults > 10 && (
-            <div className="border-t border-gray-100 bg-gradient-to-r from-orange-50 via-red-50 to-blue-50">
+            <div className="border-t border-gray-100 p-2 bg-gray-50">
               <button
                 onClick={handleViewAllResults}
-                className="w-full px-4 py-4 text-center font-medium text-gray-900 hover:text-orange-600 transition-colors flex items-center justify-center gap-2 group"
+                className="w-full py-2 text-center text-sm font-medium text-primary hover:text-primary-dark transition-colors"
               >
-                <span>View all {totalResults} results for "{query}"</span>
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                View all {totalResults} results
               </button>
             </div>
           )}
-          
-          {/* Footer showing result count */}
-          <div className="border-t border-gray-100 px-4 py-2 bg-gradient-to-r from-orange-50/50 via-red-50/50 to-blue-50/50">
-            <p className="text-xs text-gray-600 text-center">
-              {totalResults === 1 ? '1 result' : `${totalResults} results`} found
-              {totalResults > 10 && ' • Showing top 10'}
-            </p>
-          </div>
         </div>
       )}
 
       {/* Loading State */}
       {isLoading && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-200 z-50 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2 text-gray-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-gray-500">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
             <span className="text-sm">Searching...</span>
           </div>
-        </div>
-      )}
-
-      {/* No Results */}
-      {isOpen && totalResults === 0 && !isLoading && query.trim().length >= 2 && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-200 z-50 px-4 py-6 text-center animate-in fade-in slide-in-from-top-2 duration-200">
-          <p className="text-gray-600 text-sm">
-            No results found for "<span className="font-semibold text-orange-600">"{query}"</span>"
-          </p>
-          <p className="text-gray-500 text-xs mt-1">
-            Try different keywords
-          </p>
         </div>
       )}
     </div>

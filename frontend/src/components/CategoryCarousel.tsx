@@ -9,10 +9,10 @@ import { FollowerPointerCard } from "@/components/ui/following-pointer";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const PLACEHOLDER_IMG = "https://placehold.co/80x80";
 
-type BackendCategory = { 
-  _id: string; 
-  name: string; 
-  imageUrl: string; 
+type BackendCategory = {
+  _id: string;
+  name: string;
+  imageUrl: string;
   parentCategory?: { _id: string; name: string } | null;
 };
 
@@ -59,7 +59,7 @@ export const CategoryCarousel = () => {
   const categoryGroups: CategoryGroup[] = [];
   const standaloneParents: BackendCategory[] = [];
   const parentCategories = categories.filter(c => !c.parentCategory);
-  
+
   parentCategories.forEach(parent => {
     const children = categories.filter(c => c.parentCategory?._id === parent._id);
     if (children.length > 0) {
@@ -113,9 +113,13 @@ export const CategoryCarousel = () => {
             No categories available
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="mt-10 text-center">
+              <h2 className="text-3xl font-bold text-gray-900">Shop by Category</h2>
+              <p className="text-sm text-gray-500">Pick your favorite items from our categories</p>
+            </div>
             {/* Parent Categories with Subcategories */}
-            {(showAllCategories ? categoryGroups : categoryGroups.slice(0, 3)).map((group, groupIdx) => (
+            {(showAllCategories ? categoryGroups : categoryGroups.slice(0, 4)).map((group, groupIdx) => (
               <div key={group.parent._id} className="space-y-1.5">
                 {/* Parent Category Header */}
                 <div className="flex items-center justify-between">
@@ -133,11 +137,11 @@ export const CategoryCarousel = () => {
                 </div>
 
                 {/* Subcategories Grid */}
-                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20 gap-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
                   {group.children.map((category, index) => {
                     const isSelected = selectedCategory === category._id;
                     const gradient = categoryGradients[(groupIdx * 10 + index) % categoryGradients.length];
-                    
+
                     return (
                       <FollowerPointerCard
                         key={category._id}
@@ -147,35 +151,32 @@ export const CategoryCarousel = () => {
                             <p className="text-xs font-semibold">{category.name}</p>
                           </div>
                         }
-                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${
-                          isSelected ? 'scale-105' : 'hover:scale-105'
-                        }`}
+                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${isSelected ? 'scale-105' : 'hover:scale-105'
+                          }`}
                       >
                         <div onClick={() => handleCategoryClick(category)}>
                           {/* Category Card */}
                           <div className="relative w-full">
-                            <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
-                              isSelected ? 'ring-2 ring-black' : ''
-                            }`}>
+                            <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${isSelected ? 'ring-2 ring-black' : ''
+                              }`}>
                               <div className="relative w-full h-full">
-                                <img 
-                                  src={category.imageUrl} 
-                                  alt={category.name} 
-                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                                <img
+                                  src={category.imageUrl}
+                                  alt={category.name}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                 />
                                 {/* Overlay gradient on hover */}
                                 <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Category name */}
                           <div className="text-center w-full">
-                            <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
-                              isSelected 
-                                ? 'text-black' 
-                                : 'text-gray-700 group-hover:text-black'
-                            }`}>
+                            <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${isSelected
+                              ? 'text-black'
+                              : 'text-gray-700 group-hover:text-black'
+                              }`}>
                               {category.name}
                             </span>
                           </div>
@@ -186,9 +187,9 @@ export const CategoryCarousel = () => {
                 </div>
               </div>
             ))}
-            
+
             {/* View More Button */}
-            {!showAllCategories && categoryGroups.length > 3 && (
+            {!showAllCategories && categoryGroups.length > 4 && (
               <div className="flex justify-center pt-2">
                 <Button
                   onClick={() => setShowAllCategories(true)}
@@ -202,7 +203,7 @@ export const CategoryCarousel = () => {
             )}
 
             {/* View Less Button */}
-            {showAllCategories && categoryGroups.length > 3 && (
+            {showAllCategories && categoryGroups.length > 4 && (
               <div className="flex justify-center pt-2">
                 <Button
                   onClick={() => setShowAllCategories(false)}
@@ -219,43 +220,40 @@ export const CategoryCarousel = () => {
             {showAllCategories && standaloneParents.length > 0 && (
               <div className="space-y-1.5">
                 <h2 className="text-base font-bold text-gray-900">Other Categories</h2>
-                <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20 gap-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
                   {standaloneParents.map((category, index) => {
                     const isSelected = selectedCategory === category._id;
                     const gradient = categoryGradients[index % categoryGradients.length];
-                    
+
                     return (
                       <div
                         key={category._id}
-                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${
-                          isSelected ? 'scale-105' : 'hover:scale-105'
-                        }`}
+                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${isSelected ? 'scale-105' : 'hover:scale-105'
+                          }`}
                         onClick={() => handleCategoryClick(category)}
                       >
                         {/* Category Card */}
                         <div className="relative w-full">
-                          <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${
-                              isSelected ? 'ring-2 ring-black' : ''
-                          }`}>
+                          <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${isSelected ? 'ring-2 ring-black' : ''
+                            }`}>
                             <div className="relative w-full h-full">
-                              <img 
-                                src={category.imageUrl} 
-                                alt={category.name} 
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                              <img
+                                src={category.imageUrl}
+                                alt={category.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               />
                               {/* Overlay gradient on hover */}
                               <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Category name */}
                         <div className="text-center w-full">
-                          <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${
-                            isSelected 
-                              ? 'text-black' 
-                              : 'text-gray-700 group-hover:text-black'
-                          }`}>
+                          <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${isSelected
+                            ? 'text-black'
+                            : 'text-gray-700 group-hover:text-black'
+                            }`}>
                             {category.name}
                           </span>
                         </div>

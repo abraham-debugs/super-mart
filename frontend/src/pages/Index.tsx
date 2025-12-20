@@ -7,6 +7,7 @@ import { Features } from "@/components/Features";
 import RecommendedProducts from "@/components/RecommendedProducts";
 import type { Product } from "@/types/product";
 import { AdsCarousel } from "@/components/AdsCarousel";
+import { DiscountedProducts } from "@/components/DiscountedProducts";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -100,12 +101,12 @@ const Index = () => {
           const res = await fetch(`${API_BASE}/api/products/search?q=${encodeURIComponent(q)}`);
           if (!res.ok) throw new Error("Search failed");
           const data = await res.json();
-          
+
           // Handle new response format with products and categories
           if (data && typeof data === 'object') {
             const prods = Array.isArray(data.products) ? data.products : (Array.isArray(data) ? data : []);
             const cats = Array.isArray(data.categories) ? data.categories : [];
-            
+
             setAllProducts(prods);
             setSearchCategories(cats);
           } else {
@@ -146,41 +147,49 @@ const Index = () => {
     <div className="min-h-screen bg-background relative">
       {/* Background Pattern */}
       <div className="fixed inset-0 bg-pattern opacity-30 pointer-events-none"></div>
-      
+
       <div className="relative z-10">
         {/* Category Carousel */}
-         
+
         {/* Hero Section */}
         <Hero />
         <CategoryCarousel />
 
-         {/* Features */}
-         
+        {/* Features */}
+
 
         {/* Personalized Recommendations */}
         <RecommendedProducts limit={10} />
-        
+
+        {/* Discounted Products Section */}
+        <section className="py-8 lg:py-10">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">Products with Discounts</h2>
+            <DiscountedProducts />
+          </div>
+        </section>
+
         {/* Featured Products - Fresh Picks */}
         {freshPicks.length > 0 && (
           <section className="py-12 lg:py-16 relative">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-secondary/5"></div>
-            <ProductGrid 
-              title="Fresh Picks for You" 
-              showFilters={false} 
+            <ProductGrid
+              title="Fresh Picks for You"
+              showFilters={false}
               productsToShow={freshPicks}
             />
           </section>
         )}
-      
-        <Features />   
-      
+
+        <Features />
+
         {/* Most Loved Items */}
         {mostLoved.length > 0 && (
           <section className="py-12 lg:py-16 bg-gradient-to-br from-muted/30 to-muted/10 relative">
             <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5"></div>
-            <ProductGrid 
-              title="Most Loved Items" 
-              showFilters={false} 
+            <ProductGrid
+              title="Most Loved Items"
+              showFilters={false}
               productsToShow={mostLoved}
             />
           </section>
@@ -190,7 +199,7 @@ const Index = () => {
         <section className="py-10">
           <AdsCarousel />
         </section>
-        
+
         {/* Search Results - Categories */}
         {searchQuery && searchCategories.length > 0 && (
           <section className="py-8 lg:py-12 relative">
@@ -201,7 +210,7 @@ const Index = () => {
                 </h2>
                 <p className="text-muted-foreground">Found {searchCategories.length} matching categories</p>
               </div>
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {searchCategories.map((category) => (
                   <div
@@ -239,9 +248,9 @@ const Index = () => {
         {/* All Products (filtered by selected category or search) */}
         <section className="py-12 lg:py-16 relative">
           <div className="absolute inset-0 bg-gradient-to-b from-secondary/5 via-transparent to-accent/5"></div>
-          <ProductGrid 
+          <ProductGrid
             title={
-              searchQuery 
+              searchQuery
                 ? `Products matching "${searchQuery}"` + (allProducts.length > 0 ? ` (${allProducts.length})` : '')
                 : (selectedCategory ? `Category: ${selectedCategory}` : "All Groceries & Essentials")
             }

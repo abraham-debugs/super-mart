@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  CreditCard, 
-  Truck, 
-  Shield, 
+import {
+  ArrowLeft,
+  MapPin,
+  CreditCard,
+  Truck,
+  Shield,
   Clock,
   CheckCircle,
   Plus,
@@ -37,12 +37,12 @@ const Checkout = () => {
   const { toast } = useToast();
   const { items: cartItems, getCartCount, getCartTotal, removeFromCart, updateQuantity, clearCart } = useCart();
   const { user, token } = useAuth() as any;
-  
+
   // Enforce login requirement - redirect to login if not authenticated
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    
+
     if (!storedToken || !storedUser || !user) {
       toast({
         title: "Login Required",
@@ -52,7 +52,7 @@ const Checkout = () => {
       navigate("/login", { state: { from: "/checkout" } });
       return;
     }
-    
+
     // Also check if cart is empty
     if (getCartCount() === 0) {
       toast({
@@ -217,7 +217,7 @@ const Checkout = () => {
     };
     const paymentInfo = { method: paymentMethod };
     const promoCode = appliedPromoCode ? { code: appliedPromoCode.code } : null;
-    
+
     try {
       if (!token) {
         // Not authenticated - redirect to login
@@ -248,14 +248,14 @@ const Checkout = () => {
         }
         throw new Error(errMsg);
       }
-      
+
       // Get order ID from response
       const orderData = await res.json();
       const orderId = orderData?.orderId || orderData?._id || null;
-      
-  // Clear cart and navigate to order success page
-  clearCart();
-  navigate("/order-success", { state: { orderId } });
+
+      // Clear cart and navigate to order success page
+      clearCart();
+      navigate("/order-success", { state: { orderId } });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Order failed. Please try again.");
     }
@@ -297,11 +297,10 @@ const Checkout = () => {
                   {steps.map((step, index) => (
                     <div key={step.id} className="flex items-center flex-shrink-0">
                       <div className="flex items-center">
-                        <div className={`flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full border-2 flex-shrink-0 ${
-                          currentStep >= step.id 
-                            ? 'bg-black border-black text-white' 
+                        <div className={`flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full border-2 flex-shrink-0 ${currentStep >= step.id
+                            ? 'bg-black border-black text-white'
                             : 'border-gray-300 text-gray-500'
-                        }`}>
+                          }`}>
                           {currentStep > step.id ? (
                             <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                           ) : (
@@ -309,18 +308,16 @@ const Checkout = () => {
                           )}
                         </div>
                         <div className="ml-1.5 sm:ml-2 md:ml-3 min-w-0">
-                          <p className={`text-[10px] sm:text-xs md:text-sm font-medium truncate ${
-                            currentStep >= step.id ? 'text-black' : 'text-gray-500'
-                          }`}>
+                          <p className={`text-[10px] sm:text-xs md:text-sm font-medium truncate ${currentStep >= step.id ? 'text-black' : 'text-gray-500'
+                            }`}>
                             {step.title}
                           </p>
                           <p className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 hidden sm:block">{step.description}</p>
                         </div>
                       </div>
                       {index < steps.length - 1 && (
-                        <div className={`w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 mx-1 sm:mx-2 md:mx-3 lg:mx-4 flex-shrink-0 ${
-                          currentStep > step.id ? 'bg-black' : 'bg-gray-300'
-                        }`} />
+                        <div className={`w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 mx-1 sm:mx-2 md:mx-3 lg:mx-4 flex-shrink-0 ${currentStep > step.id ? 'bg-black' : 'bg-gray-300'
+                          }`} />
                       )}
                     </div>
                   ))}
@@ -400,7 +397,7 @@ const Checkout = () => {
                     </RadioGroup>
                   </div>
 
-                  <Button 
+                  <Button
                     onClick={() => setCurrentStep(2)}
                     className="w-full"
                   >
@@ -421,29 +418,31 @@ const Checkout = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg bg-gray-50">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <div className="flex-1">
-                        <Label htmlFor="cod" className="flex items-center space-x-2">
-                          <Truck className="h-4 w-4" />
-                          <span>Cash on Delivery</span>
-                        </Label>
-                        <p className="text-sm text-gray-500">
-                          Pay the full amount in cash when your order is delivered.
-                        </p>
+                    <RadioGroup defaultValue="cod" value={paymentMethod}>
+                      <div className="flex items-center space-x-2 p-4 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="cod" id="cod" />
+                        <div className="flex-1">
+                          <Label htmlFor="cod" className="flex items-center space-x-2">
+                            <Truck className="h-4 w-4" />
+                            <span>Cash on Delivery</span>
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            Pay the full amount in cash when your order is delivered.
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    </RadioGroup>
                   </div>
 
                   <div className="flex space-x-4">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setCurrentStep(1)}
                       className="flex-1"
                     >
                       Back
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => setCurrentStep(3)}
                       className="flex-1"
                     >
@@ -466,8 +465,8 @@ const Checkout = () => {
                     <h3 className="font-medium">Order Items</h3>
                     {cartItems.map((item) => (
                       <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <img 
-                          src={item.image} 
+                        <img
+                          src={item.image}
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded"
                         />
@@ -508,14 +507,14 @@ const Checkout = () => {
                   </div>
 
                   <div className="flex space-x-4">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setCurrentStep(2)}
                       className="flex-1"
                     >
                       Back
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handlePlaceOrder}
                       className="flex-1 bg-black hover:bg-gray-800 text-white"
                     >
@@ -595,9 +594,9 @@ const Checkout = () => {
                     <>
                       <Label htmlFor="promo">Promo Code</Label>
                       <div className="flex space-x-2">
-                        <Input 
-                          id="promo" 
-                          placeholder="Enter promo code" 
+                        <Input
+                          id="promo"
+                          placeholder="Enter promo code"
                           value={promoCodeInput}
                           onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
                           onKeyDown={(e) => {
@@ -606,8 +605,8 @@ const Checkout = () => {
                             }
                           }}
                         />
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={handleApplyPromoCode}
                           disabled={isValidatingPromo || !promoCodeInput.trim()}
                         >
