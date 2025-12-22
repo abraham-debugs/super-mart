@@ -12,6 +12,7 @@ const ProductSchema = new mongoose.Schema(
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     isFreshPick: { type: Boolean, default: false }, // For "Fresh Picks for You" section
     isMostLoved: { type: Boolean, default: false },   // For "Most Loved Items" section
+    isDiscounted: { type: Boolean, default: false }, // Explicitly marked as discounted
     stock: { type: Number, default: 0, min: 0 } // Inventory stock quantity
   },
   { timestamps: true }

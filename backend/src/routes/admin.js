@@ -10,6 +10,7 @@ import { DeliveryPartner } from "../models/DeliveryPartner.js";
 import { DeliveryChargeRule } from "../models/DeliveryChargeRule.js";
 import { SubscriptionPlan } from "../models/SubscriptionPlan.js";
 import { InventoryHistory } from "../models/InventoryHistory.js";
+import { SectionConfig } from "../models/SectionConfig.js";
 import { requireAuth, requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -26,9 +27,9 @@ router.post("/categories", upload.single("image"), async (req, res) => {
     if (!req.file && !parentCategory) {
       // Parent category without image - use placeholder
       const placeholderUrl = "https://placehold.co/600x600/e5e7eb/6b7280?text=" + encodeURIComponent(name.charAt(0).toUpperCase());
-      const category = await Category.create({ 
-        name, 
-        imageUrl: placeholderUrl, 
+      const category = await Category.create({
+        name,
+        imageUrl: placeholderUrl,
         publicId: "placeholder",
         parentCategory: null,
         showInNavbar: showInNavbar === "true" || showInNavbar === true
@@ -57,9 +58,9 @@ router.post("/categories", upload.single("image"), async (req, res) => {
       const mime = req.file.mimetype || "image/png";
       const base64 = req.file.buffer.toString("base64");
       const dataUrl = `data:${mime};base64,${base64}`;
-      const category = await Category.create({ 
-        name, 
-        imageUrl: dataUrl, 
+      const category = await Category.create({
+        name,
+        imageUrl: dataUrl,
         publicId: "local",
         parentCategory: parentCategory || null,
         showInNavbar: showInNavbar === "true" || showInNavbar === true
@@ -221,12 +222,12 @@ router.get("/orders", async (_req, res) => {
       items: Array.isArray(o.items) ? o.items.reduce((n, it) => n + (it.quantity || 1), 0) : 0,
       itemsBrief: Array.isArray(o.items)
         ? o.items.slice(0, 10).map((it) => ({
-            productId: String(it.productId || ""),
-            name: it.name || "",
-            price: typeof it.price === "number" ? it.price : 0,
-            quantity: it.quantity || 1,
-            imageUrl: it.imageUrl || ""
-          }))
+          productId: String(it.productId || ""),
+          name: it.name || "",
+          price: typeof it.price === "number" ? it.price : 0,
+          quantity: it.quantity || 1,
+          imageUrl: it.imageUrl || ""
+        }))
         : [],
       paymentScreenshot: o.paymentScreenshot ? { verified: !!o.paymentScreenshot.verified } : null,
       transportName: o.transportName || "",
@@ -247,7 +248,7 @@ router.get("/categories", async (_req, res) => {
     const categories = await Category.find()
       .populate('parentCategory', 'name')
       .sort({ createdAt: -1 });
-    
+
     res.json(categories);
   } catch (err) {
     console.error("Failed to fetch categories:", err);
@@ -290,7 +291,7 @@ router.get("/products", async (req, res) => {
 // Create product in existing category
 router.post("/products", upload.single("image"), async (req, res) => {
   try {
-    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId, isFreshPick, isMostLoved } = req.body;
+    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId, isFreshPick, isMostLoved, isDiscounted } = req.body;
     if (!nameEn || !price || !categoryId || !req.file) {
       return res.status(400).json({ message: "nameEn, price, categoryId and image are required" });
     }
@@ -332,7 +333,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
     // Ensure Fresh Picks and Most Loved are mutually exclusive
     const shouldBeFreshPick = isFreshPick === "true" || isFreshPick === true;
     const shouldBeMostLoved = isMostLoved === "true" || isMostLoved === true;
-    
+
     const product = await Product.create({
       nameEn,
       nameTa,
@@ -344,6 +345,7 @@ router.post("/products", upload.single("image"), async (req, res) => {
       categoryId,
       isFreshPick: shouldBeFreshPick,
       isMostLoved: shouldBeMostLoved && !shouldBeFreshPick, // Only set isMostLoved if not Fresh Pick
+      isDiscounted: isDiscounted === "true" || isDiscounted === true,
       stock: req.body.stock ? Number(req.body.stock) : 0
     });
 
@@ -363,18 +365,18 @@ router.put("/products/stock", requireAuth, requireAdmin, async (req, res) => {
     }
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    
+
     const previousStock = product.stock || 0;
     const newStock = Math.max(0, Number(stock));
     const change = newStock - previousStock;
-    
+
     product.stock = newStock;
     await product.save();
-    
+
     // Create inventory history record
     const userId = req.user?.uid || req.user?._id || req.user?.id;
     const userName = req.user?.name || req.user?.email || "System";
-    
+
     await InventoryHistory.create({
       productId: product._id,
       productName: product.nameEn,
@@ -386,7 +388,7 @@ router.put("/products/stock", requireAuth, requireAdmin, async (req, res) => {
       changedBy: userId,
       changedByName: userName
     });
-    
+
     res.json({ _id: product._id, stock: product.stock });
   } catch (err) {
     console.error("PUT /api/admin/products/stock error:", err);
@@ -398,7 +400,7 @@ router.put("/products/stock", requireAuth, requireAdmin, async (req, res) => {
 router.put("/products/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId, isFreshPick, isMostLoved } = req.body;
+    const { nameEn, nameTa, price, originalPrice, youtubeLink, categoryId, isFreshPick, isMostLoved, isDiscounted } = req.body;
     const product = await Product.findById(id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -437,6 +439,9 @@ router.put("/products/:id", upload.single("image"), async (req, res) => {
       if (shouldBeMostLoved) {
         product.isFreshPick = false;
       }
+    }
+    if (isDiscounted !== undefined) {
+      product.isDiscounted = isDiscounted === "true" || isDiscounted === true;
     }
 
     // Handle image update if new image provided
@@ -531,7 +536,7 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
 
     // Update name if provided
     if (name) category.name = name;
-    
+
     // Update parent category if provided (including setting to null)
     if (parentCategory !== undefined) {
       category.parentCategory = parentCategory || null;
@@ -632,28 +637,28 @@ router.put("/delivery-partners/:id", async (req, res) => {
 router.post("/create-admin", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    
+
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
-    
+
     // Normalize email
     const normalizedEmail = String(email).toLowerCase().trim();
-    
+
     // Check if user already exists
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(409).json({ message: "Email already registered" });
     }
-    
+
     // Validate password strength (minimum 6 characters)
     if (password.length < 6) {
       return res.status(400).json({ message: "Password must be at least 6 characters long" });
     }
-    
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
-    
+
     // Create admin user
     const adminUser = await User.create({
       name,
@@ -665,7 +670,7 @@ router.post("/create-admin", requireAuth, requireSuperAdmin, async (req, res) =>
       isOnline: false,
       lastSeen: new Date()
     });
-    
+
     res.status(201).json({
       id: String(adminUser._id),
       name: adminUser.name,
@@ -688,7 +693,7 @@ router.get("/admins", requireAuth, requireSuperAdmin, async (req, res) => {
     const admins = await User.find({ role: { $in: ["admin", "superadmin"] } })
       .select("name email role createdAt isOnline lastSeen")
       .sort({ createdAt: -1 });
-    
+
     res.json(admins.map(admin => ({
       id: String(admin._id),
       name: admin.name,
@@ -813,7 +818,7 @@ router.put("/subscription-plans/:id", requireAuth, requireAdmin, async (req, res
 
     // Check if planId is being changed and if it conflicts
     if (planId) {
-      const existing = await SubscriptionPlan.findOne({ 
+      const existing = await SubscriptionPlan.findOne({
         planId: planId.toLowerCase(),
         _id: { $ne: id }
       });
@@ -981,20 +986,20 @@ router.get("/inventory", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const { categoryId, lowStock, search } = req.query;
     let query = {};
-    
+
     if (categoryId && categoryId !== "all") {
       query.categoryId = categoryId;
     }
-    
+
     if (search) {
       const searchRegex = new RegExp(String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       query.$or = [{ nameEn: searchRegex }, { nameTa: searchRegex }];
     }
-    
+
     const products = await Product.find(query)
       .sort({ createdAt: -1 })
       .populate({ path: "categoryId", select: "name nameEn nameTa" });
-    
+
     let mapped = products.map((p) => ({
       _id: p._id,
       nameEn: p.nameEn,
@@ -1007,12 +1012,12 @@ router.get("/inventory", requireAuth, requireSuperAdmin, async (req, res) => {
       stock: p.stock || 0,
       isLowStock: (p.stock || 0) < 10 // Low stock threshold
     }));
-    
+
     // Filter by low stock if requested
     if (lowStock === "true") {
       mapped = mapped.filter(p => p.isLowStock);
     }
-    
+
     res.json(mapped);
   } catch (err) {
     console.error("GET /api/admin/inventory error:", err);
@@ -1025,13 +1030,13 @@ router.get("/inventory/:productId/history", requireAuth, requireSuperAdmin, asyn
   try {
     const { productId } = req.params;
     const { limit = 50 } = req.query;
-    
+
     const history = await InventoryHistory.find({ productId })
       .sort({ createdAt: -1 })
       .limit(Number(limit))
       .populate({ path: "changedBy", select: "name email" })
       .populate({ path: "orderId", select: "orderId" });
-    
+
     const mapped = history.map((h) => ({
       id: String(h._id),
       productId: String(h.productId),
@@ -1052,7 +1057,7 @@ router.get("/inventory/:productId/history", requireAuth, requireSuperAdmin, asyn
       orderNumber: h.orderId?.orderId || null,
       createdAt: h.createdAt
     }));
-    
+
     res.json(mapped);
   } catch (err) {
     console.error("GET /api/admin/inventory/:productId/history error:", err);
@@ -1064,38 +1069,38 @@ router.get("/inventory/:productId/history", requireAuth, requireSuperAdmin, asyn
 router.put("/inventory/bulk-update", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const { updates } = req.body; // Array of { productId, stock, reason, changeType }
-    
+
     if (!Array.isArray(updates) || updates.length === 0) {
       return res.status(400).json({ message: "updates array is required" });
     }
-    
+
     const userId = req.user?.uid || req.user?._id || req.user?.id;
     const userName = req.user?.name || req.user?.email || "System";
-    
+
     const results = [];
-    
+
     for (const update of updates) {
       const { productId, stock, reason, changeType } = update;
-      
+
       if (!productId || stock === undefined) {
         results.push({ productId, error: "productId and stock are required" });
         continue;
       }
-      
+
       try {
         const product = await Product.findById(productId);
         if (!product) {
           results.push({ productId, error: "Product not found" });
           continue;
         }
-        
+
         const previousStock = product.stock || 0;
         const newStock = Math.max(0, Number(stock));
         const change = newStock - previousStock;
-        
+
         product.stock = newStock;
         await product.save();
-        
+
         // Create inventory history record
         await InventoryHistory.create({
           productId: product._id,
@@ -1108,13 +1113,13 @@ router.put("/inventory/bulk-update", requireAuth, requireSuperAdmin, async (req,
           changedBy: userId,
           changedByName: userName
         });
-        
+
         results.push({ productId, success: true, stock: newStock });
       } catch (err) {
         results.push({ productId, error: err.message || String(err) });
       }
     }
-    
+
     res.json({ results });
   } catch (err) {
     console.error("PUT /api/admin/inventory/bulk-update error:", err);
@@ -1125,3 +1130,73 @@ router.put("/inventory/bulk-update", requireAuth, requireSuperAdmin, async (req,
 export default router;
 
 
+/ /   . . .   e x i s t i n g   i m p o r t s  
+ / /   . . .   e x i s t i n g   r o u t e s  
+  
+ / /   - - -   S e c t i o n   C o n f i g   M a n a g e m e n t   - - -  
+  
+ / /   G e t   s e c t i o n   c o n f i g  
+ r o u t e r . g e t ( " / s e c t i o n s / : s e c t i o n I d " ,   a s y n c   ( r e q ,   r e s )   = >   {  
+         t r y   {  
+                 c o n s t   {   s e c t i o n I d   }   =   r e q . p a r a m s ;  
+                 c o n s t   c o n f i g   =   a w a i t   S e c t i o n C o n f i g . f i n d O n e ( {   s e c t i o n I d   } ) ;  
+                 / /   R e t u r n   e m p t y / d e f a u l t   i f   n o t   f o u n d  
+                 r e s . j s o n ( c o n f i g   | |   {   s e c t i o n I d ,   t i t l e :   " " ,   i m a g e U r l :   " " ,   i s V i s i b l e :   t r u e   } ) ;  
+         }   c a t c h   ( e r r o r )   {  
+                 c o n s o l e . e r r o r ( " E r r o r   f e t c h i n g   s e c t i o n   c o n f i g : " ,   e r r o r ) ;  
+                 r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   m e s s a g e :   " S e r v e r   e r r o r "   } ) ;  
+         }  
+ } ) ;  
+  
+ / /   U p d a t e   s e c t i o n   c o n f i g  
+ r o u t e r . p o s t ( " / s e c t i o n s / : s e c t i o n I d " ,   u p l o a d . s i n g l e ( " i m a g e " ) ,   a s y n c   ( r e q ,   r e s )   = >   {  
+         t r y   {  
+                 c o n s t   {   s e c t i o n I d   }   =   r e q . p a r a m s ;  
+                 c o n s t   {   t i t l e ,   i s V i s i b l e   }   =   r e q . b o d y ;  
+  
+                 l e t   i m a g e U r l   =   r e q . b o d y . i m a g e U r l ;   / /   k e e p   e x i s t i n g   i f   n o t   c h a n g e d  
+                 l e t   p u b l i c I d   =   r e q . b o d y . p u b l i c I d ;  
+  
+                 / /   H a n d l e   I m a g e   U p l o a d  
+                 i f   ( r e q . f i l e )   {  
+                         i f   ( p r o c e s s . e n v . C L O U D I N A R Y _ C L O U D _ N A M E )   {  
+                                 / /   C l o u d i n a r y   l o g i c   ( p r o m i s i f i e d   f o r   c l e a n l i n e s s )  
+                                 c o n s t   r e s u l t   =   a w a i t   n e w   P r o m i s e ( ( r e s o l v e ,   r e j e c t )   = >   {  
+                                         c o n s t   s t r e a m   =   c l o u d i n a r y . u p l o a d e r . u p l o a d _ s t r e a m (  
+                                                 {   f o l d e r :   " m d m a r t / s e c t i o n s " ,   r e s o u r c e _ t y p e :   " i m a g e "   } ,  
+                                                 ( e r r ,   r e s )   = >   {   i f   ( e r r )   r e j e c t ( e r r ) ;   e l s e   r e s o l v e ( r e s ) ;   }  
+                                         ) ;  
+                                         s t r e a m . e n d ( r e q . f i l e . b u f f e r ) ;  
+                                 } ) ;  
+                                 i m a g e U r l   =   r e s u l t . s e c u r e _ u r l ;  
+                                 p u b l i c I d   =   r e s u l t . p u b l i c _ i d ;  
+                         }   e l s e   {  
+                                 / /   L o c a l   f a l l b a c k  
+                                 c o n s t   m i m e   =   r e q . f i l e . m i m e t y p e ;  
+                                 c o n s t   b a s e 6 4   =   r e q . f i l e . b u f f e r . t o S t r i n g ( " b a s e 6 4 " ) ;  
+                                 i m a g e U r l   =   ` d a t a : $ { m i m e } ; b a s e 6 4 , $ { b a s e 6 4 } ` ;  
+                                 p u b l i c I d   =   " l o c a l " ;  
+                         }  
+                 }  
+  
+                 c o n s t   c o n f i g   =   a w a i t   S e c t i o n C o n f i g . f i n d O n e A n d U p d a t e (  
+                         {   s e c t i o n I d   } ,  
+                         {  
+                                 s e c t i o n I d ,  
+                                 t i t l e ,  
+                                 i s V i s i b l e :   i s V i s i b l e   = = =   " t r u e "   | |   i s V i s i b l e   = = =   t r u e ,  
+                                 i m a g e U r l ,  
+                                 p u b l i c I d  
+                         } ,  
+                         {   n e w :   t r u e ,   u p s e r t :   t r u e   }  
+                 ) ;  
+  
+                 r e s . j s o n ( c o n f i g ) ;  
+         }   c a t c h   ( e r r o r )   {  
+                 c o n s o l e . e r r o r ( " E r r o r   u p d a t i n g   s e c t i o n   c o n f i g : " ,   e r r o r ) ;  
+                 r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   m e s s a g e :   " U p d a t e   f a i l e d " ,   e r r o r :   e r r o r . m e s s a g e   } ) ;  
+         }  
+ } ) ;  
+  
+ e x p o r t   d e f a u l t   r o u t e r ;  
+ 

@@ -17,7 +17,9 @@ import imageSearchRoutes from "./routes/imageSearch.js";
 import recommendationRoutes from "./routes/recommendations.js";
 import promoCodeRoutes from "./routes/promoCodes.js";
 import adsRoutes from "./routes/ads.js";
+import adsRoutes from "./routes/ads.js";
 import invoiceRoutes from "./routes/invoices.js";
+import sectionsRoutes from "./routes/sections.js";
 
 dotenv.config();
 
@@ -32,11 +34,11 @@ const allowedOrigins = [
   "http://localhost:3000"   // Alternative local port
 ].filter(Boolean); // Remove undefined values
 
-app.use(cors({ 
+app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -67,6 +69,7 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/promo-codes", promoCodeRoutes);
 app.use("/api/ads", adsRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/sections", sectionsRoutes);
 
 const port = process.env.PORT || 5000;
 

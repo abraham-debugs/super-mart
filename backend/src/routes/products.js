@@ -11,23 +11,27 @@ router.get("/", async (req, res) => {
   try {
     const categoryName = req.query.category;
     let query = {};
-    
+
     // If category filter is provided, find products by category name
     if (categoryName) {
-      const category = await Category.findOne({ 
+      const category = await Category.findOne({
         $or: [
           { nameEn: new RegExp(categoryName, "i") },
           { nameTa: new RegExp(categoryName, "i") },
           { name: new RegExp(categoryName, "i") }
         ]
       });
-      
+
       if (category) {
         query.categoryId = category._id;
       } else {
         // If category not found, return empty array
         return res.json([]);
       }
+    }
+
+    if (req.query.isDiscounted === "true") {
+      query.isDiscounted = true;
     }
 
     const products = await Product.find(query)
@@ -63,7 +67,7 @@ router.get("/search", async (req, res) => {
   try {
     const q = String(req.query.q || "").trim();
     if (!q) return res.json({ products: [], categories: [] });
-    
+
     // tokenize by words, ignore punctuation; require all words to appear across nameEn/nameTa
     const words = q
       .toLowerCase()
@@ -255,7 +259,7 @@ router.get("/navbar-categories", async (_req, res) => {
     const categories = await Category.find({ showInNavbar: true })
       .select('name _id')
       .sort({ name: 1 });
-    
+
     res.json(categories.map(cat => ({
       id: String(cat._id),
       name: cat.name
