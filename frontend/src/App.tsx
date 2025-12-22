@@ -26,6 +26,9 @@ import { AdminLogin } from "./pages/AdminLogin";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerifyEmail from "./pages/VerifyEmail";
 import AboutUs from "./pages/AboutUs";
+import Shop from "./pages/Shop";
+import Contact from "./pages/Contact";
+
 
 const queryClient = new QueryClient();
 
@@ -35,16 +38,16 @@ const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) 
   // Always check authentication - don't rely on cached data
   const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
   const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
-  
+
   let hasAdmin = false;
-  
+
   // Validate token and user data exist
   if (token && storedUserRaw && token.trim() !== "" && storedUserRaw.trim() !== "") {
     try {
       const u = JSON.parse(storedUserRaw);
       // Check if user has admin or superadmin role
       hasAdmin = u?.role === "admin" || u?.role === "superadmin";
-      
+
       // If invalid role, clear cache
       if (!hasAdmin) {
         localStorage.clear();
@@ -61,12 +64,12 @@ const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) 
     localStorage.clear();
     sessionStorage.clear();
   }
-  
+
   // Always redirect to login if not authenticated
   if (!hasAdmin) {
     return <Navigate to="/admin/login" replace />;
   }
-  
+
   return children;
 };
 
@@ -91,23 +94,26 @@ const App = () => (
                 <Route path="/track-order" element={<Layout><TrackOrder /></Layout>} />
                 <Route path="/subscription-plans" element={<Layout><SubscriptionPlans /></Layout>} />
                 <Route path="/about-us" element={<Layout><AboutUs /></Layout>} />
-                
+                <Route path="/shop" element={<Layout><Shop /></Layout>} />
+                <Route path="/contact" element={<Layout><Contact /></Layout>} />
+
+
                 {/* Auth pages (no navbar/footer) */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
-                
+
                 {/* Admin pages - login route must come BEFORE /admin route */}
                 <Route path="/admin/login" element={<AdminLogin />} />
-                
+
                 {/* Pages without Header/Footer (they have their own navigation) */}
                 <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
                 <Route path="/superadmin" element={<RequireAdmin><SuperAdmin /></RequireAdmin>} />
-                
+
                 {/* Delivery pages (they have their own navigation) */}
                 <Route path="/delivery/login" element={<DeliveryLogin />} />
                 <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
-                
+
                 {/* 404 page */}
                 <Route path="*" element={<Layout><NotFound /></Layout>} />
               </Routes>

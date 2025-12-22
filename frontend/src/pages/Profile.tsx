@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp, Crown, CreditCard, Download, FileText } from "lucide-react";
+import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp, Crown, CreditCard, Download, FileText, History } from "lucide-react";
 import { AddressBook } from "@/components/AddressBook";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -380,104 +380,70 @@ const Profile: React.FC = () => {
                 <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <Package className="h-5 w-5 text-primary" />
-                      My Orders
+                      <History className="h-5 w-5 text-primary" />
+                      Order History
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {ordersLoading ? (
                       <div className="py-12 text-center">
                         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                        <p className="mt-4 text-gray-600">Loading orders...</p>
+                        <p className="mt-4 text-gray-600">Loading history...</p>
                       </div>
-                    ) : orders.length === 0 ? (
+                    ) : orders.filter(o => o.status === "delivered").length === 0 ? (
                       <div className="py-12 text-center">
                         <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-600 font-medium">No orders yet</p>
-                        <p className="text-sm text-gray-500 mt-1">Your orders will appear here</p>
+                        <p className="text-gray-600 font-medium">No completed orders yet</p>
+                        <p className="text-sm text-gray-500 mt-1">Your delivered orders will appear here as history</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {orders.map((order) => {
+                        {orders.filter(o => o.status === "delivered").map((order) => {
                           const steps = ["placed", "shipped", "delivered"];
-                          let currentIndex = steps.indexOf(order.status);
-                          if (currentIndex === -1) {
-                            if (order.status === "paid") currentIndex = 0;
-                            else if (order.status === "cancelled") currentIndex = -1;
-                            else currentIndex = 0;
-                          }
+                          const currentIndex = 2; // Fixed as these are delivered
 
                           return (
-                            <div key={order._id} className="border rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
-                              <div className="flex items-start justify-between mb-4">
+                            <div key={order._id} className="border rounded-[30px] p-6 hover:shadow-lg transition-all bg-white border-gray-100">
+                              <div className="flex items-start justify-between mb-6">
                                 <div>
-                                  <p className="text-sm text-gray-500">Order ID: {order._id?.slice(-8)}</p>
-                                  <Badge className={`mt-2 ${getStatusColor(order.status)}`}>
-                                    {order.status?.toUpperCase()}
+                                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Order ID: #{order._id?.slice(-8)}</p>
+                                  <Badge className="mt-2 bg-emerald-50 text-emerald-700 border-emerald-100">
+                                    DELIVERED
                                   </Badge>
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-2xl font-bold text-gray-900">Rs.{Number(order.total).toFixed(2)}</p>
-                                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                  <p className="text-2xl font-black text-gray-900">Rs.{Number(order.total).toFixed(0)}</p>
+                                  <p className="text-xs text-gray-400 mt-1 flex items-center justify-end gap-1">
                                     <Calendar className="h-3 w-3" />
-                                    {new Date(order.createdAt).toLocaleDateString()}
+                                    {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                   </p>
                                 </div>
                               </div>
 
-                              {/* Progress Tracker */}
-                              {order.status !== "cancelled" && (
-                                <div className="my-6">
-                                  <div className="flex items-center justify-between">
-                                    {steps.map((s, idx) => {
-                                      const done = currentIndex >= idx;
-                                      const isLast = idx === steps.length - 1;
-                                      return (
-                                        <React.Fragment key={s}>
-                                          <div className="flex flex-col items-center">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${done ? "bg-primary text-white shadow-lg" : "bg-gray-200 text-gray-500"
-                                              }`}>
-                                              {done ? <Check className="h-5 w-5" /> : <span className="text-sm font-medium">{idx + 1}</span>}
-                                            </div>
-                                            <p className={`mt-2 text-xs font-medium ${done ? "text-primary" : "text-gray-500"}`}>
-                                              {s.charAt(0).toUpperCase() + s.slice(1)}
-                                            </p>
-                                          </div>
-                                          {!isLast && (
-                                            <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${currentIndex > idx ? "bg-primary" : "bg-gray-200"}`} />
-                                          )}
-                                        </React.Fragment>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-
                               {/* Items */}
-                              <div className="mt-4">
-                                <p className="text-sm font-semibold text-gray-700 mb-3">Order Items:</p>
-                                <div className="space-y-3">
-                                  {order.items?.map((it: any, idx: number) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                      <div className="flex items-center gap-3">
-                                        <img src={it.imageUrl} alt={it.name} className="w-12 h-12 object-cover rounded-md shadow-sm" />
-                                        <div>
-                                          <p className="text-sm font-medium text-gray-900">{it.name}</p>
-                                          <p className="text-xs text-gray-500">Quantity: {it.quantity}</p>
-                                        </div>
+                              <div className="space-y-3">
+                                {order.items?.map((it: any, idx: number) => (
+                                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-14 h-14 rounded-xl overflow-hidden shadow-sm border border-white">
+                                        <img src={it.imageUrl} alt={it.name} className="w-full h-full object-cover" />
                                       </div>
-                                      <p className="text-sm font-semibold text-gray-900">Rs.{Number(it.price * it.quantity).toFixed(2)}</p>
+                                      <div>
+                                        <p className="text-sm font-bold text-gray-900">{it.name}</p>
+                                        <p className="text-xs text-gray-500 font-medium">Qty: {it.quantity} × Rs.{it.price}</p>
+                                      </div>
                                     </div>
-                                  ))}
-                                </div>
+                                    <p className="text-sm font-bold text-gray-900">Rs.{Number(it.price * it.quantity).toLocaleString()}</p>
+                                  </div>
+                                ))}
                               </div>
 
                               {/* Invoice Download Button */}
-                              <div className="mt-4 pt-4 border-t border-gray-200">
+                              <div className="mt-6 pt-6 border-t border-gray-100 flex gap-4">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                                  className="flex-1 h-12 rounded-2xl border-gray-200 hover:bg-gray-50 transition-colors"
                                   onClick={() => {
                                     const orderId = order.orderId || order._id;
                                     const mobile = order.customerDetails?.mobile || '';
@@ -485,8 +451,16 @@ const Profile: React.FC = () => {
                                     window.open(invoiceUrl, '_blank');
                                   }}
                                 >
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  Download Invoice
+                                  <FileText className="h-4 w-4 mr-2 text-primary" />
+                                  Invoice
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 h-12 rounded-2xl border-gray-200 hover:bg-gray-50 transition-colors"
+                                  onClick={() => navigate(`/shop`)}
+                                >
+                                  Buy Again
                                 </Button>
                               </div>
                             </div>

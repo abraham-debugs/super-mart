@@ -29,10 +29,8 @@ export const Header = () => {
   const navigation = [
     { name: "Home", href: "/" },
     { name: "About", href: "/about-us" },
-    { name: "Shop", href: "/#shop" },
-
-    { name: "Mega Menu", href: "/mega-menu" },
-    { name: "Blog", href: "/blog" },
+    { name: "Shop", href: "/shop" },
+    { name: "Track Order", href: "/track-order" },
     { name: "Contact", href: "/contact" },
   ];
 
