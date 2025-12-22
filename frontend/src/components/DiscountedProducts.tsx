@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from './ui/button';
-import { ShoppingCart, ChevronUp, ChevronDown } from 'lucide-react';
+import { ShoppingCart, ChevronUp, ChevronDown, Tag } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
 
@@ -127,11 +127,27 @@ const MiniProductCard = ({ product }: { product: BackendProduct }) => {
 export const DiscountedProducts = ({ className }: DiscountedProductsProps) => {
     const [products, setProducts] = useState<BackendProduct[]>([]);
     const [loading, setLoading] = useState(true);
+    const [sectionConfig, setSectionConfig] = useState<{ title: string; subtitle?: string; imageUrl: string; isVisible: boolean } | null>(null);
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/sections/discounted_products`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setSectionConfig(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch section config", error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const res = await fetch(`${API_BASE}/api/products?limit=4`);
+                const res = await fetch(`${API_BASE}/api/products?isDiscounted=true&limit=4`);
                 if (res.ok) {
                     const data = await res.json();
                     setProducts(Array.isArray(data) ? data.slice(0, 4) : []);
@@ -147,71 +163,91 @@ export const DiscountedProducts = ({ className }: DiscountedProductsProps) => {
     }, []);
 
     if (loading) return null;
+    if (sectionConfig && sectionConfig.isVisible === false) return null;
 
     const orangeProducts = products.slice(0, 2);
     const greenProducts = products.slice(2, 4);
 
     return (
-        <div className={`border border-[#FBD9D9] rounded-2xl p-5 bg-[#FFF5F5]/30 ${className}`}>
-            <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-1 gap-4">
-
-                {/* Row 1 */}
-                <div className="flex flex-col lg:flex-row gap-4 h-full">
-                    {/* Orange Banner */}
-                    <div className="w-full lg:w-[320px] xl:w-[350px] relative overflow-hidden rounded-xl bg-gradient-to-br from-[#F4A51C] to-[#E59400] h-[160px] lg:h-auto flex flex-col justify-center p-6 text-white shrink-0">
-                        <div className="relative z-10 space-y-2">
-                            <h3 className="text-xl font-bold leading-tight drop-shadow-sm">
-                                Alpro Organic Flavored<br />Fresh Juice
-                            </h3>
-                            <div className="space-y-0.5">
-                                <p className="text-white/80 text-[10px] font-medium uppercase tracking-wider">Only</p>
-                                <p className="text-2xl font-black leading-none">$15.00</p>
-                            </div>
+        <section className={`py-8 container mx-auto px-4 ${className}`}>
+            {/* Admin Configurable Section Banner */}
+            {sectionConfig?.imageUrl && (
+                <div className="mb-8 w-full h-[200px] md:h-[300px] relative rounded-2xl overflow-hidden shadow-lg group">
+                    <img
+                        src={sectionConfig.imageUrl}
+                        alt={sectionConfig.title || "Offer Banner"}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    {sectionConfig.title && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
+                            <h2 className="text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg leading-tight">{sectionConfig.title}</h2>
+                            {sectionConfig.subtitle && <p className="text-lg md:text-xl font-medium opacity-90 drop-shadow-md">{sectionConfig.subtitle}</p>}
                         </div>
-                        <img
-                            src="https://html.themewant.com/ekomart/assets/images/banner/14.png"
-                            alt="Juice Banner"
-                            className="absolute right-[-10px] bottom-[-10px] w-36 object-contain drop-shadow-lg"
-                        />
-                    </div>
-
-                    {/* Product Grid */}
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {orangeProducts.map(product => (
-                            <MiniProductCard key={product._id} product={product} />
-                        ))}
-                    </div>
+                    )}
                 </div>
+            )}
 
-                {/* Row 2 */}
-                <div className="flex flex-col lg:flex-row gap-4 h-full">
-                    {/* Green Banner */}
-                    <div className="w-full lg:w-[320px] xl:w-[350px] relative overflow-hidden rounded-xl bg-gradient-to-br from-[#28A745] to-[#218838] h-[160px] lg:h-auto flex flex-col justify-center p-6 text-white shrink-0">
-                        <div className="relative z-10 space-y-2">
-                            <h3 className="text-xl font-bold leading-tight drop-shadow-sm">
-                                Alpro Organic Flavored<br />Fresh Juice
-                            </h3>
-                            <div className="space-y-0.5">
-                                <p className="text-white/80 text-[10px] font-medium uppercase tracking-wider">Only</p>
-                                <p className="text-2xl font-black leading-none">$15.00</p>
+            <div className="border border-[#FBD9D9] rounded-2xl p-5 bg-[#FFF5F5]/30">
+                <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-1 gap-4">
+
+                    {/* Row 1 */}
+                    <div className="flex flex-col lg:flex-row gap-4 h-full">
+                        {/* Orange Banner */}
+                        <div className="w-full lg:w-[320px] xl:w-[350px] relative overflow-hidden rounded-xl bg-gradient-to-br from-[#F4A51C] to-[#E59400] h-[160px] lg:h-auto flex flex-col justify-center p-6 text-white shrink-0">
+                            <div className="relative z-10 space-y-2">
+                                <h3 className="text-xl font-bold leading-tight drop-shadow-sm">
+                                    Alpro Organic Flavored<br />Fresh Juice
+                                </h3>
+                                <div className="space-y-0.5">
+                                    <p className="text-white/80 text-[10px] font-medium uppercase tracking-wider">Only</p>
+                                    <p className="text-2xl font-black leading-none">$15.00</p>
+                                </div>
                             </div>
+                            <img
+                                src="https://html.themewant.com/ekomart/assets/images/banner/14.png"
+                                alt="Juice Banner"
+                                className="absolute right-[-10px] bottom-[-10px] w-36 object-contain drop-shadow-lg"
+                            />
                         </div>
-                        <img
-                            src="https://html.themewant.com/ekomart/assets/images/banner/33.png"
-                            alt="Food Banner"
-                            className="absolute right-[-10px] bottom-[-10px] w-36 object-contain drop-shadow-lg"
-                        />
+
+                        {/* Product Grid */}
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {orangeProducts.map(product => (
+                                <MiniProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Product Grid */}
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {greenProducts.map(product => (
-                            <MiniProductCard key={product._id} product={product} />
-                        ))}
+                    {/* Row 2 */}
+                    <div className="flex flex-col lg:flex-row gap-4 h-full">
+                        {/* Green Banner */}
+                        <div className="w-full lg:w-[320px] xl:w-[350px] relative overflow-hidden rounded-xl bg-gradient-to-br from-[#28A745] to-[#218838] h-[160px] lg:h-auto flex flex-col justify-center p-6 text-white shrink-0">
+                            <div className="relative z-10 space-y-2">
+                                <h3 className="text-xl font-bold leading-tight drop-shadow-sm">
+                                    Alpro Organic Flavored<br />Fresh Juice
+                                </h3>
+                                <div className="space-y-0.5">
+                                    <p className="text-white/80 text-[10px] font-medium uppercase tracking-wider">Only</p>
+                                    <p className="text-2xl font-black leading-none">$15.00</p>
+                                </div>
+                            </div>
+                            <img
+                                src="https://html.themewant.com/ekomart/assets/images/banner/33.png"
+                                alt="Food Banner"
+                                className="absolute right-[-10px] bottom-[-10px] w-36 object-contain drop-shadow-lg"
+                            />
+                        </div>
+
+                        {/* Product Grid */}
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {greenProducts.map(product => (
+                                <MiniProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
                     </div>
+
                 </div>
-
             </div>
-        </div>
+        </section>
     );
 };

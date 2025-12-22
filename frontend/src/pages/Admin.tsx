@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Package, 
-  ShoppingCart, 
-  Tag, 
+import {
+  Package,
+  ShoppingCart,
+  Tag,
   BarChart3,
   Users,
   CreditCard,
@@ -56,6 +56,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BalancingLoader } from "@/components/BalancingLoader";
+import { SectionConfigForm } from "@/components/admin/SectionConfigForm";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -65,7 +66,7 @@ const Admin = () => {
   const { user, token } = useAuth();
   const isSuperAdmin = user?.role === "superadmin";
   const [activeTab, setActiveTab] = useState("dashboard");
-  
+
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Categories (backend-driven)
@@ -200,7 +201,7 @@ const Admin = () => {
   const [adminOrders, setAdminOrders] = useState<Array<{ id: string; customer: string; total: number; status: string; date: string | Date; items: number; delivery: string; itemsBrief?: Array<{ productId: string; name: string; price: number; quantity: number; imageUrl?: string }> }>>([]);
   const [ordersCurrentPage, setOrdersCurrentPage] = useState(1);
   const ordersPerPage = 10;
-  
+
   // Home Page Sections state
   const [freshPicksProducts, setFreshPicksProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
   const [mostLovedProducts, setMostLovedProducts] = useState<Array<{ _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string }>>([]);
@@ -209,7 +210,7 @@ const Admin = () => {
   const [showAddToMostLoved, setShowAddToMostLoved] = useState(false);
   const [showNewProductFreshPicks, setShowNewProductFreshPicks] = useState(false);
   const [showNewProductMostLoved, setShowNewProductMostLoved] = useState(false);
-  
+
   // Product management states
   const [editProductOpen, setEditProductOpen] = useState(false);
   const [deleteProductOpen, setDeleteProductOpen] = useState(false);
@@ -258,7 +259,7 @@ const Admin = () => {
   useEffect(() => {
     const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
     const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
-    
+
     // If no token or user data, clear everything and redirect
     if (!storedToken || !storedUserRaw || storedToken.trim() === "" || storedUserRaw.trim() === "") {
       localStorage.clear();
@@ -266,7 +267,7 @@ const Admin = () => {
       navigate("/admin/login", { replace: true });
       return;
     }
-    
+
     // Validate user data
     try {
       const parsedUser = JSON.parse(storedUserRaw);
@@ -291,10 +292,10 @@ const Admin = () => {
   // This check happens synchronously before any hooks or rendering
   const checkAuthAndRedirect = () => {
     if (typeof window === "undefined") return false;
-    
+
     const storedToken = localStorage.getItem("token") || localStorage.getItem("auth_token");
     const storedUserRaw = localStorage.getItem("user") || localStorage.getItem("auth_user");
-    
+
     // If no token or user data, redirect immediately
     if (!storedToken || !storedUserRaw || storedToken.trim() === "" || storedUserRaw.trim() === "") {
       // Clear any invalid data
@@ -305,7 +306,7 @@ const Admin = () => {
       window.location.href = "/admin/login";
       return false;
     }
-    
+
     // Parse and validate user data
     let storedUser = null;
     try {
@@ -319,7 +320,7 @@ const Admin = () => {
       window.location.href = "/admin/login";
       return false;
     }
-    
+
     // Check if user has admin or superadmin role
     if (!storedUser || !storedUser.role || (storedUser.role !== "admin" && storedUser.role !== "superadmin")) {
       // Clear invalid user data
@@ -330,15 +331,15 @@ const Admin = () => {
       window.location.href = "/admin/login";
       return false;
     }
-    
+
     return true;
   };
-  
+
   // Check authentication immediately - if not authorized, redirect and return null
   if (!checkAuthAndRedirect()) {
     return null;
   }
-  
+
   // Also verify with AuthContext when available
   useEffect(() => {
     if (token && user) {
@@ -377,7 +378,7 @@ const Admin = () => {
   async function loadInventoryProducts(categoryId?: string) {
     setInventoryLoading(true);
     try {
-      const url = categoryId && categoryId !== "all" 
+      const url = categoryId && categoryId !== "all"
         ? `${API_BASE}/api/admin/products?categoryId=${encodeURIComponent(categoryId)}`
         : `${API_BASE}/api/admin/products`;
       const headers: HeadersInit = {};
@@ -412,7 +413,7 @@ const Admin = () => {
       alert("Invalid stock value. Please enter a valid number >= 0");
       return;
     }
-    
+
     // Validate MongoDB ObjectId format (24 hex characters)
     const objectIdRegex = /^[0-9a-fA-F]{24}$/;
     const productIdStr = String(productId);
@@ -421,16 +422,16 @@ const Admin = () => {
       alert("Invalid product ID format");
       return;
     }
-    
+
     setStockUpdating(true);
     try {
-      const requestBody = { 
-        productId: productIdStr, 
-        stock: Math.max(0, Math.floor(Number(stock))) 
+      const requestBody = {
+        productId: productIdStr,
+        stock: Math.max(0, Math.floor(Number(stock)))
       };
-      
+
       console.log("Updating stock:", requestBody);
-      
+
       const res = await fetch(`${API_BASE}/api/admin/products/stock`, {
         method: "PUT",
         headers: {
@@ -439,7 +440,7 @@ const Admin = () => {
         },
         body: JSON.stringify(requestBody)
       });
-      
+
       // Read response body only once
       let responseData;
       try {
@@ -448,7 +449,7 @@ const Admin = () => {
         // If JSON parsing fails, create error object
         responseData = { message: `HTTP ${res.status}: ${res.statusText}` };
       }
-      
+
       if (!res.ok) {
         const errorMessage = responseData?.message || responseData?.error || `Failed to update stock (${res.status})`;
         console.error("Update stock error response:", {
@@ -459,10 +460,10 @@ const Admin = () => {
         });
         throw new Error(errorMessage);
       }
-      
+
       // Success - use the already parsed responseData
       console.log("Stock updated successfully:", responseData);
-      
+
       await loadInventoryProducts(inventoryCategoryFilter === "all" ? undefined : inventoryCategoryFilter);
       setEditingStock(null);
       setNewStockValue("");
@@ -795,7 +796,7 @@ const Admin = () => {
       setDeliveryConfirmOpen(true);
       return;
     }
-    
+
     // For other statuses, update directly
     await performStatusUpdate(order, nextStatus);
   }
@@ -836,15 +837,15 @@ const Admin = () => {
     try {
       const orderKey = (order as any).orderId || order.id;
       const actualPartnerId = partnerId === "not-assigned" ? null : partnerId;
-      
+
       const res = await fetch(`${API_BASE}/api/admin/orders/${orderKey}/assign-partner`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ partnerId: actualPartnerId })
       });
-      
+
       if (!res.ok) throw new Error("Failed to assign partner");
-      
+
       // Refresh orders to show updated assignment
       loadAdminOrders();
     } catch (e) {
@@ -926,7 +927,7 @@ const Admin = () => {
       const form = new FormData();
       form.append("name", newCategoryName);
       if (newCategoryFile) {
-      form.append("image", newCategoryFile);
+        form.append("image", newCategoryFile);
       }
       if (newParentCategory) {
         form.append("parentCategory", newParentCategory);
@@ -1066,14 +1067,14 @@ const Admin = () => {
           form.append("isFreshPick", "false");
         }
       }
-      
+
       const res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
         method: "PUT",
         body: form
       });
 
       if (!res.ok) throw new Error("Failed to update product");
-      
+
       await loadHomeSections();
       await loadProducts();
       setShowAddToFreshPicks(false);
@@ -1085,7 +1086,7 @@ const Admin = () => {
   }
 
   // Product management functions
-  async function openEditProduct(product: { _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean }) {
+  async function openEditProduct(product: { _id: string; nameEn: string; categoryName: string; price: number; imageUrl: string; isFreshPick?: boolean; isMostLoved?: boolean; isDiscounted?: boolean }) {
     setSelectedProduct(product);
     // Fetch full product details to get all fields
     try {
@@ -1103,7 +1104,8 @@ const Admin = () => {
             categoryId: fullProduct.categoryId || "",
             image: null,
             isFreshPick: fullProduct.isFreshPick || false,
-            isMostLoved: fullProduct.isMostLoved || false
+            isMostLoved: fullProduct.isMostLoved || false,
+            isDiscounted: fullProduct.isDiscounted || false
           });
         } else {
           // Fallback to basic data
@@ -1116,7 +1118,8 @@ const Admin = () => {
             categoryId: "",
             image: null,
             isFreshPick: product.isFreshPick || false,
-            isMostLoved: product.isMostLoved || false
+            isMostLoved: product.isMostLoved || false,
+            isDiscounted: product.isDiscounted || false
           });
         }
       } else {
@@ -1130,7 +1133,8 @@ const Admin = () => {
           categoryId: "",
           image: null,
           isFreshPick: product.isFreshPick || false,
-          isMostLoved: product.isMostLoved || false
+          isMostLoved: product.isMostLoved || false,
+          isDiscounted: product.isDiscounted || false
         });
       }
     } catch (err) {
@@ -1144,7 +1148,8 @@ const Admin = () => {
         categoryId: "",
         image: null,
         isFreshPick: product.isFreshPick || false,
-        isMostLoved: product.isMostLoved || false
+        isMostLoved: product.isMostLoved || false,
+        isDiscounted: product.isDiscounted || false
       });
     }
     setEditProductOpen(true);
@@ -1178,6 +1183,7 @@ const Admin = () => {
       if (editProductData.image) form.append("image", editProductData.image);
       form.append("isFreshPick", editProductData.isFreshPick.toString());
       form.append("isMostLoved", editProductData.isMostLoved.toString());
+      form.append("isDiscounted", editProductData.isDiscounted?.toString() || "false");
 
       const res = await fetch(`${API_BASE}/api/admin/products/${selectedProduct._id}`, {
         method: "PUT",
@@ -1188,7 +1194,7 @@ const Admin = () => {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to update product");
       }
-      
+
       setEditProductOpen(false);
       setSelectedProduct(null);
       setEditProductData({
@@ -1200,7 +1206,8 @@ const Admin = () => {
         categoryId: "",
         image: null,
         isFreshPick: false,
-        isMostLoved: false
+        isMostLoved: false,
+        isDiscounted: false
       });
       await loadProducts();
     } catch (err: any) {
@@ -1238,7 +1245,7 @@ const Admin = () => {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to delete product");
       }
-      
+
       setDeleteProductOpen(false);
       setSelectedProduct(null);
       await loadProducts();
@@ -1420,7 +1427,7 @@ const Admin = () => {
       delivered: { color: "bg-gray-200 text-black", label: "Delivered" },
       cancelled: { color: "bg-gray-100 text-black", label: "Cancelled" },
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.inactive;
     return <Badge className={config.color}>{config.label}</Badge>;
   };
@@ -1459,26 +1466,26 @@ const Admin = () => {
     try {
       setAdsLoading(true);
       setAdsError(null);
-      
+
       // Get token from localStorage or AuthContext
       const authToken = token || localStorage.getItem("token") || localStorage.getItem("auth_token");
-      
+
       if (!authToken) {
         setAdsError("Authentication required");
         return;
       }
-      
+
       const res = await fetch(`${API_BASE}/api/ads/manage`, {
         headers: {
           Authorization: `Bearer ${authToken}`
         }
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
         throw new Error(errorData.message || "Failed to load home posters");
       }
-      
+
       const data = await res.json();
       if (Array.isArray(data)) {
         setHomeAds(data);
@@ -1690,7 +1697,7 @@ const Admin = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
@@ -1708,9 +1715,8 @@ const Admin = () => {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/95 backdrop-blur-xl border-r border-gray-200/50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/95 backdrop-blur-xl border-r border-gray-200/50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}>
           <div className="flex flex-col h-full">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-8">
@@ -1719,7 +1725,7 @@ const Admin = () => {
                 </div>
                 <span className="text-lg font-bold text-gray-900">MDMart Admin</span>
               </div>
-              
+
               <nav className="space-y-2">
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
@@ -1731,11 +1737,10 @@ const Admin = () => {
                         setActiveTab(item.id);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                        isActive
-                          ? `${item.bgColor} ${item.color} shadow-sm`
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
+                        ? `${item.bgColor} ${item.color} shadow-sm`
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
                     >
                       <Icon className={`h-5 w-5 ${isActive ? item.color : 'text-gray-400 group-hover:text-gray-600'}`} />
                       <span>{item.label}</span>
@@ -1747,7 +1752,7 @@ const Admin = () => {
                 })}
               </nav>
             </div>
-            
+
             <div className="mt-auto p-6">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200/50">
                 <div className="flex items-center gap-3 mb-2">
@@ -1762,7 +1767,7 @@ const Admin = () => {
 
         {/* Overlay for mobile */}
         {sidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
@@ -1771,3346 +1776,3376 @@ const Admin = () => {
         {/* Main Content */}
         <div className="flex-1 lg:ml-0">
           <div className="p-6 lg:p-8">
-        {/* Dashboard */}
-        {activeTab === "dashboard" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-                <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your store.</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={exportDashboardToCsv}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Report
-                </Button>
-                <Button size="sm" onClick={refreshDashboard}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-            
-            {/* Enhanced Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-black">Total Revenue</CardTitle>
-                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
-                    <DollarSign className="h-4 w-4 text-black" />
+            {/* Dashboard */}
+            {activeTab === "dashboard" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+                    <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your store.</p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-black">Rs.{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <ShoppingCart className="h-3 w-3 text-black" />
-                    <p className="text-xs text-black font-medium">{deliveredOrdersCount} delivered orders</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-green-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-black">Total Orders</CardTitle>
-                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
-                    <ShoppingCart className="h-4 w-4 text-black" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-black">{totalOrdersCount}</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <CheckCircle className="h-3 w-3 text-black" />
-                    <p className="text-xs text-black font-medium">{deliveredOrdersCount} completed</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-black">Total Products</CardTitle>
-                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
-                    <Package className="h-4 w-4 text-black" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-black">{products.length}</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Tag className="h-3 w-3 text-black" />
-                    <p className="text-xs text-black font-medium">{categoryRows.length} categories</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-black">Active Users</CardTitle>
-                  <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
-                    <Users className="h-4 w-4 text-black" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-black">{activeUsersCount}</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Users className="h-3 w-3 text-black" />
-                    <p className="text-xs text-black font-medium">{adminUsers.length} total users</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Enhanced Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold text-gray-900">Recent Orders</CardTitle>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-black hover:text-gray-700"
-                      onClick={() => setActiveTab("order-management")}
-                    >
-                      View All
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="sm" onClick={exportDashboardToCsv}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Report
+                    </Button>
+                    <Button size="sm" onClick={refreshDashboard}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {adminOrders.length === 0 ? (
-                      <div className="py-8 text-center">
-                        <ShoppingCart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No orders yet</p>
-                      </div>
-                    ) : (
-                      adminOrders.slice(0, 5).map((order, index) => (
-                      <div key={order.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                              #{((order as any).orderId || order.id).slice(-2)}
-                          </div>
-                          <div>
-                              <p className="font-medium text-gray-900">Order #{(order as any).orderId || order.id}</p>
-                            <p className="text-sm text-gray-500">{order.customer}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                            <p className="font-semibold text-gray-900">Rs.{order.total.toLocaleString('en-IN')}</p>
-                          <div className="mt-1">
-                            {getStatusBadge(order.status)}
-                          </div>
-                        </div>
-                      </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold text-gray-900">Top Categories</CardTitle>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-black hover:text-gray-700"
-                      onClick={() => setActiveTab("categories")}
-                    >
-                      Manage
+                {/* Enhanced Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-blue-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-black">Total Revenue</CardTitle>
+                      <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                        <DollarSign className="h-4 w-4 text-black" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-black">Rs.{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <ShoppingCart className="h-3 w-3 text-black" />
+                        <p className="text-xs text-black font-medium">{deliveredOrdersCount} delivered orders</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-green-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-black">Total Orders</CardTitle>
+                      <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                        <ShoppingCart className="h-4 w-4 text-black" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-black">{totalOrdersCount}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <CheckCircle className="h-3 w-3 text-black" />
+                        <p className="text-xs text-black font-medium">{deliveredOrdersCount} completed</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-purple-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-black">Total Products</CardTitle>
+                      <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                        <Package className="h-4 w-4 text-black" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-black">{products.length}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Tag className="h-3 w-3 text-black" />
+                        <p className="text-xs text-black font-medium">{categoryRows.length} categories</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-orange-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-black">Active Users</CardTitle>
+                      <div className="p-2 rounded-lg bg-gray-500/10 group-hover:bg-gray-500/20 transition-colors">
+                        <Users className="h-4 w-4 text-black" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-black">{activeUsersCount}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Users className="h-3 w-3 text-black" />
+                        <p className="text-xs text-black font-medium">{adminUsers.length} total users</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Enhanced Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-semibold text-gray-900">Recent Orders</CardTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-black hover:text-gray-700"
+                          onClick={() => setActiveTab("order-management")}
+                        >
+                          View All
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {adminOrders.length === 0 ? (
+                          <div className="py-8 text-center">
+                            <ShoppingCart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm">No orders yet</p>
+                          </div>
+                        ) : (
+                          adminOrders.slice(0, 5).map((order, index) => (
+                            <div key={order.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+                                  #{((order as any).orderId || order.id).slice(-2)}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">Order #{(order as any).orderId || order.id}</p>
+                                  <p className="text-sm text-gray-500">{order.customer}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-gray-900">Rs.{order.total.toLocaleString('en-IN')}</p>
+                                <div className="mt-1">
+                                  {getStatusBadge(order.status)}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-semibold text-gray-900">Top Categories</CardTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-black hover:text-gray-700"
+                          onClick={() => setActiveTab("categories")}
+                        >
+                          Manage
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {topCategories.length === 0 ? (
+                          <div className="py-8 text-center">
+                            <Tag className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm">No categories yet</p>
+                          </div>
+                        ) : (
+                          topCategories.map((category, index) => (
+                            <div key={category._id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-sm font-semibold">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">{category.name}</p>
+                                  <p className="text-sm text-gray-500">{category.productCount} products</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                {getStatusBadge(category.status)}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions */}
+                <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-gray-900">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Button
+                        variant="outline"
+                        className="h-20 flex-col gap-2 hover:bg-blue-50 hover:border-blue-200"
+                        onClick={() => setActiveTab("add-product")}
+                      >
+                        <Plus className="h-5 w-5 text-blue-600" />
+                        <span className="text-sm font-medium">Add Product</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-20 flex-col gap-2 hover:bg-gray-50 hover:border-gray-200"
+                        onClick={() => setActiveTab("order-management")}
+                      >
+                        <ShoppingCart className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium">View Orders</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-20 flex-col gap-2 hover:bg-purple-50 hover:border-purple-200"
+                        onClick={() => setActiveTab("user-management")}
+                      >
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <span className="text-sm font-medium">Manage Users</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-20 flex-col gap-2 hover:bg-orange-50 hover:border-orange-200"
+                        onClick={() => setActiveTab("categories")}
+                      >
+                        <Tag className="h-5 w-5 text-orange-600" />
+                        <span className="text-sm font-medium">Categories</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Delivery Partners */}
+            {activeTab === "delivery-partners" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Delivery Partners</h1>
+                    <p className="text-gray-600 mt-1">Manage your delivery team and track performance</p>
+                  </div>
+                  <Button onClick={openCreatePartner} className="bg-black hover:bg-gray-800 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Partner
+                  </Button>
+                </div>
+
+                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-gray-200/50">
+                          <TableHead className="font-semibold text-gray-900">Name</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Phone</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {partnersLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="py-12 text-center">
+                              <BalancingLoader />
+                            </TableCell>
+                          </TableRow>
+                        ) : partners.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="py-12 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <Truck className="h-12 w-12 text-gray-300" />
+                                <div>
+                                  <p className="text-gray-600 font-medium">No delivery partners found</p>
+                                  <p className="text-sm text-gray-500">Add your first delivery partner to get started</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          partners.map((p) => (
+                            <TableRow key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                                    {p.name.charAt(0)}
+                                  </div>
+                                  <span className="text-gray-900">{p.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-gray-600">{p.phone}</TableCell>
+                              <TableCell>{getStatusBadge(p.status)}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button variant="outline" size="sm" onClick={() => openEditPartner(p)} className="hover:bg-blue-50 hover:border-blue-200">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => togglePartnerStatus(p)}
+                                    className={p.status === "active" ? "hover:bg-red-50 hover:border-red-200" : "hover:bg-green-50 hover:border-green-200"}
+                                  >
+                                    {p.status === "active" ? <XCircle className="h-4 w-4 text-red-600" /> : <CheckCircle className="h-4 w-4 text-green-600" />}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <Dialog open={partnerDialogOpen} onOpenChange={setPartnerDialogOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{editPartner ? "Edit Partner" : "Add Partner"}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={submitPartner} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="pname">Name</Label>
+                        <Input id="pname" value={pName} onChange={(e) => setPName(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pphone">Phone</Label>
+                        <Input id="pphone" value={pPhone} onChange={(e) => setPPhone(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Status</Label>
+                        <Select value={pStatus} onValueChange={(v) => setPStatus(v as any)}>
+                          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setPartnerDialogOpen(false)}>Cancel</Button>
+                        <Button type="submit">{editPartner ? "Save" : "Create"}</Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            {/* Add Product */}
+            {activeTab === "add-product" && (
+              <div className="max-w-4xl mx-auto space-y-8">
+                <div className="text-center">
+                  <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
+                  <p className="text-gray-600 mt-2">Create and manage your product catalog with ease</p>
+                </div>
+
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200/50">
+                    <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center">
+                        <Plus className="h-4 w-4 text-white" />
+                      </div>
+                      Product Information
+                    </CardTitle>
+                    <p className="text-gray-600">Fill in the details below to add a new product to your store</p>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                    <ProductForm apiBase={API_BASE} categories={categoryRows} onCreated={loadCategories} />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Product Management */}
+            {activeTab === "product-management" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
+                    <p className="text-gray-600 mt-1">Manage your product catalog and inventory</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button size="sm" onClick={() => setActiveTab("add-product")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Product
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {topCategories.length === 0 ? (
-                      <div className="py-8 text-center">
-                        <Tag className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No categories yet</p>
-                      </div>
-                    ) : (
-                      topCategories.map((category, index) => (
-                        <div key={category._id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50/50 transition-colors group">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-sm font-semibold">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{category.name}</p>
-                              <p className="text-sm text-gray-500">{category.productCount} products</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {getStatusBadge(category.status)}
-                        </div>
-                      </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col gap-2 hover:bg-blue-50 hover:border-blue-200"
-                    onClick={() => setActiveTab("add-product")}
-                  >
-                    <Plus className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm font-medium">Add Product</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col gap-2 hover:bg-gray-50 hover:border-gray-200"
-                    onClick={() => setActiveTab("order-management")}
-                  >
-                    <ShoppingCart className="h-5 w-5 text-green-600" />
-                    <span className="text-sm font-medium">View Orders</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col gap-2 hover:bg-purple-50 hover:border-purple-200"
-                    onClick={() => setActiveTab("user-management")}
-                  >
-                    <Users className="h-5 w-5 text-purple-600" />
-                    <span className="text-sm font-medium">Manage Users</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col gap-2 hover:bg-orange-50 hover:border-orange-200"
-                    onClick={() => setActiveTab("categories")}
-                  >
-                    <Tag className="h-5 w-5 text-orange-600" />
-                    <span className="text-sm font-medium">Categories</span>
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
-        {/* Delivery Partners */}
-        {activeTab === "delivery-partners" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Delivery Partners</h1>
-                <p className="text-gray-600 mt-1">Manage your delivery team and track performance</p>
-              </div>
-              <Button onClick={openCreatePartner} className="bg-black hover:bg-gray-800 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Partner
-              </Button>
-            </div>
-
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-gray-200/50">
-                      <TableHead className="font-semibold text-gray-900">Name</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Phone</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {partnersLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="py-12 text-center">
-                          <BalancingLoader />
-                        </TableCell>
-                      </TableRow>
-                    ) : partners.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="py-12 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <Truck className="h-12 w-12 text-gray-300" />
-                            <div>
-                              <p className="text-gray-600 font-medium">No delivery partners found</p>
-                              <p className="text-sm text-gray-500">Add your first delivery partner to get started</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      partners.map((p) => (
-                        <TableRow key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                                {p.name.charAt(0)}
-                              </div>
-                              <span className="text-gray-900">{p.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-gray-600">{p.phone}</TableCell>
-                          <TableCell>{getStatusBadge(p.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={() => openEditPartner(p)} className="hover:bg-blue-50 hover:border-blue-200">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => togglePartnerStatus(p)}
-                                className={p.status === "active" ? "hover:bg-red-50 hover:border-red-200" : "hover:bg-green-50 hover:border-green-200"}
-                              >
-                                {p.status === "active" ? <XCircle className="h-4 w-4 text-red-600" /> : <CheckCircle className="h-4 w-4 text-green-600" />}
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Dialog open={partnerDialogOpen} onOpenChange={setPartnerDialogOpen}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{editPartner ? "Edit Partner" : "Add Partner"}</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={submitPartner} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pname">Name</Label>
-                    <Input id="pname" value={pName} onChange={(e) => setPName(e.target.value)} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pphone">Phone</Label>
-                    <Input id="pphone" value={pPhone} onChange={(e) => setPPhone(e.target.value)} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select value={pStatus} onValueChange={(v) => setPStatus(v as any)}>
-                      <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setPartnerDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit">{editPartner ? "Save" : "Create"}</Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-
-        {/* Add Product */}
-        {activeTab === "add-product" && (
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
-              <p className="text-gray-600 mt-2">Create and manage your product catalog with ease</p>
-            </div>
-            
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200/50">
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center">
-                    <Plus className="h-4 w-4 text-white" />
-                  </div>
-                  Product Information
-                </CardTitle>
-                <p className="text-gray-600">Fill in the details below to add a new product to your store</p>
-              </CardHeader>
-              <CardContent className="p-8">
-                <ProductForm apiBase={API_BASE} categories={categoryRows} onCreated={loadCategories} />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Product Management */}
-        {activeTab === "product-management" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
-                <p className="text-gray-600 mt-1">Manage your product catalog and inventory</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-                <Button size="sm" onClick={() => setActiveTab("add-product")}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Product
-                </Button>
-              </div>
-            </div>
-
-            {/* Filter Section */}
-            <Card className="border-0 shadow-md bg-gradient-to-r from-purple-50 to-blue-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-5 w-5 text-purple-600" />
-                    <Label className="text-sm font-semibold text-gray-700">Filter by Category:</Label>
-                  </div>
-                  <Select 
-                    value={selectedCategoryFilter} 
-                    onValueChange={(value) => {
-                      setSelectedCategoryFilter(value);
-                      if (value === "all") {
-                        loadProducts();
-                      } else {
-                        loadProducts(value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-64 bg-white">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          All Categories
-                        </div>
-                      </SelectItem>
-                      {categoryRows.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedCategoryFilter !== "all" && (
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
-                      {products.length} {products.length === 1 ? 'product' : 'products'}
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-gray-200/50">
-                      <TableHead className="font-semibold text-gray-900">Product</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Category</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Price</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="py-12 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <Package className="h-12 w-12 text-gray-300" />
-                            <div>
-                              <p className="text-gray-600 font-medium">
-                                {selectedCategoryFilter !== "all" ? "No products in this category" : "No products found"}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {selectedCategoryFilter !== "all" ? "Try selecting a different category" : "Add your first product to get started"}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      products.map((product) => (
-                        <TableRow key={product._id} className="hover:bg-gray-50/50 transition-colors">
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200 shadow-sm" />
-                                <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900">{product.nameEn}</p>
-                                <p className="text-sm text-gray-500">ID: {product._id.slice(-6)}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                              {product.categoryName}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-gray-900">Rs.{product.price}</span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="hover:bg-blue-50 hover:border-blue-200"
-                                onClick={() => openEditProduct(product)}
-                                title="Edit Product"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              {isSuperAdmin && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="hover:bg-red-50 hover:border-red-200"
-                                  onClick={() => openDeleteProduct(product)}
-                                  title="Delete Product"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
-                              )}
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="hover:bg-green-50 hover:border-green-200"
-                                title="View Product"
-                              >
-                                <Eye className="h-4 w-4 text-green-600" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Edit Product Dialog */}
-            <Dialog open={editProductOpen} onOpenChange={setEditProductOpen}>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                      <Edit className="h-4 w-4 text-white" />
-                    </div>
-                    Edit Product
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleEditProduct} className="space-y-6">
-                  {editProductError && (
-                    <div className="rounded-md bg-red-50 text-red-600 text-sm px-3 py-2 border border-red-200">
-                      {editProductError}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-name-en" className="text-sm font-medium text-gray-700">Product Name (English)</Label>
-                      <Input 
-                        id="edit-name-en" 
-                        value={editProductData.nameEn} 
-                        onChange={(e) => setEditProductData({...editProductData, nameEn: e.target.value})} 
-                        placeholder="Enter product name in English" 
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-name-ta" className="text-sm font-medium text-gray-700">Product Name (Tamil)</Label>
-                      <Input 
-                        id="edit-name-ta" 
-                        value={editProductData.nameTa} 
-                        onChange={(e) => setEditProductData({...editProductData, nameTa: e.target.value})} 
-                        placeholder="Enter product name in Tamil" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (Rs.)</Label>
-                      <Input 
-                        id="edit-price" 
-                        type="number" 
-                        value={editProductData.price} 
-                        onChange={(e) => setEditProductData({...editProductData, price: e.target.value})} 
-                        placeholder="0.00" 
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-original-price" className="text-sm font-medium text-gray-700">Original Price (Rs.)</Label>
-                      <Input 
-                        id="edit-original-price" 
-                        type="number" 
-                        value={editProductData.originalPrice} 
-                        onChange={(e) => setEditProductData({...editProductData, originalPrice: e.target.value})} 
-                        placeholder="0.00" 
-                      />
-                      <p className="text-xs text-gray-500">(Optional)</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-category" className="text-sm font-medium text-gray-700">Category</Label>
-                      <Select onValueChange={(val) => setEditProductData({...editProductData, categoryId: val})}>
-                        <SelectTrigger className="w-full">
+                {/* Filter Section */}
+                <Card className="border-0 shadow-md bg-gradient-to-r from-purple-50 to-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-5 w-5 text-purple-600" />
+                        <Label className="text-sm font-semibold text-gray-700">Filter by Category:</Label>
+                      </div>
+                      <Select
+                        value={selectedCategoryFilter}
+                        onValueChange={(value) => {
+                          setSelectedCategoryFilter(value);
+                          if (value === "all") {
+                            loadProducts();
+                          } else {
+                            loadProducts(value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-64 bg-white">
                           <SelectValue placeholder="Select category" />
-                          <ChevronDown className="h-4 w-4" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categoryRows.map((c) => (
-                            <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                          <SelectItem value="all">
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4" />
+                              All Categories
+                            </div>
+                          </SelectItem>
+                          {categoryRows.map((cat) => (
+                            <SelectItem key={cat._id} value={cat._id}>
+                              {cat.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-youtube" className="text-sm font-medium text-gray-700">YouTube Link (optional)</Label>
-                      <Input 
-                        id="edit-youtube" 
-                        value={editProductData.youtubeLink} 
-                        onChange={(e) => setEditProductData({...editProductData, youtubeLink: e.target.value})} 
-                        placeholder="https://youtube.com/..." 
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-image" className="text-sm font-medium text-gray-700">New Image (optional)</Label>
-                    <input 
-                      id="edit-image" 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={(e) => setEditProductData({...editProductData, image: e.target.files?.[0] || null})} 
-                    />
-                    <p className="text-xs text-gray-500">Leave empty to keep current image</p>
-                  </div>
-
-                  {/* Home Page Sections */}
-                  <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <Label className="text-sm font-semibold text-gray-900 dark:text-white">Home Page Sections</Label>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">Select which home page sections this product should appear in</p>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="edit-fresh-pick"
-                        checked={editProductData.isFreshPick}
-                        onCheckedChange={(checked) => setEditProductData({...editProductData, isFreshPick: !!checked})}
-                      />
-                      <Label 
-                        htmlFor="edit-fresh-pick" 
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
-                      >
-                        <Star className="h-4 w-4 text-blue-600" />
-                        Show in "Fresh Picks for You" section
-                      </Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="edit-most-loved"
-                        checked={editProductData.isMostLoved}
-                        onCheckedChange={(checked) => setEditProductData({...editProductData, isMostLoved: !!checked})}
-                      />
-                      <Label 
-                        htmlFor="edit-most-loved" 
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
-                      >
-                        <Heart className="h-4 w-4 text-pink-600" />
-                        Show in "Most Loved Items" section
-                      </Label>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-3">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setEditProductOpen(false)}
-                      disabled={editProductLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      className="bg-black hover:bg-gray-800 text-white"
-                      disabled={editProductLoading}
-                    >
-                      {editProductLoading ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        "Update Product"
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            {/* Delete Product Dialog - Only visible for superadmin */}
-            {isSuperAdmin && (
-              <Dialog open={deleteProductOpen} onOpenChange={setDeleteProductOpen}>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-3 text-red-600">
-                      <div className="h-8 w-8 rounded-lg bg-red-500 flex items-center justify-center">
-                        <Trash2 className="h-4 w-4 text-white" />
-                      </div>
-                      Delete Product
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                      {selectedProduct && (
-                        <>
-                          <img src={selectedProduct.imageUrl} alt={selectedProduct.nameEn} className="h-12 w-12 rounded-lg object-cover border" />
-                          <div>
-                            <p className="font-semibold text-gray-900">{selectedProduct.nameEn}</p>
-                            <p className="text-sm text-gray-600">Rs.{selectedProduct.price}</p>
-                          </div>
-                        </>
+                      {selectedCategoryFilter !== "all" && (
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                          {products.length} {products.length === 1 ? 'product' : 'products'}
+                        </Badge>
                       )}
                     </div>
-                    <p className="text-gray-600">
-                      Are you sure you want to delete this product? This action cannot be undone.
-                    </p>
-                    <div className="flex justify-end gap-3">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setDeleteProductOpen(false)}
-                        disabled={deleteProductLoading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        onClick={handleDeleteProduct}
-                        className="bg-black hover:bg-gray-800 text-white"
-                        disabled={deleteProductLoading}
-                      >
-                        {deleteProductLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Deleting...
-                          </>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-gray-200/50">
+                          <TableHead className="font-semibold text-gray-900">Product</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Category</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Price</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {products.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="py-12 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <Package className="h-12 w-12 text-gray-300" />
+                                <div>
+                                  <p className="text-gray-600 font-medium">
+                                    {selectedCategoryFilter !== "all" ? "No products in this category" : "No products found"}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {selectedCategoryFilter !== "all" ? "Try selecting a different category" : "Add your first product to get started"}
+                                  </p>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         ) : (
-                          "Delete Product"
+                          products.map((product) => (
+                            <TableRow key={product._id} className="hover:bg-gray-50/50 transition-colors">
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-4">
+                                  <div className="relative">
+                                    <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200 shadow-sm" />
+                                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-gray-900">{product.nameEn}</p>
+                                    <p className="text-sm text-gray-500">ID: {product._id.slice(-6)}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                                  {product.categoryName}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-semibold text-gray-900">Rs.{product.price}</span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-blue-50 hover:border-blue-200"
+                                    onClick={() => openEditProduct(product)}
+                                    title="Edit Product"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  {isSuperAdmin && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="hover:bg-red-50 hover:border-red-200"
+                                      onClick={() => openDeleteProduct(product)}
+                                      title="Delete Product"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-600" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-green-50 hover:border-green-200"
+                                    title="View Product"
+                                  >
+                                    <Eye className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
                         )}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* Edit Product Dialog */}
+                <Dialog open={editProductOpen} onOpenChange={setEditProductOpen}>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                          <Edit className="h-4 w-4 text-white" />
+                        </div>
+                        Edit Product
+                      </DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleEditProduct} className="space-y-6">
+                      {editProductError && (
+                        <div className="rounded-md bg-red-50 text-red-600 text-sm px-3 py-2 border border-red-200">
+                          {editProductError}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-name-en" className="text-sm font-medium text-gray-700">Product Name (English)</Label>
+                          <Input
+                            id="edit-name-en"
+                            value={editProductData.nameEn}
+                            onChange={(e) => setEditProductData({ ...editProductData, nameEn: e.target.value })}
+                            placeholder="Enter product name in English"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-name-ta" className="text-sm font-medium text-gray-700">Product Name (Tamil)</Label>
+                          <Input
+                            id="edit-name-ta"
+                            value={editProductData.nameTa}
+                            onChange={(e) => setEditProductData({ ...editProductData, nameTa: e.target.value })}
+                            placeholder="Enter product name in Tamil"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (Rs.)</Label>
+                          <Input
+                            id="edit-price"
+                            type="number"
+                            value={editProductData.price}
+                            onChange={(e) => setEditProductData({ ...editProductData, price: e.target.value })}
+                            placeholder="0.00"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-original-price" className="text-sm font-medium text-gray-700">Original Price (Rs.)</Label>
+                          <Input
+                            id="edit-original-price"
+                            type="number"
+                            value={editProductData.originalPrice}
+                            onChange={(e) => setEditProductData({ ...editProductData, originalPrice: e.target.value })}
+                            placeholder="0.00"
+                          />
+                          <p className="text-xs text-gray-500">(Optional)</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-category" className="text-sm font-medium text-gray-700">Category</Label>
+                          <Select onValueChange={(val) => setEditProductData({ ...editProductData, categoryId: val })}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select category" />
+                              <ChevronDown className="h-4 w-4" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categoryRows.map((c) => (
+                                <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-youtube" className="text-sm font-medium text-gray-700">YouTube Link (optional)</Label>
+                          <Input
+                            id="edit-youtube"
+                            value={editProductData.youtubeLink}
+                            onChange={(e) => setEditProductData({ ...editProductData, youtubeLink: e.target.value })}
+                            placeholder="https://youtube.com/..."
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-image" className="text-sm font-medium text-gray-700">New Image (optional)</Label>
+                        <input
+                          id="edit-image"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setEditProductData({ ...editProductData, image: e.target.files?.[0] || null })}
+                        />
+                        <p className="text-xs text-gray-500">Leave empty to keep current image</p>
+                      </div>
+
+                      {/* Home Page Sections */}
+                      <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <Label className="text-sm font-semibold text-gray-900 dark:text-white">Home Page Sections</Label>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">Select which home page sections this product should appear in</p>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="edit-fresh-pick"
+                            checked={editProductData.isFreshPick}
+                            onCheckedChange={(checked) => setEditProductData({ ...editProductData, isFreshPick: !!checked })}
+                          />
+                          <Label
+                            htmlFor="edit-fresh-pick"
+                            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                          >
+                            <Star className="h-4 w-4 text-blue-600" />
+                            Show in "Fresh Picks for You" section
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="edit-most-loved"
+                            checked={editProductData.isMostLoved}
+                            onCheckedChange={(checked) => setEditProductData({ ...editProductData, isMostLoved: !!checked })}
+                          />
+                          <Label
+                            htmlFor="edit-most-loved"
+                            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                          >
+                            <Heart className="h-4 w-4 text-pink-600" />
+                            Show in "Most Loved Items" section
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="edit-discounted"
+                            checked={editProductData.isDiscounted}
+                            onCheckedChange={(checked) => setEditProductData({ ...editProductData, isDiscounted: !!checked })}
+                          />
+                          <Label
+                            htmlFor="edit-discounted"
+                            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                          >
+                            <Tag className="h-4 w-4 text-yellow-600" />
+                            Mark as "Discounted Product"
+                          </Label>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setEditProductOpen(false)}
+                          disabled={editProductLoading}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-black hover:bg-gray-800 text-white"
+                          disabled={editProductLoading}
+                        >
+                          {editProductLoading ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Updating...
+                            </>
+                          ) : (
+                            "Update Product"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Delete Product Dialog - Only visible for superadmin */}
+                {isSuperAdmin && (
+                  <Dialog open={deleteProductOpen} onOpenChange={setDeleteProductOpen}>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-3 text-red-600">
+                          <div className="h-8 w-8 rounded-lg bg-red-500 flex items-center justify-center">
+                            <Trash2 className="h-4 w-4 text-white" />
+                          </div>
+                          Delete Product
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                          {selectedProduct && (
+                            <>
+                              <img src={selectedProduct.imageUrl} alt={selectedProduct.nameEn} className="h-12 w-12 rounded-lg object-cover border" />
+                              <div>
+                                <p className="font-semibold text-gray-900">{selectedProduct.nameEn}</p>
+                                <p className="text-sm text-gray-600">Rs.{selectedProduct.price}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-gray-600">
+                          Are you sure you want to delete this product? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => setDeleteProductOpen(false)}
+                            disabled={deleteProductLoading}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleDeleteProduct}
+                            className="bg-black hover:bg-gray-800 text-white"
+                            disabled={deleteProductLoading}
+                          >
+                            {deleteProductLoading ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              "Delete Product"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+
+                {/* Order detail modal */}
+                <Dialog open={orderDetailOpen} onOpenChange={(o) => { setOrderDetailOpen(o); if (!o) { setSelectedOrderId(null); setOrderDetail(null); } }}>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Order Details {selectedOrderId ? `#${selectedOrderId}` : ""}</DialogTitle>
+                    </DialogHeader>
+                    {orderDetailLoading ? (
+                      <div className="py-8 text-center">Loading...</div>
+                    ) : !orderDetail ? (
+                      <div className="py-8 text-center text-muted-foreground">No details available.</div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: Rs.{orderDetail.total.toFixed(2)}</div>
+                        <div className="border rounded-md">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Item</TableHead>
+                                <TableHead>Qty</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Subtotal</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {orderDetail.items.map((it) => (
+                                <TableRow key={it.productId}>
+                                  <TableCell>
+                                    <div className="flex items-center gap-3">
+                                      {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
+                                      <span>{it.name}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{it.quantity}</TableCell>
+                                  <TableCell>Rs.{Number(it.price).toFixed(2)}</TableCell>
+                                  <TableCell>Rs.{Number(it.price * it.quantity).toFixed(2)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        {orderDetail && (
+                          <div className="mt-4 pt-4 border-t">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full bg-black text-white hover:bg-gray-800"
+                              onClick={() => {
+                                const orderId = orderDetail.id || selectedOrderId;
+                                const invoiceUrl = `${API_BASE}/api/invoices/${orderId}?token=${token || ''}`;
+                                window.open(invoiceUrl, '_blank');
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Download Invoice
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
             )}
 
-            {/* Order detail modal */}
-            <Dialog open={orderDetailOpen} onOpenChange={(o) => { setOrderDetailOpen(o); if (!o) { setSelectedOrderId(null); setOrderDetail(null); } }}>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Order Details {selectedOrderId ? `#${selectedOrderId}` : ""}</DialogTitle>
-                </DialogHeader>
-                {orderDetailLoading ? (
-                  <div className="py-8 text-center">Loading...</div>
-                ) : !orderDetail ? (
-                  <div className="py-8 text-center text-muted-foreground">No details available.</div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">Placed: {orderDetail.createdAt} · Status: {orderDetail.status} · Total: Rs.{orderDetail.total.toFixed(2)}</div>
-                    <div className="border rounded-md">
+            {/* Inventory Management */}
+            {activeTab === "inventory" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+                    <p className="text-gray-600 mt-1">Update stock levels for products by category</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => loadInventoryProducts(inventoryCategoryFilter === "all" ? undefined : inventoryCategoryFilter)}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+
+                {/* Category Filter */}
+                <Card className="border-0 shadow-md bg-gradient-to-r from-teal-50 to-cyan-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-5 w-5 text-teal-600" />
+                        <Label className="text-sm font-semibold text-gray-700">Filter by Category:</Label>
+                      </div>
+                      <Select
+                        value={inventoryCategoryFilter}
+                        onValueChange={(value) => {
+                          setInventoryCategoryFilter(value);
+                          loadInventoryProducts(value === "all" ? undefined : value);
+                        }}
+                      >
+                        <SelectTrigger className="w-64 bg-white">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">
+                            <div className="flex items-center gap-2">
+                              <Warehouse className="h-4 w-4" />
+                              All Categories
+                            </div>
+                          </SelectItem>
+                          {categoryRows.map((cat) => (
+                            <SelectItem key={cat._id} value={cat._id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {inventoryCategoryFilter !== "all" && (
+                        <Badge variant="secondary" className="bg-teal-100 text-teal-700 border-teal-200">
+                          {inventoryProducts.length} {inventoryProducts.length === 1 ? 'product' : 'products'}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Inventory Table */}
+                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-0">
+                    {inventoryLoading ? (
+                      <div className="py-12 text-center">
+                        <BalancingLoader />
+                        <p className="mt-3 text-sm text-gray-500">Loading inventory...</p>
+                      </div>
+                    ) : inventoryProducts.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <Warehouse className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-600 font-medium">No products found</p>
+                        <p className="text-sm text-gray-500">Try selecting a different category</p>
+                      </div>
+                    ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Item</TableHead>
-                            <TableHead>Qty</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Subtotal</TableHead>
+                          <TableRow className="border-b border-gray-200/50">
+                            <TableHead className="font-semibold text-gray-900">Product</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Category</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Current Stock</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {orderDetail.items.map((it) => (
-                            <TableRow key={it.productId}>
+                          {inventoryProducts.map((product) => {
+                            const isOutOfStock = (product.stock || 0) === 0;
+                            const isEditing = editingStock?.productId === product._id;
+                            return (
+                              <TableRow key={product._id} className="hover:bg-gray-50/50">
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <img
+                                      src={product.imageUrl}
+                                      alt={product.nameEn}
+                                      className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                                    />
+                                    <div>
+                                      <p className="font-medium text-gray-900">{product.nameEn}</p>
+                                      <p className="text-xs text-gray-500">ID: {product._id.slice(-6)}</p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                                    {product.categoryName || "Uncategorized"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={newStockValue}
+                                        onChange={(e) => setNewStockValue(e.target.value)}
+                                        className="w-24"
+                                        autoFocus
+                                      />
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          const stock = parseInt(newStockValue);
+                                          if (!isNaN(stock) && stock >= 0) {
+                                            updateProductStock(product._id, stock);
+                                          }
+                                        }}
+                                        disabled={stockUpdating}
+                                        className="bg-teal-600 hover:bg-teal-700"
+                                      >
+                                        {stockUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setEditingStock(null);
+                                          setNewStockValue("");
+                                        }}
+                                        disabled={stockUpdating}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : 'text-gray-900'}`}>
+                                        {product.stock || 0}
+                                      </span>
+                                      <span className="text-xs text-gray-500">units</span>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {isOutOfStock ? (
+                                    <Badge className="bg-red-100 text-red-800 border-red-300">
+                                      Out of Stock
+                                    </Badge>
+                                  ) : (product.stock || 0) < 10 ? (
+                                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                                      Low Stock
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-green-100 text-green-800 border-green-300">
+                                      In Stock
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {!isEditing && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingStock({ productId: product._id, currentStock: product.stock || 0 });
+                                        setNewStockValue(String(product.stock || 0));
+                                      }}
+                                      className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Update Stock
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Categories */}
+            {/* Home Page Sections */}
+            {activeTab === "home-sections" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Home Page Sections</h1>
+                    <p className="text-gray-600 mt-1">Manage products featured on the home page</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      loadHomeSections();
+                      loadProducts();
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Fresh Picks Section */}
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50/50">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                            <Star className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl font-bold text-gray-900">Fresh Picks for You</CardTitle>
+                            <p className="text-sm text-gray-600">{freshPicksProducts.length} products</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddToFreshPicks(!showAddToFreshPicks)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Existing
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowNewProductFreshPicks(!showNewProductFreshPicks)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            New Product
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Add Existing Product Modal */}
+                      {showAddToFreshPicks && (
+                        <div className="p-4 bg-white rounded-lg border-2 border-blue-200 mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="font-semibold text-gray-900">Select Product to Add</Label>
+                            <Button variant="ghost" size="sm" onClick={() => setShowAddToFreshPicks(false)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="max-h-60 overflow-y-auto space-y-2">
+                            {availableProducts
+                              .filter(p => !p.isFreshPick && !p.isMostLoved)
+                              .map((product) => (
+                                <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
+                                      <p className="text-xs text-gray-500">{product.categoryName}</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => toggleProductSection(product._id, "freshPick", false)}
+                                  >
+                                    Add
+                                  </Button>
+                                </div>
+                              ))}
+                            {availableProducts.filter(p => !p.isFreshPick && !p.isMostLoved).length === 0 && (
+                              <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Most Loved</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* New Product Form */}
+                      {showNewProductFreshPicks && (
+                        <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="font-semibold text-gray-900">Create New Product</Label>
+                            <Button variant="ghost" size="sm" onClick={() => setShowNewProductFreshPicks(false)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <ProductForm
+                            apiBase={API_BASE}
+                            categories={categoryRows}
+                            defaultFreshPick={true}
+                            onCreated={async () => {
+                              await loadProducts();
+                              await loadHomeSections();
+                              setShowNewProductFreshPicks(false);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Products List */}
+                      <div className="space-y-3">
+                        {freshPicksProducts.length === 0 ? (
+                          <div className="py-8 text-center">
+                            <Star className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm">No products in Fresh Picks</p>
+                            <p className="text-xs text-gray-400 mt-1">Add products to showcase on home page</p>
+                          </div>
+                        ) : (
+                          freshPicksProducts.map((product) => (
+                            <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+                                <div>
+                                  <p className="font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => toggleProductSection(product._id, "freshPick", true)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Remove
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Most Loved Section */}
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-rose-50/50">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg">
+                            <Heart className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl font-bold text-gray-900">Most Loved Items</CardTitle>
+                            <p className="text-sm text-gray-600">{mostLovedProducts.length} products</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddToMostLoved(!showAddToMostLoved)}
+                            className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Existing
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowNewProductMostLoved(!showNewProductMostLoved)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            New Product
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Add Existing Product Modal */}
+                      {showAddToMostLoved && (
+                        <div className="p-4 bg-white rounded-lg border-2 border-pink-200 mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="font-semibold text-gray-900">Select Product to Add</Label>
+                            <Button variant="ghost" size="sm" onClick={() => setShowAddToMostLoved(false)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="max-h-60 overflow-y-auto space-y-2">
+                            {availableProducts
+                              .filter(p => !p.isMostLoved && !p.isFreshPick)
+                              .map((product) => (
+                                <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
+                                      <p className="text-xs text-gray-500">{product.categoryName}</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => toggleProductSection(product._id, "mostLoved", false)}
+                                  >
+                                    Add
+                                  </Button>
+                                </div>
+                              ))}
+                            {availableProducts.filter(p => !p.isMostLoved && !p.isFreshPick).length === 0 && (
+                              <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Fresh Picks</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* New Product Form */}
+                      {showNewProductMostLoved && (
+                        <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="font-semibold text-gray-900">Create New Product</Label>
+                            <Button variant="ghost" size="sm" onClick={() => setShowNewProductMostLoved(false)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <ProductForm
+                            apiBase={API_BASE}
+                            categories={categoryRows}
+                            defaultMostLoved={true}
+                            onCreated={async () => {
+                              await loadProducts();
+                              await loadHomeSections();
+                              setShowNewProductMostLoved(false);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Products List */}
+                      <div className="space-y-3">
+                        {mostLovedProducts.length === 0 ? (
+                          <div className="py-8 text-center">
+                            <Heart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm">No products in Most Loved</p>
+                            <p className="text-xs text-gray-400 mt-1">Add products to showcase on home page</p>
+                          </div>
+                        ) : (
+                          mostLovedProducts.map((product) => (
+                            <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
+                                <div>
+                                  <p className="font-medium text-gray-900">{product.nameEn}</p>
+                                  <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => toggleProductSection(product._id, "mostLoved", true)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Remove
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Home Page Posters */}
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 lg:col-span-2">
+                    <CardHeader className="pb-4">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center shadow-lg">
+                            <Image className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl font-bold text-gray-900">Home Page Posters</CardTitle>
+                            <p className="text-sm text-gray-600">
+                              {homeAds.filter((poster) => poster.isActive).length} active • {homeAds.length} total
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => loadAdPosters()}
+                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Refresh
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => openAdDialog()}
+                            className="bg-black text-white hover:bg-gray-800"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Poster
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {adsError && !adDialogOpen && (
+                        <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
+                          {adsError}
+                        </div>
+                      )}
+                      {adsLoading ? (
+                        <div className="py-12 text-center">
+                          <BalancingLoader />
+                          <p className="mt-3 text-sm text-gray-500">Loading posters...</p>
+                        </div>
+                      ) : homeAds.length === 0 ? (
+                        <div className="py-12 text-center">
+                          <Image className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                          <h3 className="text-lg font-semibold text-gray-900">No posters yet</h3>
+                          <p className="text-sm text-gray-600 mb-4">Add promotional posters to highlight offers on the home page.</p>
+                          <Button onClick={() => openAdDialog()} className="bg-black text-white hover:bg-gray-800">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Poster
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                          {homeAds.map((poster) => (
+                            <div
+                              key={poster._id}
+                              className="snap-start min-w-[280px] max-w-sm flex-1 group overflow-hidden rounded-2xl border border-amber-100 bg-white/80 shadow hover:shadow-lg transition-shadow"
+                            >
+                              <div className="relative h-44 overflow-hidden">
+                                <img
+                                  src={poster.imageUrl}
+                                  alt={poster.title}
+                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute top-3 left-3">
+                                  <Badge className={poster.isActive ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}>
+                                    {poster.isActive ? "Active" : "Hidden"}
+                                  </Badge>
+                                </div>
+                                <div className="absolute top-3 right-3 text-xs font-semibold text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                                  Order {poster.order ?? 0}
+                                </div>
+                              </div>
+                              <div className="space-y-2 p-4">
+                                <div>
+                                  <h4 className="text-lg font-semibold text-gray-900">{poster.title}</h4>
+                                  {poster.subtitle && <p className="text-sm text-gray-600">{poster.subtitle}</p>}
+                                  {poster.description && <p className="text-sm text-gray-500">{poster.description}</p>}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 break-all">
+                                  {poster.ctaText && (
+                                    <span className="font-medium text-gray-700">CTA:</span>
+                                  )}
+                                  {poster.ctaText && <span>{poster.ctaText}</span>}
+                                  {poster.ctaLink && (
+                                    <a
+                                      href={poster.ctaLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      {poster.ctaLink}
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-2 pt-3">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleToggleAd(poster)}
+                                    className={poster.isActive ? "text-amber-600 hover:bg-amber-50" : "text-green-600 hover:bg-green-50"}
+                                  >
+                                    {poster.isActive ? (
+                                      <span className="flex items-center">
+                                        <Ban className="h-4 w-4 mr-2" /> Hide
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center">
+                                        <CheckCircle className="h-4 w-4 mr-2" /> Activate
+                                      </span>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openAdDialog(poster)}
+                                    className="text-blue-600 hover:bg-blue-50"
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" /> Edit
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteAd(poster)}
+                                    className="text-red-600 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Dialog
+                    open={adDialogOpen}
+                    onOpenChange={(open) => {
+                      setAdDialogOpen(open);
+                      if (!open) {
+                        setEditingAd(null);
+                        resetAdForm();
+                        setAdsError(null);
+                      }
+                    }}
+                  >
+                    <DialogContent className="sm:max-w-xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-semibold text-gray-900">
+                          {editingAd ? "Edit Home Poster" : "Add Home Poster"}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleSubmitAd} className="space-y-5">
+                        {adsError && (
+                          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
+                            {adsError}
+                          </div>
+                        )}
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="poster-title">Title *</Label>
+                            <Input
+                              id="poster-title"
+                              value={adTitle}
+                              onChange={(e) => setAdTitle(e.target.value)}
+                              placeholder="Mega Fresh Grocery Fiesta"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="poster-subtitle">Subtitle</Label>
+                            <Input
+                              id="poster-subtitle"
+                              value={adSubtitle}
+                              onChange={(e) => setAdSubtitle(e.target.value)}
+                              placeholder="Limited Time"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="poster-description">Description</Label>
+                            <Textarea
+                              id="poster-description"
+                              value={adDescription}
+                              onChange={(e) => setAdDescription(e.target.value)}
+                              placeholder="Save up to 40% on fruits, veggies, and essentials."
+                              rows={3}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="poster-cta-text">CTA Text</Label>
+                            <Input
+                              id="poster-cta-text"
+                              value={adCtaText}
+                              onChange={(e) => setAdCtaText(e.target.value)}
+                              placeholder="Shop Now"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="poster-cta-link">CTA Link</Label>
+                            <Input
+                              id="poster-cta-link"
+                              value={adCtaLink}
+                              onChange={(e) => setAdCtaLink(e.target.value)}
+                              placeholder="/shop"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="poster-order">Display Order</Label>
+                            <Input
+                              id="poster-order"
+                              type="number"
+                              value={adOrder}
+                              onChange={(e) => setAdOrder(e.target.value)}
+                            />
+                            <p className="text-xs text-gray-500">Lower numbers appear first in the carousel.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Visibility</Label>
+                            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                              <Checkbox
+                                id="poster-active"
+                                checked={adIsActive}
+                                onCheckedChange={(checked) => setAdIsActive(!!checked)}
+                              />
+                              <Label htmlFor="poster-active" className="text-sm text-gray-700 cursor-pointer">
+                                Show this poster on the home page
+                              </Label>
+                            </div>
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="poster-image">
+                              Poster Image {editingAd ? <span className="text-xs text-gray-500">(Leave empty to keep current image)</span> : "*"}
+                            </Label>
+                            <input
+                              id="poster-image"
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => setAdFile(e.target.files?.[0] || null)}
+                              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                            />
+                            {editingAd && !adFile && (
+                              <div className="mt-2 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                                <img src={editingAd.imageUrl} alt={editingAd.title} className="h-14 w-14 rounded object-cover" />
+                                <p className="text-xs text-gray-500">Current poster image</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-3 pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setAdDialogOpen(false);
+                              setEditingAd(null);
+                              resetAdForm();
+                              setAdsError(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={adSubmitting}
+                            className="bg-black text-white hover:bg-gray-800"
+                          >
+                            {adSubmitting ? (
+                              <span className="flex items-center">
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Saving...
+                              </span>
+                            ) : (
+                              <span>{editingAd ? "Save Changes" : "Create Poster"}</span>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Discounted Products Config */}
+                  <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold text-gray-900">Dedicated Section Configuration</CardTitle>
+                      <p className="text-sm text-gray-600">Manage specialized sections of the home page</p>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <SectionConfigForm
+                        apiBase={API_BASE}
+                        sectionId="discounted_products"
+                        sectionName="Discounted Products Section"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "categories" && (
+              <div className="space-y-8">
+                {/* Enhanced Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Category Management</h1>
+                    <p className="text-gray-600 mt-1">Create parent categories (e.g., Grocery & Kitchen) and their subcategories (e.g., Atta, Rice & Dal)</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="sm" className="hover:bg-orange-50">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <Dialog open={isAddCategoryOpen} onOpenChange={(open) => {
+                      setIsAddCategoryOpen(open);
+                      if (open) {
+                        setNewParentCategory(""); // Reset parent category
+                        setNewCategoryName("");
+                        setNewCategoryFile(null);
+                        setCatError(null);
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Category
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                              <Plus className="h-4 w-4 text-white" />
+                            </div>
+                            Add New Category
+                          </DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleAddCategory} className="space-y-4">
+                          {catError && (
+                            <div className="rounded-lg bg-red-50 text-red-600 text-sm px-4 py-3 border border-red-200 flex items-center gap-2">
+                              <XCircle className="h-4 w-4" />
+                              {catError}
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            <Label htmlFor="cat-name" className="text-sm font-medium text-gray-700">Category Name</Label>
+                            <Input
+                              id="cat-name"
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              placeholder="e.g. Fresh Produce, Electronics, Beverages"
+                              className="focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="parent-cat" className="text-sm font-medium text-gray-700">Parent Category (Optional)</Label>
+                            <Select value={newParentCategory || "none"} onValueChange={(val) => setNewParentCategory(val === "none" ? "" : val)}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select parent category (optional)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">None (Top-level category)</SelectItem>
+                                {categoryRows.filter(c => !c.parentCategory).map((cat) => (
+                                  <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500">Select a parent to create a subcategory</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cat-image" className="text-sm font-medium text-gray-700">
+                              Category Image {!newParentCategory && <span className="text-xs font-normal text-gray-500">(Optional for parent categories)</span>}
+                            </Label>
+                            <div className="relative">
+                              <input
+                                id="cat-image"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setNewCategoryFile(e.target.files?.[0] || null)}
+                                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {newParentCategory
+                                ? "Image required for subcategories. Upload a high-quality image (PNG, JPG, WEBP)"
+                                : "Optional for parent categories. A placeholder will be used if not provided."}
+                            </p>
+                          </div>
+
+                          {/* Show in Navbar Checkbox */}
+                          <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <Checkbox
+                              id="new-cat-navbar"
+                              checked={newCategoryShowInNavbar}
+                              onCheckedChange={(checked) => setNewCategoryShowInNavbar(!!checked)}
+                            />
+                            <Label
+                              htmlFor="new-cat-navbar"
+                              className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                            >
+                              <Home className="h-4 w-4 text-blue-600" />
+                              Show this category in navbar
+                            </Label>
+                          </div>
+
+                          <div className="flex justify-end gap-3 pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={catSubmitting} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
+                              {catSubmitting ? (
+                                <>
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                  Adding...
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Category
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+
+                {/* Category Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-red-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-orange-700">Total Categories</CardTitle>
+                      <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+                        <Tag className="h-4 w-4 text-orange-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-orange-900">{categoryRows.length}</div>
+                      <p className="text-xs text-orange-600 font-medium">Active categories</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-indigo-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-blue-700">Total Products</CardTitle>
+                      <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                        <Package className="h-4 w-4 text-blue-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-blue-900">{products.length}</div>
+                      <p className="text-xs text-blue-600 font-medium">Across all categories</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-green-700">Most Popular</CardTitle>
+                      <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-xl font-bold text-green-900 truncate">{categoryRows[0]?.name || "N/A"}</div>
+                      <p className="text-xs text-green-600 font-medium">Top selling category</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-pink-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-purple-700">Avg Products</CardTitle>
+                      <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                        <Target className="h-4 w-4 text-purple-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-purple-900">{categoryRows.length > 0 ? Math.round(products.length / categoryRows.length) : 0}</div>
+                      <p className="text-xs text-purple-600 font-medium">Per category</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Enhanced Category Grid */}
+                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="border-b border-gray-200/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <Tag className="h-5 w-5 text-orange-600" />
+                          All Categories
+                        </CardTitle>
+                        <p className="text-sm text-gray-500 mt-1">Manage and organize your product categories</p>
+                      </div>
+                      <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                        {categoryRows.length} {categoryRows.length === 1 ? 'Category' : 'Categories'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {categoryRows.length === 0 ? (
+                      <div className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+                            <Tag className="h-10 w-10 text-orange-500" />
+                          </div>
+                          <div>
+                            <p className="text-gray-900 font-semibold text-lg">No categories yet</p>
+                            <p className="text-sm text-gray-500 mt-1">Get started by creating your first product category</p>
+                          </div>
+                          <Button
+                            onClick={() => setIsAddCategoryOpen(true)}
+                            className="mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Your First Category
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b border-gray-200/50">
+                            <TableHead className="font-semibold text-gray-900">#</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Category Name</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Products</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {categoryRows.map((category, index) => (
+                            <TableRow key={category._id} className="hover:bg-gray-50/50 transition-colors">
+                              <TableCell className="font-medium">
+                                <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+                                  #{index + 1}
+                                </Badge>
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-3">
-                                  {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
-                                  <span>{it.name}</span>
+                                  <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                    {category.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-gray-900">{category.name}</p>
+                                    {category.parentCategory ? (
+                                      <p className="text-xs text-gray-500">
+                                        <span className="text-blue-600">↳ {category.parentCategory.name}</span> • ID: {category._id.slice(-6)}
+                                      </p>
+                                    ) : (
+                                      <p className="text-xs text-gray-500">ID: {category._id.slice(-6)}</p>
+                                    )}
+                                  </div>
                                 </div>
                               </TableCell>
-                              <TableCell>{it.quantity}</TableCell>
-                              <TableCell>Rs.{Number(it.price).toFixed(2)}</TableCell>
-                              <TableCell>Rs.{Number(it.price * it.quantity).toFixed(2)}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4 text-gray-400" />
+                                  <span className="text-gray-700 font-medium">
+                                    {products.filter(p => p.categoryName === category.name).length} products
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-green-100 text-green-700 border-green-200">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Active
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Dialog open={editOpenForId === category._id} onOpenChange={(o) => !o && setEditOpenForId(null)}>
+                                    <DialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
+                                        onClick={() => openEdit(category)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                      <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-3">
+                                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                            <Edit className="h-4 w-4 text-white" />
+                                          </div>
+                                          Edit Category
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <form onSubmit={handleEditCategory} className="space-y-4">
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-name" className="text-sm font-medium text-gray-700">Category Name</Label>
+                                          <Input
+                                            id="edit-name"
+                                            value={editName}
+                                            onChange={(e) => setEditName(e.target.value)}
+                                            className="focus:ring-2 focus:ring-blue-500"
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-parent-cat" className="text-sm font-medium text-gray-700">Parent Category (Optional)</Label>
+                                          <Select value={editParentCategory || "none"} onValueChange={(val) => setEditParentCategory(val === "none" ? "" : val)}>
+                                            <SelectTrigger className="w-full">
+                                              <SelectValue placeholder="Select parent category (optional)" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none">None (Top-level category)</SelectItem>
+                                              {categoryRows.filter(c => !c.parentCategory && c._id !== editOpenForId).map((cat) => (
+                                                <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <p className="text-xs text-gray-500">Select a parent to make this a subcategory</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-image" className="text-sm font-medium text-gray-700">New Image (optional)</Label>
+                                          <input
+                                            id="edit-image"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                                          />
+                                          <p className="text-xs text-gray-500">Leave empty to keep current image</p>
+                                        </div>
+
+                                        {/* Show in Navbar Checkbox */}
+                                        <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                                          <Checkbox
+                                            id="edit-cat-navbar"
+                                            checked={editShowInNavbar}
+                                            onCheckedChange={(checked) => setEditShowInNavbar(!!checked)}
+                                          />
+                                          <Label
+                                            htmlFor="edit-cat-navbar"
+                                            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+                                          >
+                                            <Home className="h-4 w-4 text-blue-600" />
+                                            Show this category in navbar
+                                          </Label>
+                                        </div>
+
+                                        <div className="flex justify-end gap-3 pt-4">
+                                          <Button type="button" variant="outline" onClick={() => setEditOpenForId(null)}>Cancel</Button>
+                                          <Button type="submit" className="bg-black hover:bg-gray-800 text-white">
+                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            Save Changes
+                                          </Button>
+                                        </div>
+                                      </form>
+                                    </DialogContent>
+                                  </Dialog>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-all"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700 transition-all"
+                                    title="View products"
+                                    onClick={() => {
+                                      setSelectedCategoryFilter(category._id);
+                                      setActiveTab("product-management");
+                                      loadProducts(category._id);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
-                    </div>
-                    {orderDetail && (
-                      <div className="mt-4 pt-4 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full bg-black text-white hover:bg-gray-800"
-                          onClick={() => {
-                            const orderId = orderDetail.id || selectedOrderId;
-                            const invoiceUrl = `${API_BASE}/api/invoices/${orderId}?token=${token || ''}`;
-                            window.open(invoiceUrl, '_blank');
-                          }}
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Download Invoice
-                        </Button>
-                      </div>
                     )}
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-
-        {/* Inventory Management */}
-        {activeTab === "inventory" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-                <p className="text-gray-600 mt-1">Update stock levels for products by category</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => loadInventoryProducts(inventoryCategoryFilter === "all" ? undefined : inventoryCategoryFilter)}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-
-            {/* Category Filter */}
-            <Card className="border-0 shadow-md bg-gradient-to-r from-teal-50 to-cyan-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-5 w-5 text-teal-600" />
-                    <Label className="text-sm font-semibold text-gray-700">Filter by Category:</Label>
-                  </div>
-                  <Select 
-                    value={inventoryCategoryFilter} 
-                    onValueChange={(value) => {
-                      setInventoryCategoryFilter(value);
-                      loadInventoryProducts(value === "all" ? undefined : value);
-                    }}
-                  >
-                    <SelectTrigger className="w-64 bg-white">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        <div className="flex items-center gap-2">
-                          <Warehouse className="h-4 w-4" />
-                          All Categories
-                        </div>
-                      </SelectItem>
-                      {categoryRows.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {inventoryCategoryFilter !== "all" && (
-                    <Badge variant="secondary" className="bg-teal-100 text-teal-700 border-teal-200">
-                      {inventoryProducts.length} {inventoryProducts.length === 1 ? 'product' : 'products'}
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Inventory Table */}
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                {inventoryLoading ? (
-                  <div className="py-12 text-center">
-                    <BalancingLoader />
-                    <p className="mt-3 text-sm text-gray-500">Loading inventory...</p>
-                  </div>
-                ) : inventoryProducts.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <Warehouse className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">No products found</p>
-                    <p className="text-sm text-gray-500">Try selecting a different category</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-b border-gray-200/50">
-                        <TableHead className="font-semibold text-gray-900">Product</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Category</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Current Stock</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {inventoryProducts.map((product) => {
-                        const isOutOfStock = (product.stock || 0) === 0;
-                        const isEditing = editingStock?.productId === product._id;
-                        return (
-                          <TableRow key={product._id} className="hover:bg-gray-50/50">
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <img 
-                                  src={product.imageUrl} 
-                                  alt={product.nameEn}
-                                  className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                                />
-                                <div>
-                                  <p className="font-medium text-gray-900">{product.nameEn}</p>
-                                  <p className="text-xs text-gray-500">ID: {product._id.slice(-6)}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                                {product.categoryName || "Uncategorized"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {isEditing ? (
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={newStockValue}
-                                    onChange={(e) => setNewStockValue(e.target.value)}
-                                    className="w-24"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      const stock = parseInt(newStockValue);
-                                      if (!isNaN(stock) && stock >= 0) {
-                                        updateProductStock(product._id, stock);
-                                      }
-                                    }}
-                                    disabled={stockUpdating}
-                                    className="bg-teal-600 hover:bg-teal-700"
-                                  >
-                                    {stockUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setEditingStock(null);
-                                      setNewStockValue("");
-                                    }}
-                                    disabled={stockUpdating}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : 'text-gray-900'}`}>
-                                    {product.stock || 0}
-                                  </span>
-                                  <span className="text-xs text-gray-500">units</span>
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {isOutOfStock ? (
-                                <Badge className="bg-red-100 text-red-800 border-red-300">
-                                  Out of Stock
-                                </Badge>
-                              ) : (product.stock || 0) < 10 ? (
-                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                                  Low Stock
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-green-100 text-green-800 border-green-300">
-                                  In Stock
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {!isEditing && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingStock({ productId: product._id, currentStock: product.stock || 0 });
-                                    setNewStockValue(String(product.stock || 0));
-                                  }}
-                                  className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Update Stock
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Categories */}
-        {/* Home Page Sections */}
-        {activeTab === "home-sections" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Home Page Sections</h1>
-                <p className="text-gray-600 mt-1">Manage products featured on the home page</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  loadHomeSections();
-                  loadProducts();
-                }}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Fresh Picks Section */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50/50">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                        <Star className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-bold text-gray-900">Fresh Picks for You</CardTitle>
-                        <p className="text-sm text-gray-600">{freshPicksProducts.length} products</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddToFreshPicks(!showAddToFreshPicks)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Existing
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowNewProductFreshPicks(!showNewProductFreshPicks)}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        New Product
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Add Existing Product Modal */}
-                  {showAddToFreshPicks && (
-                    <div className="p-4 bg-white rounded-lg border-2 border-blue-200 mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="font-semibold text-gray-900">Select Product to Add</Label>
-                        <Button variant="ghost" size="sm" onClick={() => setShowAddToFreshPicks(false)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="max-h-60 overflow-y-auto space-y-2">
-                        {availableProducts
-                          .filter(p => !p.isFreshPick && !p.isMostLoved)
-                          .map((product) => (
-                            <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
-                                  <p className="text-xs text-gray-500">{product.categoryName}</p>
-                                </div>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => toggleProductSection(product._id, "freshPick", false)}
-                              >
-                                Add
-                              </Button>
-                            </div>
-                          ))}
-                        {availableProducts.filter(p => !p.isFreshPick && !p.isMostLoved).length === 0 && (
-                          <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Most Loved</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* New Product Form */}
-                  {showNewProductFreshPicks && (
-                    <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="font-semibold text-gray-900">Create New Product</Label>
-                        <Button variant="ghost" size="sm" onClick={() => setShowNewProductFreshPicks(false)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <ProductForm 
-                        apiBase={API_BASE}
-                        categories={categoryRows}
-                        defaultFreshPick={true}
-                        onCreated={async () => {
-                          await loadProducts();
-                          await loadHomeSections();
-                          setShowNewProductFreshPicks(false);
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Products List */}
-                  <div className="space-y-3">
-                    {freshPicksProducts.length === 0 ? (
-                      <div className="py-8 text-center">
-                        <Star className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No products in Fresh Picks</p>
-                        <p className="text-xs text-gray-400 mt-1">Add products to showcase on home page</p>
-                      </div>
-                    ) : (
-                      freshPicksProducts.map((product) => (
-                        <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                          <div className="flex items-center gap-3">
-                            <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
-                            <div>
-                              <p className="font-medium text-gray-900">{product.nameEn}</p>
-                              <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => toggleProductSection(product._id, "freshPick", true)}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Remove
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Most Loved Section */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-rose-50/50">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg">
-                        <Heart className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-bold text-gray-900">Most Loved Items</CardTitle>
-                        <p className="text-sm text-gray-600">{mostLovedProducts.length} products</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddToMostLoved(!showAddToMostLoved)}
-                        className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Existing
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowNewProductMostLoved(!showNewProductMostLoved)}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        New Product
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Add Existing Product Modal */}
-                  {showAddToMostLoved && (
-                    <div className="p-4 bg-white rounded-lg border-2 border-pink-200 mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="font-semibold text-gray-900">Select Product to Add</Label>
-                        <Button variant="ghost" size="sm" onClick={() => setShowAddToMostLoved(false)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="max-h-60 overflow-y-auto space-y-2">
-                        {availableProducts
-                          .filter(p => !p.isMostLoved && !p.isFreshPick)
-                          .map((product) => (
-                            <div key={product._id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <img src={product.imageUrl} alt={product.nameEn} className="h-10 w-10 rounded object-cover" />
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">{product.nameEn}</p>
-                                  <p className="text-xs text-gray-500">{product.categoryName}</p>
-                                </div>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => toggleProductSection(product._id, "mostLoved", false)}
-                              >
-                                Add
-                              </Button>
-                            </div>
-                          ))}
-                        {availableProducts.filter(p => !p.isMostLoved && !p.isFreshPick).length === 0 && (
-                          <p className="text-sm text-gray-500 text-center py-4">All available products are already added or are in Fresh Picks</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* New Product Form */}
-                  {showNewProductMostLoved && (
-                    <div className="p-4 bg-white rounded-lg border-2 border-green-200 mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="font-semibold text-gray-900">Create New Product</Label>
-                        <Button variant="ghost" size="sm" onClick={() => setShowNewProductMostLoved(false)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <ProductForm 
-                        apiBase={API_BASE}
-                        categories={categoryRows}
-                        defaultMostLoved={true}
-                        onCreated={async () => {
-                          await loadProducts();
-                          await loadHomeSections();
-                          setShowNewProductMostLoved(false);
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Products List */}
-                  <div className="space-y-3">
-                    {mostLovedProducts.length === 0 ? (
-                      <div className="py-8 text-center">
-                        <Heart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">No products in Most Loved</p>
-                        <p className="text-xs text-gray-400 mt-1">Add products to showcase on home page</p>
-                      </div>
-                    ) : (
-                      mostLovedProducts.map((product) => (
-                        <div key={product._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                          <div className="flex items-center gap-3">
-                            <img src={product.imageUrl} alt={product.nameEn} className="h-12 w-12 rounded-lg object-cover border border-gray-200" />
-                            <div>
-                              <p className="font-medium text-gray-900">{product.nameEn}</p>
-                              <p className="text-sm text-gray-500">{product.categoryName} • Rs.{product.price}</p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => toggleProductSection(product._id, "mostLoved", true)}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Remove
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Home Page Posters */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 lg:col-span-2">
-                <CardHeader className="pb-4">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center shadow-lg">
-                        <Image className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-bold text-gray-900">Home Page Posters</CardTitle>
-                        <p className="text-sm text-gray-600">
-                          {homeAds.filter((poster) => poster.isActive).length} active • {homeAds.length} total
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => loadAdPosters()}
-                        className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Refresh
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => openAdDialog()}
-                        className="bg-black text-white hover:bg-gray-800"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Poster
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {adsError && !adDialogOpen && (
-                    <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
-                      {adsError}
-                    </div>
-                  )}
-                  {adsLoading ? (
-                    <div className="py-12 text-center">
-                      <BalancingLoader />
-                      <p className="mt-3 text-sm text-gray-500">Loading posters...</p>
-                    </div>
-                  ) : homeAds.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <Image className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <h3 className="text-lg font-semibold text-gray-900">No posters yet</h3>
-                      <p className="text-sm text-gray-600 mb-4">Add promotional posters to highlight offers on the home page.</p>
-                      <Button onClick={() => openAdDialog()} className="bg-black text-white hover:bg-gray-800">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Poster
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
-                      {homeAds.map((poster) => (
-                        <div
-                          key={poster._id}
-                          className="snap-start min-w-[280px] max-w-sm flex-1 group overflow-hidden rounded-2xl border border-amber-100 bg-white/80 shadow hover:shadow-lg transition-shadow"
-                        >
-                          <div className="relative h-44 overflow-hidden">
-                            <img
-                              src={poster.imageUrl}
-                              alt={poster.title}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="absolute top-3 left-3">
-                              <Badge className={poster.isActive ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}>
-                                {poster.isActive ? "Active" : "Hidden"}
-                              </Badge>
-                            </div>
-                            <div className="absolute top-3 right-3 text-xs font-semibold text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
-                              Order {poster.order ?? 0}
-                            </div>
-                          </div>
-                          <div className="space-y-2 p-4">
-                            <div>
-                              <h4 className="text-lg font-semibold text-gray-900">{poster.title}</h4>
-                              {poster.subtitle && <p className="text-sm text-gray-600">{poster.subtitle}</p>}
-                              {poster.description && <p className="text-sm text-gray-500">{poster.description}</p>}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 break-all">
-                              {poster.ctaText && (
-                                <span className="font-medium text-gray-700">CTA:</span>
-                              )}
-                              {poster.ctaText && <span>{poster.ctaText}</span>}
-                              {poster.ctaLink && (
-                                <a
-                                  href={poster.ctaLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  {poster.ctaLink}
-                                </a>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap gap-2 pt-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleToggleAd(poster)}
-                                className={poster.isActive ? "text-amber-600 hover:bg-amber-50" : "text-green-600 hover:bg-green-50"}
-                              >
-                                {poster.isActive ? (
-                                  <span className="flex items-center">
-                                    <Ban className="h-4 w-4 mr-2" /> Hide
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center">
-                                    <CheckCircle className="h-4 w-4 mr-2" /> Activate
-                                  </span>
-                                )}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openAdDialog(poster)}
-                                className="text-blue-600 hover:bg-blue-50"
-                              >
-                                <Edit className="h-4 w-4 mr-2" /> Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteAd(poster)}
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Dialog
-                open={adDialogOpen}
-                onOpenChange={(open) => {
-                  setAdDialogOpen(open);
-                  if (!open) {
-                    setEditingAd(null);
-                    resetAdForm();
-                    setAdsError(null);
-                  }
-                }}
-              >
-                <DialogContent className="sm:max-w-xl">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold text-gray-900">
-                      {editingAd ? "Edit Home Poster" : "Add Home Poster"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmitAd} className="space-y-5">
-                    {adsError && (
-                      <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 border border-red-200">
-                        {adsError}
-                      </div>
-                    )}
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="poster-title">Title *</Label>
-                        <Input
-                          id="poster-title"
-                          value={adTitle}
-                          onChange={(e) => setAdTitle(e.target.value)}
-                          placeholder="Mega Fresh Grocery Fiesta"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="poster-subtitle">Subtitle</Label>
-                        <Input
-                          id="poster-subtitle"
-                          value={adSubtitle}
-                          onChange={(e) => setAdSubtitle(e.target.value)}
-                          placeholder="Limited Time"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="poster-description">Description</Label>
-                        <Textarea
-                          id="poster-description"
-                          value={adDescription}
-                          onChange={(e) => setAdDescription(e.target.value)}
-                          placeholder="Save up to 40% on fruits, veggies, and essentials."
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="poster-cta-text">CTA Text</Label>
-                        <Input
-                          id="poster-cta-text"
-                          value={adCtaText}
-                          onChange={(e) => setAdCtaText(e.target.value)}
-                          placeholder="Shop Now"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="poster-cta-link">CTA Link</Label>
-                        <Input
-                          id="poster-cta-link"
-                          value={adCtaLink}
-                          onChange={(e) => setAdCtaLink(e.target.value)}
-                          placeholder="/shop"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="poster-order">Display Order</Label>
-                        <Input
-                          id="poster-order"
-                          type="number"
-                          value={adOrder}
-                          onChange={(e) => setAdOrder(e.target.value)}
-                        />
-                        <p className="text-xs text-gray-500">Lower numbers appear first in the carousel.</p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Visibility</Label>
-                        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                          <Checkbox
-                            id="poster-active"
-                            checked={adIsActive}
-                            onCheckedChange={(checked) => setAdIsActive(!!checked)}
-                          />
-                          <Label htmlFor="poster-active" className="text-sm text-gray-700 cursor-pointer">
-                            Show this poster on the home page
-                          </Label>
-                        </div>
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="poster-image">
-                          Poster Image {editingAd ? <span className="text-xs text-gray-500">(Leave empty to keep current image)</span> : "*"}
-                        </Label>
-                        <input
-                          id="poster-image"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setAdFile(e.target.files?.[0] || null)}
-                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
-                        />
-                        {editingAd && !adFile && (
-                          <div className="mt-2 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
-                            <img src={editingAd.imageUrl} alt={editingAd.title} className="h-14 w-14 rounded object-cover" />
-                            <p className="text-xs text-gray-500">Current poster image</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setAdDialogOpen(false);
-                          setEditingAd(null);
-                          resetAdForm();
-                          setAdsError(null);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={adSubmitting}
-                        className="bg-black text-white hover:bg-gray-800"
-                      >
-                        {adSubmitting ? (
-                          <span className="flex items-center">
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Saving...
-                          </span>
-                        ) : (
-                          <span>{editingAd ? "Save Changes" : "Create Poster"}</span>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "categories" && (
-          <div className="space-y-8">
-            {/* Enhanced Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Category Management</h1>
-                <p className="text-gray-600 mt-1">Create parent categories (e.g., Grocery & Kitchen) and their subcategories (e.g., Atta, Rice & Dal)</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" className="hover:bg-orange-50">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              <Dialog open={isAddCategoryOpen} onOpenChange={(open) => {
-                setIsAddCategoryOpen(open);
-                if (open) {
-                  setNewParentCategory(""); // Reset parent category
-                  setNewCategoryName("");
-                  setNewCategoryFile(null);
-                  setCatError(null);
-                }
-              }}>
-                <DialogTrigger asChild>
-                    <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Category
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                      <DialogTitle className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                          <Plus className="h-4 w-4 text-white" />
-                        </div>
-                        Add New Category
-                      </DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleAddCategory} className="space-y-4">
-                    {catError && (
-                        <div className="rounded-lg bg-red-50 text-red-600 text-sm px-4 py-3 border border-red-200 flex items-center gap-2">
-                          <XCircle className="h-4 w-4" />
-                          {catError}
-                        </div>
-                    )}
-                    <div className="space-y-2">
-                        <Label htmlFor="cat-name" className="text-sm font-medium text-gray-700">Category Name</Label>
-                        <Input 
-                          id="cat-name" 
-                          value={newCategoryName} 
-                          onChange={(e) => setNewCategoryName(e.target.value)} 
-                          placeholder="e.g. Fresh Produce, Electronics, Beverages" 
-                          className="focus:ring-2 focus:ring-orange-500"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="parent-cat" className="text-sm font-medium text-gray-700">Parent Category (Optional)</Label>
-                        <Select value={newParentCategory || "none"} onValueChange={(val) => setNewParentCategory(val === "none" ? "" : val)}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select parent category (optional)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None (Top-level category)</SelectItem>
-                            {categoryRows.filter(c => !c.parentCategory).map((cat) => (
-                              <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-gray-500">Select a parent to create a subcategory</p>
-                    </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cat-image" className="text-sm font-medium text-gray-700">
-                          Category Image {!newParentCategory && <span className="text-xs font-normal text-gray-500">(Optional for parent categories)</span>}
-                        </Label>
-                        <div className="relative">
-                          <input 
-                            id="cat-image" 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={(e) => setNewCategoryFile(e.target.files?.[0] || null)} 
-                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          {newParentCategory 
-                            ? "Image required for subcategories. Upload a high-quality image (PNG, JPG, WEBP)" 
-                            : "Optional for parent categories. A placeholder will be used if not provided."}
-                        </p>
-                      </div>
-                      
-                      {/* Show in Navbar Checkbox */}
-                      <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <Checkbox 
-                          id="new-cat-navbar"
-                          checked={newCategoryShowInNavbar}
-                          onCheckedChange={(checked) => setNewCategoryShowInNavbar(!!checked)}
-                        />
-                        <Label 
-                          htmlFor="new-cat-navbar" 
-                          className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
-                        >
-                          <Home className="h-4 w-4 text-blue-600" />
-                          Show this category in navbar
-                        </Label>
-                      </div>
-                      
-                      <div className="flex justify-end gap-3 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={catSubmitting} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
-                          {catSubmitting ? (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              Adding...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Category
-                            </>
-                          )}
-                        </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-              </div>
-            </div>
-
-            {/* Category Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-orange-50 to-red-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-700">Total Categories</CardTitle>
-                  <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-                    <Tag className="h-4 w-4 text-orange-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-orange-900">{categoryRows.length}</div>
-                  <p className="text-xs text-orange-600 font-medium">Active categories</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-indigo-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-700">Total Products</CardTitle>
-                  <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                    <Package className="h-4 w-4 text-blue-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">{products.length}</div>
-                  <p className="text-xs text-blue-600 font-medium">Across all categories</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700">Most Popular</CardTitle>
-                  <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-bold text-green-900 truncate">{categoryRows[0]?.name || "N/A"}</div>
-                  <p className="text-xs text-green-600 font-medium">Top selling category</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-pink-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-700">Avg Products</CardTitle>
-                  <div className="p-2 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                    <Target className="h-4 w-4 text-purple-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-purple-900">{categoryRows.length > 0 ? Math.round(products.length / categoryRows.length) : 0}</div>
-                  <p className="text-xs text-purple-600 font-medium">Per category</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Enhanced Category Grid */}
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader className="border-b border-gray-200/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <Tag className="h-5 w-5 text-orange-600" />
-                      All Categories
-                    </CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">Manage and organize your product categories</p>
-                  </div>
-                  <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
-                    {categoryRows.length} {categoryRows.length === 1 ? 'Category' : 'Categories'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {categoryRows.length === 0 ? (
-                  <div className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
-                        <Tag className="h-10 w-10 text-orange-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-900 font-semibold text-lg">No categories yet</p>
-                        <p className="text-sm text-gray-500 mt-1">Get started by creating your first product category</p>
-                      </div>
-                      <Button 
-                        onClick={() => setIsAddCategoryOpen(true)} 
-                        className="mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Your First Category
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                <Table>
-                  <TableHeader>
-                      <TableRow className="border-b border-gray-200/50">
-                        <TableHead className="font-semibold text-gray-900">#</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Category Name</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Products</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                        <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {categoryRows.map((category, index) => (
-                        <TableRow key={category._id} className="hover:bg-gray-50/50 transition-colors">
-                          <TableCell className="font-medium">
-                            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
-                              #{index + 1}
-                            </Badge>
-                          </TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                                {category.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <p className="font-semibold text-gray-900">{category.name}</p>
-                                {category.parentCategory ? (
-                                  <p className="text-xs text-gray-500">
-                                    <span className="text-blue-600">↳ {category.parentCategory.name}</span> • ID: {category._id.slice(-6)}
-                                  </p>
-                                ) : (
-                                  <p className="text-xs text-gray-500">ID: {category._id.slice(-6)}</p>
-                                )}
-                              </div>
-                            </div>
-                        </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4 text-gray-400" />
-                              <span className="text-gray-700 font-medium">
-                                {products.filter(p => p.categoryName === category.name).length} products
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className="bg-green-100 text-green-700 border-green-200">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Active
-                            </Badge>
-                          </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Dialog open={editOpenForId === category._id} onOpenChange={(o) => !o && setEditOpenForId(null)}>
-                              <DialogTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all"
-                                    onClick={() => openEdit(category)}
-                                  >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-3">
-                                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                                        <Edit className="h-4 w-4 text-white" />
-                                      </div>
-                                      Edit Category
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <form onSubmit={handleEditCategory} className="space-y-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-name" className="text-sm font-medium text-gray-700">Category Name</Label>
-                                    <Input 
-                                      id="edit-name" 
-                                      value={editName} 
-                                      onChange={(e) => setEditName(e.target.value)}
-                                      className="focus:ring-2 focus:ring-blue-500" 
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-parent-cat" className="text-sm font-medium text-gray-700">Parent Category (Optional)</Label>
-                                    <Select value={editParentCategory || "none"} onValueChange={(val) => setEditParentCategory(val === "none" ? "" : val)}>
-                                      <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select parent category (optional)" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">None (Top-level category)</SelectItem>
-                                        {categoryRows.filter(c => !c.parentCategory && c._id !== editOpenForId).map((cat) => (
-                                          <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-gray-500">Select a parent to make this a subcategory</p>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-image" className="text-sm font-medium text-gray-700">New Image (optional)</Label>
-                                      <input 
-                                        id="edit-image" 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={(e) => setEditFile(e.target.files?.[0] || null)}
-                                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                                      />
-                                      <p className="text-xs text-gray-500">Leave empty to keep current image</p>
-                                    </div>
-                                    
-                                    {/* Show in Navbar Checkbox */}
-                                    <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                                      <Checkbox 
-                                        id="edit-cat-navbar"
-                                        checked={editShowInNavbar}
-                                        onCheckedChange={(checked) => setEditShowInNavbar(!!checked)}
-                                      />
-                                      <Label 
-                                        htmlFor="edit-cat-navbar" 
-                                        className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
-                                      >
-                                        <Home className="h-4 w-4 text-blue-600" />
-                                        Show this category in navbar
-                                      </Label>
-                                    </div>
-                                    
-                                    <div className="flex justify-end gap-3 pt-4">
-                                    <Button type="button" variant="outline" onClick={() => setEditOpenForId(null)}>Cancel</Button>
-                                      <Button type="submit" className="bg-black hover:bg-gray-800 text-white">
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        Save Changes
-                                      </Button>
-                                  </div>
-                                </form>
-                              </DialogContent>
-                            </Dialog>
-                              
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-all"
-                              >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                              
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700 transition-all"
-                                title="View products"
-                                onClick={() => {
-                                  setSelectedCategoryFilter(category._id);
-                                  setActiveTab("product-management");
-                                  loadProducts(category._id);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Order Management */}
-        {activeTab === "order-management" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
-                <p className="text-gray-600 mt-1">Track and manage customer orders efficiently</p>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={loadAdminOrders} disabled={loadingAdminOrders} className="hover:bg-blue-50">
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loadingAdminOrders ? 'animate-spin' : ''}`} />
-                  {loadingAdminOrders ? "Refreshing..." : "Refresh"}
-                </Button>
-                <Button variant="outline" className="hover:bg-green-50">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
-
-              {/* Filters now in Order Management */}
-              <div className="mt-2">
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div>
-                    <Label>Search by Date</Label>
-                    <Input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>Search by Order ID</Label>
-                    <Input type="text" placeholder="Enter Order ID" value={searchOrderId} onChange={(e) => setSearchOrderId(e.target.value)} />
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <Button className="bg-primary hover:bg-primary/90" onClick={() => { /* filters are reactive */ loadAdminOrders(); }}>Apply Filter</Button>
-                    <Button variant="outline" onClick={() => { setSearchDate(""); setSearchOrderId(""); setOrderStatusFilter("all"); }}>Clear</Button>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mb-4 flex-wrap">
-                  {orderStatuses.map((s) => (
-                    <button key={s.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${orderStatusFilter === s.value ? 'bg-black text-white border-black' : 'bg-white text-black border-gray-200 hover:bg-gray-50'}`} onClick={() => setOrderStatusFilter(s.value as any)}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-            {/* Enhanced Order Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-yellow-50 to-orange-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-700">Pending Orders</CardTitle>
-                  <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-                    <Clock className="h-4 w-4 text-orange-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-orange-900">{pendingCount}</div>
-                  <p className="text-xs text-orange-600 font-medium">Awaiting processing</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-cyan-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-700">In Transit</CardTitle>
-                  <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                    <Truck className="h-4 w-4 text-blue-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-blue-900">{inTransitCount}</div>
-                  <p className="text-xs text-blue-600 font-medium">Out for delivery</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700">Delivered Today</CardTitle>
-                  <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-900">{deliveredTodayCount}</div>
-                  <p className="text-xs text-green-600 font-medium">Successfully delivered</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-red-50 to-pink-100/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-red-700">Cancelled</CardTitle>
-                  <div className="p-2 rounded-lg bg-red-500/10 group-hover:bg-red-500/20 transition-colors">
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-red-900">{cancelledCount}</div>
-                  <p className="text-xs text-red-600 font-medium">Cancelled orders</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-gray-200/50">
-                      <TableHead className="font-semibold text-gray-900">Order ID</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Customer</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Items</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Total</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Delivery Person</TableHead>
-                      <TableHead className="font-semibold text-gray-900">Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedOrders.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                          No orders found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedOrders.map((order) => (
-                        <>
-                          <TableRow
-                          className="cursor-pointer hover:bg-blue-50/30 transition-colors group"
-                          onClick={() => {
-                          setSelectedOrderId(order.id);
-                          setOrderDetailOpen(false);
-                          setExpandedOrderId(expandedOrderId === order.id ? null : order.id);
-                          // optimistic: show brief items immediately if present
-                          if (order.itemsBrief && order.itemsBrief.length > 0) {
-                            setOrderDetail({
-                              id: order.id,
-                              customerDetails: {},
-                              status: String(order.status),
-                              total: Number(order.total || 0),
-                              createdAt: new Date(order.date).toLocaleString(),
-                              items: order.itemsBrief.map(it => ({
-                                productId: it.productId,
-                                name: it.name,
-                                price: it.price,
-                                quantity: it.quantity,
-                                imageUrl: it.imageUrl
-                              }))
-                            });
-                          } else {
-                            setOrderDetail(null);
-                          }
-                          // fetch full details in background
-                          loadOrderDetail(((order as any).orderId as string) || order.id);
-                         }}
-                        >
-                         <TableCell className="font-medium">#{(order as any).orderId || order.id}</TableCell>
-                         <TableCell>{order.customer}</TableCell>
-                         <TableCell>{order.items}</TableCell>
-                         <TableCell>Rs.{order.total}</TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          {order.status === "delivered" || order.status === "cancelled" ? (
-                            getStatusBadge(order.status)
-                          ) : (
-                            <Select value={String(order.status)} onValueChange={(val) => handleOrderStatusUpdate(order, val)}>
-                              <SelectTrigger className="w-40" onClick={(e) => e.stopPropagation()}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableStatuses.map(s => (
-                                  <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </TableCell>
-                         <TableCell onClick={(e) => e.stopPropagation()}>
-                           {order.status === "delivered" || order.status === "cancelled" ? (
-                             <Badge variant="outline" className="text-xs">
-                               {(order as any).assignedPartnerName || "Not Assigned"}
-                             </Badge>
-                           ) : (
-                             <Select 
-                               key={`partner-select-${order.id}-${partners.length}`}
-                               value={(() => {
-                                 const assignedId = (order as any).assignedDeliveryPartner;
-                                 if (!assignedId) return "not-assigned";
-                                 // Convert to string and ensure it matches a partner ID
-                                 const assignedIdStr = String(assignedId);
-                                 // Check if partner exists in the list (including inactive ones for display)
-                                 const partnerExists = partners.some(p => String(p.id) === assignedIdStr);
-                                 return partnerExists ? assignedIdStr : "not-assigned";
-                               })()}
-                               onValueChange={(partnerId) => handleAssignPartner(order, partnerId)}
-                             >
-                              <SelectTrigger className="w-32" onClick={(e) => e.stopPropagation()}>
-                                <SelectValue placeholder="Select partner" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="not-assigned">Not Assigned</SelectItem>
-                                {partners.filter(p => p.status === "active").map((p) => (
-                                  <SelectItem key={p.id} value={String(p.id)}>
-                                    {p.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                           )}
-                        </TableCell>
-                        <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
-                        </TableRow>
-                        {expandedOrderId === order.id && (
-                          <TableRow>
-                          <TableCell colSpan={7}>
-                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-l-4 border-blue-400 rounded-lg shadow-sm">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                                  <Package className="h-4 w-4 text-white" />
-                                </div>
-                                <h4 className="font-semibold text-blue-900 text-lg">Ordered Products</h4>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm">
-                                <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
-                                  <div className="text-blue-700 font-medium mb-1">Delivery Address</div>
-                                  <div className="text-blue-900">{(order as any).customerDetails?.address || orderDetail?.customerDetails?.address || '-'}</div>
-                                </div>
-                                <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
-                                  <div className="text-blue-700 font-medium mb-1">Payment Mode</div>
-                                  <div className="text-blue-900 font-semibold">{orderDetail?.paymentMode || 'COD'}</div>
-                                </div>
-                                <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
-                                  <div className="text-blue-700 font-medium mb-1">Payment Status</div>
-                                  <div className={`font-semibold ${orderDetail?.paymentStatus === 'Paid' ? 'text-green-600' : orderDetail?.paymentStatus === 'Failed' ? 'text-red-600' : 'text-yellow-600'}`}>
-                                    {orderDetail?.paymentStatus || 'Pending'}
-                                  </div>
-                                  {orderDetail?.transactionId && (
-                                    <div className="text-xs text-blue-600 mt-1">TXN: {orderDetail.transactionId}</div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                {orderDetail && orderDetail.id === order.id && orderDetail.items.length > 0 ? (
-                                  orderDetail.items.map((it) => (
-                                    <div key={it.productId} className="flex items-center justify-between p-4 bg-white/60 rounded-lg border border-blue-200/50 hover:bg-white/80 transition-colors">
-                                      <div className="flex items-center gap-4">
-                                        {it.imageUrl ? (
-                                          <div className="relative">
-                                            <img src={it.imageUrl} alt={it.name} className="h-12 w-12 rounded-lg object-cover border border-blue-200 shadow-sm" />
-                                            <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                          </div>
-                                        ) : (
-                                          <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                                            <Package className="h-6 w-6 text-gray-400" />
-                                          </div>
-                                        )}
-                                        <div>
-                                          <div className="font-semibold text-blue-900">{it.name}</div>
-                                          <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full inline-block">ID: {it.productId.slice(-6)}</div>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-6">
-                                        <div className="text-center">
-                                          <div className="text-sm text-blue-600 font-medium">Quantity</div>
-                                          <div className="text-lg font-bold text-blue-900">{it.quantity}</div>
-                                        </div>
-                                        <div className="text-center">
-                                          <div className="text-sm text-blue-600 font-medium">Price</div>
-                                          <div className="text-lg font-bold text-blue-900">Rs.{Number(it.price).toFixed(2)}</div>
-                                        </div>
-                                        <div className="text-center">
-                                          <div className="text-sm text-blue-600 font-medium">Total</div>
-                                          <div className="text-lg font-bold text-green-600">Rs.{(Number(it.price) * it.quantity).toFixed(2)}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (order as any).itemsBrief && (order as any).itemsBrief.length > 0 ? (
-                                  (order as any).itemsBrief.map((it: any) => (
-                                    <div key={it.productId} className="flex items-center justify-between border-b border-blue-100 pb-2 last:border-b-0">
-                                      <div className="flex items-center gap-3">
-                                        {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
-                                        <div>
-                                          <div className="font-medium text-blue-900">{it.name}</div>
-                                          <div className="text-xs text-blue-500">Product ID: {it.productId}</div>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-4">
-                                        <span className="text-sm text-blue-700">Qty: {it.quantity}</span>
-                                        <span className="text-sm text-blue-900 font-semibold">Rs.{Number(it.price).toFixed(2)}</span>
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="text-sm text-blue-400">No products found in this order.</div>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          </TableRow>
-                        )}
-                      </>
-                    ))
-                  )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Pagination Controls */}
-            {filteredOrders.length > ordersPerPage && (
-              <div className="flex items-center justify-between px-4 py-4 bg-white rounded-lg border border-gray-200">
-                <div className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOrdersCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={ordersCurrentPage === 1}
-                  >
-                    <ChevronDown className="h-4 w-4 mr-1 rotate-90" />
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (ordersCurrentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (ordersCurrentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = ordersCurrentPage - 2 + i;
-                      }
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={ordersCurrentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setOrdersCurrentPage(pageNum)}
-                          className={ordersCurrentPage === pageNum ? "bg-black text-white" : ""}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOrdersCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={ordersCurrentPage === totalPages}
-                  >
-                    Next
-                    <ChevronDown className="h-4 w-4 ml-1 -rotate-90" />
-                  </Button>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
-            {/* Delivery Confirmation Dialog */}
-            <Dialog open={deliveryConfirmOpen} onOpenChange={(open) => {
-              setDeliveryConfirmOpen(open);
-              if (!open) {
-                // Reset pending update when dialog is closed
-                setPendingStatusUpdate(null);
-              }
-            }}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-3 text-orange-600">
-                    <CheckCircle className="h-6 w-6" />
-                    Confirm Order Delivery
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  {pendingStatusUpdate && (
-                    <>
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                        <p className="text-sm text-gray-700 mb-2">
-                          Are you sure you want to mark this order as <strong className="text-orange-600">delivered</strong>?
-                        </p>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p><strong>Order ID:</strong> #{(pendingStatusUpdate.order as any).orderId || pendingStatusUpdate.order.id}</p>
-                          <p><strong>Customer:</strong> {pendingStatusUpdate.order.customer}</p>
-                          <p><strong>Total:</strong> Rs.{pendingStatusUpdate.order.total}</p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        This action will mark the order as completed. Make sure the order has been successfully delivered to the customer.
-                      </p>
-                    </>
-                  )}
-                  <div className="flex justify-end gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setDeliveryConfirmOpen(false);
-                        setPendingStatusUpdate(null);
-                      }}
-                    >
-                      Cancel
+            {/* Order Management */}
+            {activeTab === "order-management" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
+                    <p className="text-gray-600 mt-1">Track and manage customer orders efficiently</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={loadAdminOrders} disabled={loadingAdminOrders} className="hover:bg-blue-50">
+                      <RefreshCw className={`h-4 w-4 mr-2 ${loadingAdminOrders ? 'animate-spin' : ''}`} />
+                      {loadingAdminOrders ? "Refreshing..." : "Refresh"}
                     </Button>
-                    <Button
-                      onClick={confirmDeliveryStatusUpdate}
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Confirm Delivery
+                    <Button variant="outline" className="hover:bg-green-50">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
                     </Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
 
-        {/* User Management */}
-        {activeTab === "user-management" && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-              <div className="flex gap-2">
-                <Input placeholder="Search users..." className="w-64" />
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                <Button variant="outline" onClick={loadAdminUsers} disabled={loadingAdminUsers}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  {loadingAdminUsers ? "Refreshing..." : "Refresh"}
-                </Button>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
+                {/* Filters now in Order Management */}
+                <div className="mt-2">
+                  <div className="flex flex-col md:flex-row gap-4 mb-4">
+                    <div>
+                      <Label>Search by Date</Label>
+                      <Input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>Search by Order ID</Label>
+                      <Input type="text" placeholder="Enter Order ID" value={searchOrderId} onChange={(e) => setSearchOrderId(e.target.value)} />
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <Button className="bg-primary hover:bg-primary/90" onClick={() => { /* filters are reactive */ loadAdminOrders(); }}>Apply Filter</Button>
+                      <Button variant="outline" onClick={() => { setSearchDate(""); setSearchOrderId(""); setOrderStatusFilter("all"); }}>Clear</Button>
+                    </div>
+                  </div>
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Orders</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Join Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {adminUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>{user.id}</TableCell>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell>{user.orders}</TableCell>
-                        <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell>{user.joinDate}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            {user.status === "active" ? (
-                              <Button variant="outline" size="sm" className="text-orange-600">
-                                <Ban className="h-4 w-4" />
-                              </Button>
-                            ) : (
-                              <Button variant="outline" size="sm" className="text-green-600">
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    {orderStatuses.map((s) => (
+                      <button key={s.value} className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${orderStatusFilter === s.value ? 'bg-black text-white border-black' : 'bg-white text-black border-gray-200 hover:bg-gray-50'}`} onClick={() => setOrderStatusFilter(s.value as any)}>
+                        {s.label}
+                      </button>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                  </div>
+                </div>
 
-        {/* Promo Codes */}
-        {activeTab === "promo-codes" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Promo Codes</h1>
-                <p className="text-gray-600 mt-1">Create and manage discount codes for your customers</p>
-              </div>
-              <Dialog open={isAddPromoOpen} onOpenChange={setIsAddPromoOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Promo Code
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Create New Promo Code</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {promoError && (
-                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
-                        {promoError}
+                {/* Enhanced Order Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-yellow-50 to-orange-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-orange-700">Pending Orders</CardTitle>
+                      <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+                        <Clock className="h-4 w-4 text-orange-600" />
                       </div>
-                    )}
-                    <div>
-                      <Label htmlFor="promoCode">Code *</Label>
-                      <Input
-                        id="promoCode"
-                        placeholder="e.g., SUMMER2025"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                        className="uppercase"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoDiscount">Discount Percent (%) *</Label>
-                      <Input
-                        id="promoDiscount"
-                        type="number"
-                        min="1"
-                        max="100"
-                        placeholder="e.g., 10"
-                        value={promoDiscount}
-                        onChange={(e) => setPromoDiscount(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoExpiry">Expiry Date *</Label>
-                      <Input
-                        id="promoExpiry"
-                        type="datetime-local"
-                        value={promoExpiry}
-                        onChange={(e) => setPromoExpiry(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoUsageLimit">Usage Limit (optional)</Label>
-                      <Input
-                        id="promoUsageLimit"
-                        type="number"
-                        min="1"
-                        placeholder="Leave empty for unlimited"
-                        value={promoUsageLimit}
-                        onChange={(e) => setPromoUsageLimit(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="promoMinAmount">Minimum Order Amount (Rs.)</Label>
-                      <Input
-                        id="promoMinAmount"
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={promoMinAmount}
-                        onChange={(e) => setPromoMinAmount(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCreatePromoCode}
-                      disabled={promoSubmitting || !promoCode || !promoDiscount || !promoExpiry}
-                      className="w-full"
-                    >
-                      {promoSubmitting ? "Creating..." : "Create Promo Code"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-orange-900">{pendingCount}</div>
+                      <p className="text-xs text-orange-600 font-medium">Awaiting processing</p>
+                    </CardContent>
+                  </Card>
 
-            {/* Promo Codes Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Total Codes</CardTitle>
-                  <Tag className="h-4 w-4 text-yellow-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{promoCodes.length}</div>
-                  <p className="text-xs text-gray-600 mt-1">All promo codes</p>
-                </CardContent>
-              </Card>
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-cyan-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-blue-700">In Transit</CardTitle>
+                      <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                        <Truck className="h-4 w-4 text-blue-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-blue-900">{inTransitCount}</div>
+                      <p className="text-xs text-blue-600 font-medium">Out for delivery</p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Active Codes</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {promoCodes.filter(c => c.isActive && c.isValid).length}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Currently active</p>
-                </CardContent>
-              </Card>
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-green-50 to-emerald-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-green-700">Delivered Today</CardTitle>
+                      <div className="p-2 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-green-900">{deliveredTodayCount}</div>
+                      <p className="text-xs text-green-600 font-medium">Successfully delivered</p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Expired</CardTitle>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {promoCodes.filter(c => !c.isValid).length}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">No longer valid</p>
-                </CardContent>
-              </Card>
+                  <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-red-50 to-pink-100/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-red-700">Cancelled</CardTitle>
+                      <div className="p-2 rounded-lg bg-red-500/10 group-hover:bg-red-500/20 transition-colors">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-red-900">{cancelledCount}</div>
+                      <p className="text-xs text-red-600 font-medium">Cancelled orders</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Total Uses</CardTitle>
-                  <Activity className="h-4 w-4 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {promoCodes.reduce((sum, c) => sum + c.usedCount, 0)}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Times redeemed</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Promo Codes Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>All Promo Codes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {promoCodes.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Promo Codes Yet</h3>
-                    <p className="text-gray-600 mb-4">Create your first promo code to start offering discounts</p>
-                    <Button onClick={() => setIsAddPromoOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Promo Code
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Discount</TableHead>
-                        <TableHead>Expiry Date</TableHead>
-                        <TableHead>Usage</TableHead>
-                        <TableHead>Min Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {promoCodes.map((promo) => (
-                        <TableRow key={promo.id}>
-                          <TableCell className="font-semibold text-gray-900">
-                            <div className="flex items-center gap-2">
-                              <Tag className="h-4 w-4 text-yellow-600" />
-                              {promo.code}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className="bg-green-100 text-green-800">
-                              {promo.discountPercent}% OFF
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              {new Date(promo.expiryDate).toLocaleDateString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <span className="font-semibold">{promo.usedCount}</span>
-                              {promo.usageLimit ? ` / ${promo.usageLimit}` : ' / ∞'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            Rs.{promo.minOrderAmount}
-                          </TableCell>
-                          <TableCell>
-                            {promo.isValid && promo.isActive ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Active
-                              </Badge>
-                            ) : !promo.isValid ? (
-                              <Badge className="bg-red-100 text-red-800">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Expired
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">
-                                <Ban className="h-3 w-3 mr-1" />
-                                Inactive
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleTogglePromoCode(promo.id)}
-                                className={promo.isActive ? "text-orange-600 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}
-                              >
-                                {promo.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeletePromoCode(promo.id)}
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-gray-200/50">
+                          <TableHead className="font-semibold text-gray-900">Order ID</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Customer</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Items</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Total</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Delivery Person</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Date</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Delivery Charges */}
-        {activeTab === "delivery-charges" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Delivery Charges</h1>
-                <p className="text-gray-600 mt-1">
-                  Configure delivery fees based on order amount (e.g. above Rs.200 → Rs.30, above Rs.500 → Rs.20)
-                </p>
-              </div>
-              <Button
-                onClick={() =>
-                  setEditingDeliveryRule({
-                    _id: undefined,
-                    minAmount: "",
-                    fee: "",
-                    label: "",
-                    isActive: true
-                  })
-                }
-                className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Rule
-              </Button>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Delivery Charge Rules</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {deliveryRulesLoading ? (
-                  <div className="py-12 flex justify-center">
-                    <BalancingLoader />
-                  </div>
-                ) : deliveryRules.length === 0 ? (
-                  <div className="text-center py-12">
-                    <RouteIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Delivery Rules Yet</h3>
-                    <p className="text-gray-600 mb-4">
-                      Create rules like "Minimum Rs.200 → Rs.30 fee" or "Minimum Rs.500 → Rs.20 fee".
-                    </p>
-                    <Button
-                      onClick={() =>
-                        setEditingDeliveryRule({
-                          _id: undefined,
-                          minAmount: "",
-                          fee: "",
-                          label: "",
-                          isActive: true
-                        })
-                      }
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create First Rule
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Minimum Order Amount (Rs.)</TableHead>
-                        <TableHead>Delivery Fee (Rs.)</TableHead>
-                        <TableHead>Label</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {deliveryRules.map((rule) => (
-                        <TableRow key={rule._id}>
-                          <TableCell>Rs.{rule.minAmount}</TableCell>
-                          <TableCell>Rs.{rule.fee}</TableCell>
-                          <TableCell>{rule.label || "-"}</TableCell>
-                          <TableCell>
-                            {rule.isActive ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Active
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">
-                                <Ban className="h-3 w-3 mr-1" />
-                                Inactive
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  setEditingDeliveryRule({
-                                    _id: rule._id,
-                                    minAmount: String(rule.minAmount),
-                                    fee: String(rule.fee),
-                                    label: rule.label || "",
-                                    isActive: rule.isActive
-                                  })
-                                }
-                                className="hover:bg-blue-50 hover:border-blue-200"
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedOrders.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                              No orders found
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          paginatedOrders.map((order) => (
+                            <>
+                              <TableRow
+                                className="cursor-pointer hover:bg-blue-50/30 transition-colors group"
+                                onClick={() => {
+                                  setSelectedOrderId(order.id);
+                                  setOrderDetailOpen(false);
+                                  setExpandedOrderId(expandedOrderId === order.id ? null : order.id);
+                                  // optimistic: show brief items immediately if present
+                                  if (order.itemsBrief && order.itemsBrief.length > 0) {
+                                    setOrderDetail({
+                                      id: order.id,
+                                      customerDetails: {},
+                                      status: String(order.status),
+                                      total: Number(order.total || 0),
+                                      createdAt: new Date(order.date).toLocaleString(),
+                                      items: order.itemsBrief.map(it => ({
+                                        productId: it.productId,
+                                        name: it.name,
+                                        price: it.price,
+                                        quantity: it.quantity,
+                                        imageUrl: it.imageUrl
+                                      }))
+                                    });
+                                  } else {
+                                    setOrderDetail(null);
+                                  }
+                                  // fetch full details in background
+                                  loadOrderDetail(((order as any).orderId as string) || order.id);
+                                }}
                               >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteDeliveryRule(rule._id)}
-                                className="hover:bg-red-50 hover:border-red-200 text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                                <TableCell className="font-medium">#{(order as any).orderId || order.id}</TableCell>
+                                <TableCell>{order.customer}</TableCell>
+                                <TableCell>{order.items}</TableCell>
+                                <TableCell>Rs.{order.total}</TableCell>
+                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                  {order.status === "delivered" || order.status === "cancelled" ? (
+                                    getStatusBadge(order.status)
+                                  ) : (
+                                    <Select value={String(order.status)} onValueChange={(val) => handleOrderStatusUpdate(order, val)}>
+                                      <SelectTrigger className="w-40" onClick={(e) => e.stopPropagation()}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {availableStatuses.map(s => (
+                                          <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </TableCell>
+                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                  {order.status === "delivered" || order.status === "cancelled" ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      {(order as any).assignedPartnerName || "Not Assigned"}
+                                    </Badge>
+                                  ) : (
+                                    <Select
+                                      key={`partner-select-${order.id}-${partners.length}`}
+                                      value={(() => {
+                                        const assignedId = (order as any).assignedDeliveryPartner;
+                                        if (!assignedId) return "not-assigned";
+                                        // Convert to string and ensure it matches a partner ID
+                                        const assignedIdStr = String(assignedId);
+                                        // Check if partner exists in the list (including inactive ones for display)
+                                        const partnerExists = partners.some(p => String(p.id) === assignedIdStr);
+                                        return partnerExists ? assignedIdStr : "not-assigned";
+                                      })()}
+                                      onValueChange={(partnerId) => handleAssignPartner(order, partnerId)}
+                                    >
+                                      <SelectTrigger className="w-32" onClick={(e) => e.stopPropagation()}>
+                                        <SelectValue placeholder="Select partner" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="not-assigned">Not Assigned</SelectItem>
+                                        {partners.filter(p => p.status === "active").map((p) => (
+                                          <SelectItem key={p.id} value={String(p.id)}>
+                                            {p.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </TableCell>
+                                <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
+                              </TableRow>
+                              {expandedOrderId === order.id && (
+                                <TableRow>
+                                  <TableCell colSpan={7}>
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-l-4 border-blue-400 rounded-lg shadow-sm">
+                                      <div className="flex items-center gap-3 mb-4">
+                                        <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                                          <Package className="h-4 w-4 text-white" />
+                                        </div>
+                                        <h4 className="font-semibold text-blue-900 text-lg">Ordered Products</h4>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm">
+                                        <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
+                                          <div className="text-blue-700 font-medium mb-1">Delivery Address</div>
+                                          <div className="text-blue-900">{(order as any).customerDetails?.address || orderDetail?.customerDetails?.address || '-'}</div>
+                                        </div>
+                                        <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
+                                          <div className="text-blue-700 font-medium mb-1">Payment Mode</div>
+                                          <div className="text-blue-900 font-semibold">{orderDetail?.paymentMode || 'COD'}</div>
+                                        </div>
+                                        <div className="bg-white/80 p-3 rounded-lg border border-blue-200">
+                                          <div className="text-blue-700 font-medium mb-1">Payment Status</div>
+                                          <div className={`font-semibold ${orderDetail?.paymentStatus === 'Paid' ? 'text-green-600' : orderDetail?.paymentStatus === 'Failed' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                            {orderDetail?.paymentStatus || 'Pending'}
+                                          </div>
+                                          {orderDetail?.transactionId && (
+                                            <div className="text-xs text-blue-600 mt-1">TXN: {orderDetail.transactionId}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        {orderDetail && orderDetail.id === order.id && orderDetail.items.length > 0 ? (
+                                          orderDetail.items.map((it) => (
+                                            <div key={it.productId} className="flex items-center justify-between p-4 bg-white/60 rounded-lg border border-blue-200/50 hover:bg-white/80 transition-colors">
+                                              <div className="flex items-center gap-4">
+                                                {it.imageUrl ? (
+                                                  <div className="relative">
+                                                    <img src={it.imageUrl} alt={it.name} className="h-12 w-12 rounded-lg object-cover border border-blue-200 shadow-sm" />
+                                                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                                  </div>
+                                                ) : (
+                                                  <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                                                    <Package className="h-6 w-6 text-gray-400" />
+                                                  </div>
+                                                )}
+                                                <div>
+                                                  <div className="font-semibold text-blue-900">{it.name}</div>
+                                                  <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full inline-block">ID: {it.productId.slice(-6)}</div>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-6">
+                                                <div className="text-center">
+                                                  <div className="text-sm text-blue-600 font-medium">Quantity</div>
+                                                  <div className="text-lg font-bold text-blue-900">{it.quantity}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                  <div className="text-sm text-blue-600 font-medium">Price</div>
+                                                  <div className="text-lg font-bold text-blue-900">Rs.{Number(it.price).toFixed(2)}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                  <div className="text-sm text-blue-600 font-medium">Total</div>
+                                                  <div className="text-lg font-bold text-green-600">Rs.{(Number(it.price) * it.quantity).toFixed(2)}</div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))
+                                        ) : (order as any).itemsBrief && (order as any).itemsBrief.length > 0 ? (
+                                          (order as any).itemsBrief.map((it: any) => (
+                                            <div key={it.productId} className="flex items-center justify-between border-b border-blue-100 pb-2 last:border-b-0">
+                                              <div className="flex items-center gap-3">
+                                                {it.imageUrl ? <img src={it.imageUrl} alt={it.name} className="h-10 w-10 rounded object-cover border" /> : null}
+                                                <div>
+                                                  <div className="font-medium text-blue-900">{it.name}</div>
+                                                  <div className="text-xs text-blue-500">Product ID: {it.productId}</div>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-4">
+                                                <span className="text-sm text-blue-700">Qty: {it.quantity}</span>
+                                                <span className="text-sm text-blue-900 font-semibold">Rs.{Number(it.price).toFixed(2)}</span>
+                                              </div>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="text-sm text-blue-400">No products found in this order.</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
 
-            {/* Create / Edit Rule Dialog */}
-            <Dialog
-              open={!!editingDeliveryRule}
-              onOpenChange={(open) => {
-                if (!open) setEditingDeliveryRule(null);
-              }}
-            >
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingDeliveryRule?._id ? "Edit Delivery Rule" : "Add Delivery Rule"}
-                  </DialogTitle>
-                </DialogHeader>
-                {editingDeliveryRule && (
-                  <form
-                    className="space-y-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSaveDeliveryRule();
-                    }}
-                  >
-                    <div>
-                      <Label htmlFor="dc-min">Minimum Order Amount (Rs.) *</Label>
-                      <Input
-                        id="dc-min"
-                        type="number"
-                        min="0"
-                        value={editingDeliveryRule.minAmount}
-                        onChange={(e) =>
-                          setEditingDeliveryRule((prev) =>
-                            prev ? { ...prev, minAmount: e.target.value } : prev
-                          )
-                        }
-                        required
-                      />
+                {/* Pagination Controls */}
+                {filteredOrders.length > ordersPerPage && (
+                  <div className="flex items-center justify-between px-4 py-4 bg-white rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {startIndex + 1} to {Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
                     </div>
-                    <div>
-                      <Label htmlFor="dc-fee">Delivery Fee (Rs.) *</Label>
-                      <Input
-                        id="dc-fee"
-                        type="number"
-                        min="0"
-                        value={editingDeliveryRule.fee}
-                        onChange={(e) =>
-                          setEditingDeliveryRule((prev) =>
-                            prev ? { ...prev, fee: e.target.value } : prev
-                          )
-                        }
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dc-label">Label (optional)</Label>
-                      <Input
-                        id="dc-label"
-                        placeholder='e.g., "Above 200", "Above 500"'
-                        value={editingDeliveryRule.label}
-                        onChange={(e) =>
-                          setEditingDeliveryRule((prev) =>
-                            prev ? { ...prev, label: e.target.value } : prev
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="dc-active"
-                        checked={editingDeliveryRule.isActive}
-                        onCheckedChange={(checked) =>
-                          setEditingDeliveryRule((prev) =>
-                            prev ? { ...prev, isActive: !!checked } : prev
-                          )
-                        }
-                      />
-                      <Label htmlFor="dc-active">Active</Label>
-                    </div>
-                    <div className="flex justify-end gap-2">
+                    <div className="flex items-center gap-2">
                       <Button
-                        type="button"
                         variant="outline"
-                        onClick={() => setEditingDeliveryRule(null)}
+                        size="sm"
+                        onClick={() => setOrdersCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={ordersCurrentPage === 1}
                       >
-                        Cancel
+                        <ChevronDown className="h-4 w-4 mr-1 rotate-90" />
+                        Previous
                       </Button>
-                      <Button type="submit">
-                        {editingDeliveryRule._id ? "Save Changes" : "Create Rule"}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (ordersCurrentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (ordersCurrentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = ordersCurrentPage - 2 + i;
+                          }
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={ordersCurrentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setOrdersCurrentPage(pageNum)}
+                              className={ordersCurrentPage === pageNum ? "bg-black text-white" : ""}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setOrdersCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={ordersCurrentPage === totalPages}
+                      >
+                        Next
+                        <ChevronDown className="h-4 w-4 ml-1 -rotate-90" />
                       </Button>
                     </div>
-                  </form>
+                  </div>
                 )}
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
 
-        {/* Subscription Plans */}
-        {activeTab === "subscription-plans" && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Subscription Plans</h1>
-                <p className="text-gray-600 mt-1">Create and manage subscription plans for your customers</p>
+                {/* Delivery Confirmation Dialog */}
+                <Dialog open={deliveryConfirmOpen} onOpenChange={(open) => {
+                  setDeliveryConfirmOpen(open);
+                  if (!open) {
+                    // Reset pending update when dialog is closed
+                    setPendingStatusUpdate(null);
+                  }
+                }}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-3 text-orange-600">
+                        <CheckCircle className="h-6 w-6" />
+                        Confirm Order Delivery
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      {pendingStatusUpdate && (
+                        <>
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <p className="text-sm text-gray-700 mb-2">
+                              Are you sure you want to mark this order as <strong className="text-orange-600">delivered</strong>?
+                            </p>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <p><strong>Order ID:</strong> #{(pendingStatusUpdate.order as any).orderId || pendingStatusUpdate.order.id}</p>
+                              <p><strong>Customer:</strong> {pendingStatusUpdate.order.customer}</p>
+                              <p><strong>Total:</strong> Rs.{pendingStatusUpdate.order.total}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            This action will mark the order as completed. Make sure the order has been successfully delivered to the customer.
+                          </p>
+                        </>
+                      )}
+                      <div className="flex justify-end gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setDeliveryConfirmOpen(false);
+                            setPendingStatusUpdate(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={confirmDeliveryStatusUpdate}
+                          className="bg-orange-600 hover:bg-orange-700 text-white"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Confirm Delivery
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
-              <Dialog open={isAddPlanOpen} onOpenChange={setIsAddPlanOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    onClick={() => openPlanDialog()}
-                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+            )}
+
+            {/* User Management */}
+            {activeTab === "user-management" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
+                  <div className="flex gap-2">
+                    <Input placeholder="Search users..." className="w-64" />
+                    <Button variant="outline">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filter
+                    </Button>
+                    <Button variant="outline" onClick={loadAdminUsers} disabled={loadingAdminUsers}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      {loadingAdminUsers ? "Refreshing..." : "Refresh"}
+                    </Button>
+                    <Button variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Orders</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Join Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {adminUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>{user.id}</TableCell>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.phone}</TableCell>
+                            <TableCell>{user.orders}</TableCell>
+                            <TableCell>{getStatusBadge(user.status)}</TableCell>
+                            <TableCell>{user.joinDate}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                {user.status === "active" ? (
+                                  <Button variant="outline" size="sm" className="text-orange-600">
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button variant="outline" size="sm" className="text-green-600">
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Promo Codes */}
+            {activeTab === "promo-codes" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Promo Codes</h1>
+                    <p className="text-gray-600 mt-1">Create and manage discount codes for your customers</p>
+                  </div>
+                  <Dialog open={isAddPromoOpen} onOpenChange={setIsAddPromoOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Promo Code
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create New Promo Code</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {promoError && (
+                          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                            {promoError}
+                          </div>
+                        )}
+                        <div>
+                          <Label htmlFor="promoCode">Code *</Label>
+                          <Input
+                            id="promoCode"
+                            placeholder="e.g., SUMMER2025"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                            className="uppercase"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="promoDiscount">Discount Percent (%) *</Label>
+                          <Input
+                            id="promoDiscount"
+                            type="number"
+                            min="1"
+                            max="100"
+                            placeholder="e.g., 10"
+                            value={promoDiscount}
+                            onChange={(e) => setPromoDiscount(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="promoExpiry">Expiry Date *</Label>
+                          <Input
+                            id="promoExpiry"
+                            type="datetime-local"
+                            value={promoExpiry}
+                            onChange={(e) => setPromoExpiry(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="promoUsageLimit">Usage Limit (optional)</Label>
+                          <Input
+                            id="promoUsageLimit"
+                            type="number"
+                            min="1"
+                            placeholder="Leave empty for unlimited"
+                            value={promoUsageLimit}
+                            onChange={(e) => setPromoUsageLimit(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="promoMinAmount">Minimum Order Amount (Rs.)</Label>
+                          <Input
+                            id="promoMinAmount"
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={promoMinAmount}
+                            onChange={(e) => setPromoMinAmount(e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          onClick={handleCreatePromoCode}
+                          disabled={promoSubmitting || !promoCode || !promoDiscount || !promoExpiry}
+                          className="w-full"
+                        >
+                          {promoSubmitting ? "Creating..." : "Create Promo Code"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Promo Codes Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Total Codes</CardTitle>
+                      <Tag className="h-4 w-4 text-yellow-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">{promoCodes.length}</div>
+                      <p className="text-xs text-gray-600 mt-1">All promo codes</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Active Codes</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {promoCodes.filter(c => c.isActive && c.isValid).length}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">Currently active</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Expired</CardTitle>
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {promoCodes.filter(c => !c.isValid).length}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">No longer valid</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Total Uses</CardTitle>
+                      <Activity className="h-4 w-4 text-blue-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {promoCodes.reduce((sum, c) => sum + c.usedCount, 0)}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">Times redeemed</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Promo Codes Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>All Promo Codes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {promoCodes.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Promo Codes Yet</h3>
+                        <p className="text-gray-600 mb-4">Create your first promo code to start offering discounts</p>
+                        <Button onClick={() => setIsAddPromoOpen(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Promo Code
+                        </Button>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Code</TableHead>
+                            <TableHead>Discount</TableHead>
+                            <TableHead>Expiry Date</TableHead>
+                            <TableHead>Usage</TableHead>
+                            <TableHead>Min Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {promoCodes.map((promo) => (
+                            <TableRow key={promo.id}>
+                              <TableCell className="font-semibold text-gray-900">
+                                <div className="flex items-center gap-2">
+                                  <Tag className="h-4 w-4 text-yellow-600" />
+                                  {promo.code}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-green-100 text-green-800">
+                                  {promo.discountPercent}% OFF
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-gray-400" />
+                                  {new Date(promo.expiryDate).toLocaleDateString()}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <span className="font-semibold">{promo.usedCount}</span>
+                                  {promo.usageLimit ? ` / ${promo.usageLimit}` : ' / ∞'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                Rs.{promo.minOrderAmount}
+                              </TableCell>
+                              <TableCell>
+                                {promo.isValid && promo.isActive ? (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Active
+                                  </Badge>
+                                ) : !promo.isValid ? (
+                                  <Badge className="bg-red-100 text-red-800">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Expired
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-800">
+                                    <Ban className="h-3 w-3 mr-1" />
+                                    Inactive
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleTogglePromoCode(promo.id)}
+                                    className={promo.isActive ? "text-orange-600 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}
+                                  >
+                                    {promo.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeletePromoCode(promo.id)}
+                                    className="text-red-600 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Delivery Charges */}
+            {activeTab === "delivery-charges" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Delivery Charges</h1>
+                    <p className="text-gray-600 mt-1">
+                      Configure delivery fees based on order amount (e.g. above Rs.200 → Rs.30, above Rs.500 → Rs.20)
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() =>
+                      setEditingDeliveryRule({
+                        _id: undefined,
+                        minAmount: "",
+                        fee: "",
+                        label: "",
+                        isActive: true
+                      })
+                    }
+                    className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Plan
+                    Add Rule
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingPlan ? "Edit Subscription Plan" : "Create New Subscription Plan"}</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmitPlan} className="space-y-4">
-                    {planError && (
-                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
-                        {planError}
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Delivery Charge Rules</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {deliveryRulesLoading ? (
+                      <div className="py-12 flex justify-center">
+                        <BalancingLoader />
                       </div>
+                    ) : deliveryRules.length === 0 ? (
+                      <div className="text-center py-12">
+                        <RouteIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Delivery Rules Yet</h3>
+                        <p className="text-gray-600 mb-4">
+                          Create rules like "Minimum Rs.200 → Rs.30 fee" or "Minimum Rs.500 → Rs.20 fee".
+                        </p>
+                        <Button
+                          onClick={() =>
+                            setEditingDeliveryRule({
+                              _id: undefined,
+                              minAmount: "",
+                              fee: "",
+                              label: "",
+                              isActive: true
+                            })
+                          }
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create First Rule
+                        </Button>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Minimum Order Amount (Rs.)</TableHead>
+                            <TableHead>Delivery Fee (Rs.)</TableHead>
+                            <TableHead>Label</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {deliveryRules.map((rule) => (
+                            <TableRow key={rule._id}>
+                              <TableCell>Rs.{rule.minAmount}</TableCell>
+                              <TableCell>Rs.{rule.fee}</TableCell>
+                              <TableCell>{rule.label || "-"}</TableCell>
+                              <TableCell>
+                                {rule.isActive ? (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Active
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-800">
+                                    <Ban className="h-3 w-3 mr-1" />
+                                    Inactive
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      setEditingDeliveryRule({
+                                        _id: rule._id,
+                                        minAmount: String(rule.minAmount),
+                                        fee: String(rule.fee),
+                                        label: rule.label || "",
+                                        isActive: rule.isActive
+                                      })
+                                    }
+                                    className="hover:bg-blue-50 hover:border-blue-200"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteDeliveryRule(rule._id)}
+                                    className="hover:bg-red-50 hover:border-red-200 text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     )}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="planId">Plan ID * (lowercase, no spaces)</Label>
-                        <Input
-                          id="planId"
-                          placeholder="e.g., basic, premium"
-                          value={planId}
-                          onChange={(e) => setPlanId(e.target.value.toLowerCase().replace(/\s/g, '-'))}
-                          disabled={!!editingPlan}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="planName">Plan Name *</Label>
-                        <Input
-                          id="planName"
-                          placeholder="e.g., Basic Plan"
-                          value={planName}
-                          onChange={(e) => setPlanName(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="planPrice">Price (Rs.) *</Label>
-                        <Input
-                          id="planPrice"
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={planPrice}
-                          onChange={(e) => setPlanPrice(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="planDuration">Duration *</Label>
-                        <Select value={planDuration} onValueChange={setPlanDuration}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="forever">Forever</SelectItem>
-                            <SelectItem value="month">Month</SelectItem>
-                            <SelectItem value="year">Year</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="planDescription">Description *</Label>
-                      <Textarea
-                        id="planDescription"
-                        placeholder="Describe the plan benefits..."
-                        value={planDescription}
-                        onChange={(e) => setPlanDescription(e.target.value)}
-                        rows={3}
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="planMaxOrders">Max Orders (-1 for unlimited)</Label>
-                        <Input
-                          id="planMaxOrders"
-                          type="number"
-                          min="-1"
-                          placeholder="10"
-                          value={planMaxOrders}
-                          onChange={(e) => setPlanMaxOrders(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="planCashback">Cashback Percentage (%)</Label>
-                        <Input
-                          id="planCashback"
-                          type="number"
-                          min="0"
-                          max="100"
-                          placeholder="0"
-                          value={planCashbackPercentage}
-                          onChange={(e) => setPlanCashbackPercentage(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="planFreeDelivery"
-                          checked={planFreeDelivery}
-                          onCheckedChange={(checked) => setPlanFreeDelivery(checked === true)}
-                        />
-                        <Label htmlFor="planFreeDelivery">Free Delivery</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="planPrioritySupport"
-                          checked={planPrioritySupport}
-                          onCheckedChange={(checked) => setPlanPrioritySupport(checked === true)}
-                        />
-                        <Label htmlFor="planPrioritySupport">Priority Support</Label>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="planExclusiveDeals"
-                          checked={planExclusiveDeals}
-                          onCheckedChange={(checked) => setPlanExclusiveDeals(checked === true)}
-                        />
-                        <Label htmlFor="planExclusiveDeals">Exclusive Deals</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="planPopular"
-                          checked={planPopular}
-                          onCheckedChange={(checked) => setPlanPopular(checked === true)}
-                        />
-                        <Label htmlFor="planPopular">Mark as Popular</Label>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="planOrder">Display Order</Label>
-                        <Input
-                          id="planOrder"
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={planOrder}
-                          onChange={(e) => setPlanOrder(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex items-center space-x-2 pt-6">
-                        <Checkbox
-                          id="planIsActive"
-                          checked={planIsActive}
-                          onCheckedChange={(checked) => setPlanIsActive(checked === true)}
-                        />
-                        <Label htmlFor="planIsActive">Active</Label>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Features</Label>
-                      <div className="space-y-2 mt-2">
-                        {planFeatures.map((feature, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={feature.included}
-                              onCheckedChange={() => toggleFeatureIncluded(index)}
-                            />
-                            <Input
-                              value={feature.text}
-                              onChange={(e) => {
-                                const updated = [...planFeatures];
-                                updated[index].text = e.target.value;
-                                setPlanFeatures(updated);
-                              }}
-                              placeholder="Feature description"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFeature(index)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
-                        ))}
-                        <div className="flex gap-2">
+                  </CardContent>
+                </Card>
+
+                {/* Create / Edit Rule Dialog */}
+                <Dialog
+                  open={!!editingDeliveryRule}
+                  onOpenChange={(open) => {
+                    if (!open) setEditingDeliveryRule(null);
+                  }}
+                >
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingDeliveryRule?._id ? "Edit Delivery Rule" : "Add Delivery Rule"}
+                      </DialogTitle>
+                    </DialogHeader>
+                    {editingDeliveryRule && (
+                      <form
+                        className="space-y-4"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSaveDeliveryRule();
+                        }}
+                      >
+                        <div>
+                          <Label htmlFor="dc-min">Minimum Order Amount (Rs.) *</Label>
                           <Input
-                            placeholder="Add new feature"
-                            value={newFeatureText}
-                            onChange={(e) => setNewFeatureText(e.target.value)}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addFeature();
-                              }
-                            }}
+                            id="dc-min"
+                            type="number"
+                            min="0"
+                            value={editingDeliveryRule.minAmount}
+                            onChange={(e) =>
+                              setEditingDeliveryRule((prev) =>
+                                prev ? { ...prev, minAmount: e.target.value } : prev
+                              )
+                            }
+                            required
                           />
-                          <Button type="button" onClick={addFeature} variant="outline">
-                            <Plus className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <Label htmlFor="dc-fee">Delivery Fee (Rs.) *</Label>
+                          <Input
+                            id="dc-fee"
+                            type="number"
+                            min="0"
+                            value={editingDeliveryRule.fee}
+                            onChange={(e) =>
+                              setEditingDeliveryRule((prev) =>
+                                prev ? { ...prev, fee: e.target.value } : prev
+                              )
+                            }
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="dc-label">Label (optional)</Label>
+                          <Input
+                            id="dc-label"
+                            placeholder='e.g., "Above 200", "Above 500"'
+                            value={editingDeliveryRule.label}
+                            onChange={(e) =>
+                              setEditingDeliveryRule((prev) =>
+                                prev ? { ...prev, label: e.target.value } : prev
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="dc-active"
+                            checked={editingDeliveryRule.isActive}
+                            onCheckedChange={(checked) =>
+                              setEditingDeliveryRule((prev) =>
+                                prev ? { ...prev, isActive: !!checked } : prev
+                              )
+                            }
+                          />
+                          <Label htmlFor="dc-active">Active</Label>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEditingDeliveryRule(null)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit">
+                            {editingDeliveryRule._id ? "Save Changes" : "Create Rule"}
                           </Button>
                         </div>
+                      </form>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            {/* Subscription Plans */}
+            {activeTab === "subscription-plans" && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Subscription Plans</h1>
+                    <p className="text-gray-600 mt-1">Create and manage subscription plans for your customers</p>
+                  </div>
+                  <Dialog open={isAddPlanOpen} onOpenChange={setIsAddPlanOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        onClick={() => openPlanDialog()}
+                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Plan
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{editingPlan ? "Edit Subscription Plan" : "Create New Subscription Plan"}</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleSubmitPlan} className="space-y-4">
+                        {planError && (
+                          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                            {planError}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="planId">Plan ID * (lowercase, no spaces)</Label>
+                            <Input
+                              id="planId"
+                              placeholder="e.g., basic, premium"
+                              value={planId}
+                              onChange={(e) => setPlanId(e.target.value.toLowerCase().replace(/\s/g, '-'))}
+                              disabled={!!editingPlan}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="planName">Plan Name *</Label>
+                            <Input
+                              id="planName"
+                              placeholder="e.g., Basic Plan"
+                              value={planName}
+                              onChange={(e) => setPlanName(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="planPrice">Price (Rs.) *</Label>
+                            <Input
+                              id="planPrice"
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              value={planPrice}
+                              onChange={(e) => setPlanPrice(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="planDuration">Duration *</Label>
+                            <Select value={planDuration} onValueChange={setPlanDuration}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="forever">Forever</SelectItem>
+                                <SelectItem value="month">Month</SelectItem>
+                                <SelectItem value="year">Year</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="planDescription">Description *</Label>
+                          <Textarea
+                            id="planDescription"
+                            placeholder="Describe the plan benefits..."
+                            value={planDescription}
+                            onChange={(e) => setPlanDescription(e.target.value)}
+                            rows={3}
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="planMaxOrders">Max Orders (-1 for unlimited)</Label>
+                            <Input
+                              id="planMaxOrders"
+                              type="number"
+                              min="-1"
+                              placeholder="10"
+                              value={planMaxOrders}
+                              onChange={(e) => setPlanMaxOrders(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="planCashback">Cashback Percentage (%)</Label>
+                            <Input
+                              id="planCashback"
+                              type="number"
+                              min="0"
+                              max="100"
+                              placeholder="0"
+                              value={planCashbackPercentage}
+                              onChange={(e) => setPlanCashbackPercentage(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="planFreeDelivery"
+                              checked={planFreeDelivery}
+                              onCheckedChange={(checked) => setPlanFreeDelivery(checked === true)}
+                            />
+                            <Label htmlFor="planFreeDelivery">Free Delivery</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="planPrioritySupport"
+                              checked={planPrioritySupport}
+                              onCheckedChange={(checked) => setPlanPrioritySupport(checked === true)}
+                            />
+                            <Label htmlFor="planPrioritySupport">Priority Support</Label>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="planExclusiveDeals"
+                              checked={planExclusiveDeals}
+                              onCheckedChange={(checked) => setPlanExclusiveDeals(checked === true)}
+                            />
+                            <Label htmlFor="planExclusiveDeals">Exclusive Deals</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="planPopular"
+                              checked={planPopular}
+                              onCheckedChange={(checked) => setPlanPopular(checked === true)}
+                            />
+                            <Label htmlFor="planPopular">Mark as Popular</Label>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="planOrder">Display Order</Label>
+                            <Input
+                              id="planOrder"
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              value={planOrder}
+                              onChange={(e) => setPlanOrder(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2 pt-6">
+                            <Checkbox
+                              id="planIsActive"
+                              checked={planIsActive}
+                              onCheckedChange={(checked) => setPlanIsActive(checked === true)}
+                            />
+                            <Label htmlFor="planIsActive">Active</Label>
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Features</Label>
+                          <div className="space-y-2 mt-2">
+                            {planFeatures.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={feature.included}
+                                  onCheckedChange={() => toggleFeatureIncluded(index)}
+                                />
+                                <Input
+                                  value={feature.text}
+                                  onChange={(e) => {
+                                    const updated = [...planFeatures];
+                                    updated[index].text = e.target.value;
+                                    setPlanFeatures(updated);
+                                  }}
+                                  placeholder="Feature description"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFeature(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Add new feature"
+                                value={newFeatureText}
+                                onChange={(e) => setNewFeatureText(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addFeature();
+                                  }
+                                }}
+                              />
+                              <Button type="button" onClick={addFeature} variant="outline">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={planSubmitting || !planId || !planName}
+                          className="w-full"
+                        >
+                          {planSubmitting ? "Saving..." : editingPlan ? "Update Plan" : "Create Plan"}
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Subscription Plans Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Total Plans</CardTitle>
+                      <CreditCard className="h-4 w-4 text-purple-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">{subscriptionPlans.length}</div>
+                      <p className="text-xs text-gray-600 mt-1">All subscription plans</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Active Plans</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {subscriptionPlans.filter(p => p.isActive).length}
                       </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={planSubmitting || !planId || !planName}
-                      className="w-full"
-                    >
-                      {planSubmitting ? "Saving..." : editingPlan ? "Update Plan" : "Create Plan"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
+                      <p className="text-xs text-gray-600 mt-1">Currently active</p>
+                    </CardContent>
+                  </Card>
 
-            {/* Subscription Plans Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Total Plans</CardTitle>
-                  <CreditCard className="h-4 w-4 text-purple-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{subscriptionPlans.length}</div>
-                  <p className="text-xs text-gray-600 mt-1">All subscription plans</p>
-                </CardContent>
-              </Card>
+                  <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Popular Plans</CardTitle>
+                      <Star className="h-4 w-4 text-yellow-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {subscriptionPlans.filter(p => p.popular).length}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">Marked as popular</p>
+                    </CardContent>
+                  </Card>
 
-              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Active Plans</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {subscriptionPlans.filter(p => p.isActive).length}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Currently active</p>
-                </CardContent>
-              </Card>
+                  <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700">Avg. Price</CardTitle>
+                      <DollarSign className="h-4 w-4 text-blue-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900">
+                        Rs.{subscriptionPlans.length > 0
+                          ? Math.round(subscriptionPlans.reduce((sum, p) => sum + p.price, 0) / subscriptionPlans.length)
+                          : 0}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">Average plan price</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Popular Plans</CardTitle>
-                  <Star className="h-4 w-4 text-yellow-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {subscriptionPlans.filter(p => p.popular).length}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Marked as popular</p>
-                </CardContent>
-              </Card>
+                {/* Subscription Plans Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>All Subscription Plans</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {subscriptionPlans.length === 0 ? (
+                      <div className="text-center py-12">
+                        <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Subscription Plans Yet</h3>
+                        <p className="text-gray-600 mb-4">Create your first subscription plan to start offering subscriptions</p>
+                        <Button onClick={() => openPlanDialog()}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Plan
+                        </Button>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Plan ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Duration</TableHead>
+                            <TableHead>Features</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {subscriptionPlans.map((plan) => (
+                            <TableRow key={plan._id}>
+                              <TableCell className="font-semibold text-gray-900">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4 text-purple-600" />
+                                  {plan.planId}
+                                  {plan.popular && (
+                                    <Badge className="bg-yellow-100 text-yellow-800 text-xs">Popular</Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>{plan.name}</TableCell>
+                              <TableCell>
+                                <Badge className="bg-green-100 text-green-800">
+                                  Rs.{plan.price} / {plan.duration}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{plan.duration}</TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-600">
+                                  {plan.features?.length || 0} features
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {plan.isActive ? (
+                                  <Badge className="bg-green-100 text-green-800">Active</Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openPlanDialog(plan)}
+                                    className="text-blue-600 hover:bg-blue-50"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleTogglePlan(plan._id)}
+                                    className={plan.isActive ? "text-yellow-600 hover:bg-yellow-50" : "text-green-600 hover:bg-green-50"}
+                                  >
+                                    {plan.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePlan(plan._id)}
+                                    className="text-red-600 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">Avg. Price</CardTitle>
-                  <DollarSign className="h-4 w-4 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    Rs.{subscriptionPlans.length > 0 
-                      ? Math.round(subscriptionPlans.reduce((sum, p) => sum + p.price, 0) / subscriptionPlans.length)
-                      : 0}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">Average plan price</p>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Analytics */}
+            {activeTab === "analytics" && (
+              <div className="space-y-6">
+                <h1 className="text-2xl font-bold text-gray-800">Advanced Analytics</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Revenue Growth</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">+24.5%</div>
+                      <p className="text-xs text-muted-foreground">vs last month</p>
+                    </CardContent>
+                  </Card>
 
-            {/* Subscription Plans Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>All Subscription Plans</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {subscriptionPlans.length === 0 ? (
-                  <div className="text-center py-12">
-                    <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Subscription Plans Yet</h3>
-                    <p className="text-gray-600 mb-4">Create your first subscription plan to start offering subscriptions</p>
-                    <Button onClick={() => openPlanDialog()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Plan
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Plan ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Features</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subscriptionPlans.map((plan) => (
-                        <TableRow key={plan._id}>
-                          <TableCell className="font-semibold text-gray-900">
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="h-4 w-4 text-purple-600" />
-                              {plan.planId}
-                              {plan.popular && (
-                                <Badge className="bg-yellow-100 text-yellow-800 text-xs">Popular</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{plan.name}</TableCell>
-                          <TableCell>
-                            <Badge className="bg-green-100 text-green-800">
-                              Rs.{plan.price} / {plan.duration}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{plan.duration}</TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600">
-                              {plan.features?.length || 0} features
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {plan.isActive ? (
-                              <Badge className="bg-green-100 text-green-800">Active</Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openPlanDialog(plan)}
-                                className="text-blue-600 hover:bg-blue-50"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleTogglePlan(plan._id)}
-                                className={plan.isActive ? "text-yellow-600 hover:bg-yellow-50" : "text-green-600 hover:bg-green-50"}
-                              >
-                                {plan.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePlan(plan._id)}
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Order Volume</CardTitle>
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">2,847</div>
+                      <p className="text-xs text-muted-foreground">orders this month</p>
+                    </CardContent>
+                  </Card>
 
-        {/* Analytics */}
-        {activeTab === "analytics" && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800">Advanced Analytics</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Revenue Growth</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">+24.5%</div>
-                  <p className="text-xs text-muted-foreground">vs last month</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Order Volume</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">2,847</div>
-                  <p className="text-xs text-muted-foreground">orders this month</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Customer Retention</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">87.3%</div>
-                  <p className="text-xs text-muted-foreground">retention rate</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">Rs.1,247</div>
-                  <p className="text-xs text-muted-foreground">per order</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Customer Retention</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">87.3%</div>
+                      <p className="text-xs text-muted-foreground">retention rate</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">Rs.1,247</div>
+                      <p className="text-xs text-muted-foreground">per order</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -5121,13 +5156,14 @@ const Admin = () => {
 export default Admin;
 
 // Inline ProductForm component to submit to backend and use real categories
-const ProductForm: React.FC<{ 
-  apiBase: string; 
-  categories: Array<{ _id: string; name: string }>; 
+const ProductForm: React.FC<{
+  apiBase: string;
+  categories: Array<{ _id: string; name: string }>;
   onCreated: () => void;
   defaultFreshPick?: boolean;
   defaultMostLoved?: boolean;
-}> = ({ apiBase, categories, onCreated, defaultFreshPick = false, defaultMostLoved = false }) => {
+  defaultDiscounted?: boolean;
+}> = ({ apiBase, categories, onCreated, defaultFreshPick = false, defaultMostLoved = false, defaultDiscounted = false }) => {
   const [nameEn, setNameEn] = useState("");
   const [nameTa, setNameTa] = useState("");
   const [price, setPrice] = useState("");
@@ -5137,6 +5173,7 @@ const ProductForm: React.FC<{
   const [file, setFile] = useState<File | null>(null);
   const [isFreshPick, setIsFreshPick] = useState(defaultFreshPick);
   const [isMostLoved, setIsMostLoved] = useState(defaultMostLoved);
+  const [isDiscounted, setIsDiscounted] = useState(defaultDiscounted);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -5159,12 +5196,13 @@ const ProductForm: React.FC<{
       form.append("image", file);
       form.append("isFreshPick", isFreshPick.toString());
       form.append("isMostLoved", isMostLoved.toString());
+      form.append("isDiscounted", isDiscounted.toString());
       const res = await fetch(`${apiBase}/api/admin/products`, { method: "POST", body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.message || "Failed to add product");
       // reset
       setNameEn(""); setNameTa(""); setPrice(""); setOriginalPrice(""); setYoutubeLink(""); setCategoryId(""); setFile(null);
-      setIsFreshPick(false); setIsMostLoved(false);
+      setIsFreshPick(false); setIsMostLoved(false); setIsDiscounted(false);
       onCreated();
     } catch (err: any) {
       setError(err.message || "Failed to add product");
@@ -5222,34 +5260,49 @@ const ProductForm: React.FC<{
       <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
         <Label className="text-sm font-semibold text-gray-900 dark:text-white">Home Page Sections</Label>
         <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">Select which home page sections this product should appear in</p>
-        
+
         <div className="flex items-center space-x-2">
-          <Checkbox 
+          <Checkbox
             id="p-fresh-pick"
             checked={isFreshPick}
             onCheckedChange={(checked) => setIsFreshPick(!!checked)}
           />
-          <Label 
-            htmlFor="p-fresh-pick" 
+          <Label
+            htmlFor="p-fresh-pick"
             className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
           >
             <Star className="h-4 w-4 text-blue-600" />
             Show in "Fresh Picks for You" section
           </Label>
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <Checkbox 
+          <Checkbox
             id="p-most-loved"
             checked={isMostLoved}
             onCheckedChange={(checked) => setIsMostLoved(!!checked)}
           />
-          <Label 
-            htmlFor="p-most-loved" 
+          <Label
+            htmlFor="p-most-loved"
             className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
           >
             <Heart className="h-4 w-4 text-pink-600" />
             Show in "Most Loved Items" section
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="p-discounted"
+            checked={isDiscounted}
+            onCheckedChange={(checked) => setIsDiscounted(!!checked)}
+          />
+          <Label
+            htmlFor="p-discounted"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center gap-2"
+          >
+            <Tag className="h-4 w-4 text-yellow-600" />
+            Mark as "Discounted Product"
           </Label>
         </div>
       </div>
