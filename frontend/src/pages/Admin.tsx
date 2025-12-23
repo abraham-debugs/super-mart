@@ -42,7 +42,10 @@ import {
   Image,
   Warehouse,
   FileText,
-  Route as RouteIcon
+  Route as RouteIcon,
+  LogOut,
+  Percent,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -254,6 +257,11 @@ const Admin = () => {
 
   // Product filter state
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+
+  // Bulk Discount state
+  const [bulkDiscountCatId, setBulkDiscountCatId] = useState("");
+  const [bulkDiscountPercent, setBulkDiscountPercent] = useState("");
+  const [bulkDiscountLoading, setBulkDiscountLoading] = useState(false);
 
   // Strict authentication check - clear cache and redirect if not authenticated
   useEffect(() => {
@@ -1257,6 +1265,51 @@ const Admin = () => {
     }
   }
 
+  async function handleBulkDiscount() {
+    if (!bulkDiscountCatId || !bulkDiscountPercent) {
+      alert("Please select a category and enter a discount percentage.");
+      return;
+    }
+
+    const discount = parseFloat(bulkDiscountPercent);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      alert("Please enter a valid discount percentage between 0 and 100.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to apply a ${discount}% discount to ALL products in the selected category? This will update their current prices.`)) {
+      return;
+    }
+
+    setBulkDiscountLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/products/bulk-discount`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          categoryId: bulkDiscountCatId,
+          discountPercentage: discount
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to apply bulk discount");
+
+      alert(data.message);
+      setBulkDiscountCatId("");
+      setBulkDiscountPercent("");
+      await loadProducts();
+    } catch (err: any) {
+      console.error("Bulk discount error:", err);
+      alert(err.message || "Failed to apply bulk discount");
+    } finally {
+      setBulkDiscountLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadProducts();
   }, []);
@@ -1414,6 +1467,7 @@ const Admin = () => {
     { id: "delivery-partners", label: "Delivery Partners", icon: Truck, color: "text-black", bgColor: "bg-gray-50" },
     { id: "delivery-charges", label: "Delivery Charges", icon: RouteIcon, color: "text-black", bgColor: "bg-gray-50" },
     { id: "promo-codes", label: "Promo Codes", icon: Tag, color: "text-black", bgColor: "bg-gray-50" },
+    { id: "bulk-discount", label: "Bulk Discount", icon: Zap, color: "text-black", bgColor: "bg-gray-50" },
     { id: "subscription-plans", label: "Subscription Plans", icon: CreditCard, color: "text-black", bgColor: "bg-gray-50" },
   ];
 
@@ -1673,6 +1727,23 @@ const Admin = () => {
     URL.revokeObjectURL(url);
   }
 
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to log out?")) {
+      // Clear all auth data
+      localStorage.clear();
+      sessionStorage.clear();
+      if (token && typeof window !== 'undefined') {
+        const logoutUrl = `${API_BASE}/api/auth/logout`;
+        // Try to notify server but don't wait for it
+        fetch(logoutUrl, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(err => console.error("Logout error", err));
+      }
+      navigate("/admin/login");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       {/* Header */}
@@ -1751,6 +1822,16 @@ const Admin = () => {
                   );
                 })}
               </nav>
+
+              <div className="pt-4 mt-2 border-t border-gray-100">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
+                >
+                  <LogOut className="h-5 w-5 text-red-500 group-hover:text-red-600" />
+                  <span>Log Out</span>
+                </button>
+              </div>
             </div>
 
             <div className="mt-auto p-6">
@@ -3360,6 +3441,14 @@ const Admin = () => {
                         sectionId="discounted_products"
                         sectionName="Discounted Products Section"
                       />
+
+                      <div className="pt-6 border-t">
+                        <SectionConfigForm
+                          apiBase={API_BASE}
+                          sectionId="most_loved"
+                          sectionName="Most Loved Items Section"
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -5144,6 +5233,102 @@ const Admin = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </div>
+            )}
+            {/* Bulk Discount */}
+            {activeTab === "bulk-discount" && (
+              <div className="max-w-4xl mx-auto space-y-8">
+                <div className="text-center">
+                  <h1 className="text-3xl font-bold text-gray-900">Bulk Discount Manager</h1>
+                  <p className="text-gray-600 mt-2">Apply percentage-based discounts to entire categories at once</p>
+                </div>
+
+                <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
+                  <CardHeader className="bg-gradient-to-r from-orange-500 to-red-600 text-white">
+                    <CardTitle className="flex items-center gap-3">
+                      <Zap className="h-6 w-6" />
+                      Global Category Discount
+                    </CardTitle>
+                    <p className="text-orange-50 opacity-90">Quickly update prices for all products in a chosen category</p>
+                  </CardHeader>
+                  <CardContent className="p-8 space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                        <Label className="text-lg font-semibold flex items-center gap-2">
+                          <Tag className="w-5 h-5 text-orange-600" />
+                          1. Select Category
+                        </Label>
+                        <Select value={bulkDiscountCatId} onValueChange={setBulkDiscountCatId}>
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-100 focus:border-orange-500 transition-all">
+                            <SelectValue placeholder="Pick a category..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categoryRows.map((cat) => (
+                              <SelectItem key={cat._id} value={cat._id} className="text-lg py-3">
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-gray-500 italic">
+                          This will affect all products currently assigned to this category.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <Label className="text-lg font-semibold flex items-center gap-2">
+                          <Percent className="w-5 h-5 text-orange-600" />
+                          2. Discount Percentage
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            placeholder="e.g. 50"
+                            value={bulkDiscountPercent}
+                            onChange={(e) => setBulkDiscountPercent(e.target.value)}
+                            className="h-12 text-2xl font-bold border-2 border-gray-100 focus:border-orange-500 transition-all pr-12"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">%</span>
+                        </div>
+                        <p className="text-sm text-gray-500 italic">
+                          Example: Entering <span className="font-bold text-orange-600">50</span> will reduce all prices by half.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 flex gap-4">
+                      <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-orange-900 mb-1">Important Information</h4>
+                        <ul className="text-sm text-orange-800 space-y-2 list-disc ml-4">
+                          <li>The current price will be moved to <span className="font-semibold">Original Price</span> (if it hasn't been already).</li>
+                          <li>All products will be automatically marked as <span className="font-semibold">"On Sale"</span>.</li>
+                          <li>This action is permanent but can be reversed by applying a <span className="font-semibold">0% discount</span> later.</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleBulkDiscount}
+                      disabled={bulkDiscountLoading || !bulkDiscountCatId || !bulkDiscountPercent}
+                      className="w-full h-14 text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg shadow-orange-200 transition-all transform hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      {bulkDiscountLoading ? (
+                        <>
+                          <RefreshCw className="mr-3 h-6 w-6 animate-spin" />
+                          Applying Discounts...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-3 h-6 w-6" />
+                          Apply {bulkDiscountPercent ? `${bulkDiscountPercent}% ` : ""}Discount Now
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>

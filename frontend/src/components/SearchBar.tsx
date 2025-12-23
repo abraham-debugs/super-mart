@@ -95,33 +95,35 @@ export const SearchBar = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      const searchUrl = `/?q=${encodeURIComponent(query.trim())}`;
+      const searchUrl = `/shop?q=${encodeURIComponent(query.trim())}`;
       setIsOpen(false);
       setQuery("");
-      window.location.href = searchUrl;
+      navigate(searchUrl);
     }
   };
 
   const handleCategoryClick = (categoryId: string) => {
-    setIsOpen(false);
-    setQuery("");
-    window.location.href = `/category/${categoryId}`;
+    const category = results.categories.find(c => c.id === categoryId);
+    if (category) {
+      setIsOpen(false);
+      setQuery("");
+      navigate(`/shop?category=${encodeURIComponent(category.name)}`);
+    }
   };
 
   const handleProductClick = () => {
-    const searchUrl = `/?q=${encodeURIComponent(query.trim())}`;
-    navigate(searchUrl);
+    const searchUrl = `/shop?q=${encodeURIComponent(query.trim())}`;
     setIsOpen(false);
     setQuery("");
-    window.location.href = searchUrl;
+    navigate(searchUrl);
   };
 
   const handleViewAllResults = () => {
     if (query.trim()) {
-      const searchUrl = `/?q=${encodeURIComponent(query.trim())}`;
+      const searchUrl = `/shop?q=${encodeURIComponent(query.trim())}`;
       setIsOpen(false);
       setQuery("");
-      window.location.href = searchUrl;
+      navigate(searchUrl);
     }
   };
 

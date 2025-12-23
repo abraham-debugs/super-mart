@@ -8,6 +8,8 @@ import RecommendedProducts from "@/components/RecommendedProducts";
 import type { Product } from "@/types/product";
 import { AdsCarousel } from "@/components/AdsCarousel";
 import { DiscountedProducts } from "@/components/DiscountedProducts";
+import { MainCategories } from "@/components/MainCategories";
+import { HowItWorks } from "@/components/HowItWorks";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -153,6 +155,10 @@ const Index = () => {
 
         {/* Hero Section */}
         <Hero />
+
+        {/* Main Top Categories */}
+        <MainCategories />
+
         <CategoryCarousel />
 
         {/* Features */}
@@ -257,6 +263,9 @@ const Index = () => {
             productsToShow={allProducts}
           />
         </section>
+
+        {/* How It Works Section */}
+        <HowItWorks />
       </div>
     </div>
   );

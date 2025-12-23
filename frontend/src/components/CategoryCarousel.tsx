@@ -95,7 +95,7 @@ export const CategoryCarousel = () => {
     const evt = new CustomEvent("category:selected", { detail: { id: category._id, name: category.name } });
     window.dispatchEvent(evt);
     try {
-      navigate(`/category/${category._id}`);
+      navigate(`/shop?category=${encodeURIComponent(category.name)}`);
     } catch (_err) {
       // navigate might not be available in some contexts; ignore
     }

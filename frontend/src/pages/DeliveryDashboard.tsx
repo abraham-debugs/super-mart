@@ -6,14 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Truck, 
-  Package, 
-  LogOut, 
-  MapPin, 
-  CreditCard, 
-  Phone, 
-  User, 
+import {
+  Truck,
+  Package,
+  LogOut,
+  MapPin,
+  CreditCard,
+  Phone,
+  User,
   Clock,
   TrendingUp,
   CheckCircle2,
@@ -39,6 +39,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -72,6 +80,8 @@ export const DeliveryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<string>("active");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{ orderId: string, status: string } | null>(null);
 
   useEffect(() => {
     // Check if partner is logged in
@@ -117,6 +127,15 @@ export const DeliveryDashboard = () => {
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    if (newStatus === "delivered") {
+      setPendingStatusUpdate({ orderId, status: newStatus });
+      setConfirmDialogOpen(true);
+      return;
+    }
+    await processStatusUpdate(orderId, newStatus);
+  };
+
+  const processStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/delivery/orders/${orderId}/status`, {
         method: "PUT",
@@ -133,6 +152,14 @@ export const DeliveryDashboard = () => {
     } catch (err) {
       console.error("Status update error:", err);
       alert("Failed to update status");
+    }
+  };
+
+  const confirmStatusUpdate = async () => {
+    if (pendingStatusUpdate) {
+      await processStatusUpdate(pendingStatusUpdate.orderId, pendingStatusUpdate.status);
+      setConfirmDialogOpen(false);
+      setPendingStatusUpdate(null);
     }
   };
 
@@ -187,16 +214,16 @@ export const DeliveryDashboard = () => {
 
   // Filter orders based on search and status
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerDetails?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerDetails?.mobile?.includes(searchQuery);
-    
-    const matchesStatus = 
-      statusFilter === "all" || 
+
+    const matchesStatus =
+      statusFilter === "all" ||
       (statusFilter === "pending" && order.status !== "delivered" && order.status !== "cancelled") ||
       order.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -230,8 +257,8 @@ export const DeliveryDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -458,7 +485,24 @@ export const DeliveryDashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delivery</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to mark this order as delivered? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+            <Button onClick={confirmStatusUpdate} className="bg-green-600 hover:bg-green-700 text-white">
+              Confirm Delivered
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 };
 
@@ -489,8 +533,8 @@ const OrderCard = ({
     <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden">
       <CardContent className="p-0">
         <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-3">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+            <div className="flex-1 space-y-3 w-full">
               {/* Order Header */}
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -519,7 +563,7 @@ const OrderCard = ({
                       {order.customerDetails?.fullName || "Customer"}
                     </div>
                     {order.customerDetails?.mobile && (
-                      <a 
+                      <a
                         href={`tel:${order.customerDetails.mobile}`}
                         className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1"
                       >
@@ -565,7 +609,7 @@ const OrderCard = ({
             </div>
 
             {/* Action Button */}
-            <div className="flex flex-col items-end gap-3">
+            <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-3 mt-4 md:mt-0">
               {canUpdateStatus ? (
                 <Select
                   value={order.status}
@@ -623,10 +667,10 @@ const OrderCard = ({
               {order.items.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow">
                   {item.imageUrl && (
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.name} 
-                      className="h-16 w-16 rounded-lg object-cover border border-gray-200 dark:border-slate-700" 
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="h-16 w-16 rounded-lg object-cover border border-gray-200 dark:border-slate-700"
                     />
                   )}
                   <div className="flex-1 min-w-0">

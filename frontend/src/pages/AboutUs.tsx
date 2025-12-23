@@ -211,7 +211,7 @@ const AboutUs: React.FC = () => {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-16 px-10 rounded-full font-bold text-lg border-white/20 text-white hover:bg-white/10 transition-all"
+                    className="h-16 px-10 rounded-full font-bold text-lg bg-grey-300 text-white hover:bg-white/10 transition-all"
                   >
                     Explore Membership
                   </Button>

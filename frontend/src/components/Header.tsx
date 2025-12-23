@@ -149,7 +149,7 @@ export const Header = () => {
                   ].map((category, idx) => (
                     <li key={idx}>
                       <Link
-                        to={`/category/${category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`}
+                        to={`/shop?category=${encodeURIComponent(category)}`}
                         className="block px-6 py-2.5 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors flex items-center justify-between group/item"
                       >
                         {category}

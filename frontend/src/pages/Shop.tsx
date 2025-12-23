@@ -14,17 +14,31 @@ import {
 } from "@/components/ui/select";
 import { Grid, List, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
 import { Product, Category } from "@/types/product";
+import { useLocation } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const Shop = () => {
+    const location = useLocation();
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [priceRange, setPriceRange] = useState([0, 1000]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [sortBy, setSortBy] = useState("latest");
+
+    // Handle initial filters from URL
+    useEffect(() => {
+        const cat = searchParams.get("category");
+        const q = searchParams.get("q");
+
+        setSelectedCategories(cat ? [cat] : []);
+        setSearchQuery(q || "");
+    }, [searchParams]);
 
     // Fetch initial data
     useEffect(() => {
@@ -75,7 +89,8 @@ const Shop = () => {
             p.price <= priceRange[1] &&
             (selectedCategories.length === 0 || selectedCategories.some(cat =>
                 p.category.toLowerCase().includes(cat.toLowerCase())
-            ))
+            )) &&
+            (searchQuery === "" || p.name.toLowerCase().includes(searchQuery.toLowerCase()))
         );
 
         // Sorting
@@ -87,7 +102,7 @@ const Shop = () => {
         // "latest" is default from backend sort
 
         return result;
-    }, [products, priceRange, selectedCategories, sortBy]);
+    }, [products, priceRange, selectedCategories, sortBy, searchQuery]);
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
