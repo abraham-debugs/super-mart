@@ -1127,76 +1127,140 @@ router.put("/inventory/bulk-update", requireAuth, requireSuperAdmin, async (req,
   }
 });
 
+// Bulk update products discount by category
+router.post("/products/bulk-discount", async (req, res) => {
+  try {
+    const { categoryId, discountPercentage } = req.body;
+
+    if (!categoryId || discountPercentage === undefined) {
+      return res.status(400).json({ message: "Category ID and discount percentage are required." });
+    }
+
+    const discount = parseFloat(discountPercentage);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      return res.status(400).json({ message: "Invalid discount percentage. Must be between 0 and 100." });
+    }
+
+    // Find all products in the category
+    const products = await Product.find({ categoryId });
+
+    if (products.length === 0) {
+      return res.status(404).json({ message: "No products found in this category." });
+    }
+
+    const results = [];
+    for (const product of products) {
+      try {
+        // Use originalPrice if exists, else current price is the base
+        const basePrice = product.originalPrice || product.price;
+        const newPrice = basePrice * (1 - discount / 100);
+
+        product.originalPrice = basePrice;
+        product.price = parseFloat(newPrice.toFixed(2));
+        product.isDiscounted = discount > 0;
+
+        await product.save();
+        results.push({ id: product._id, success: true });
+      } catch (err) {
+        results.push({ id: product._id, success: false, error: err.message });
+      }
+    }
+
+    res.json({
+      message: `Bulk discount applied successfully to ${results.filter(r => r.success).length} products.`,
+      count: results.length,
+      successCount: results.filter(r => r.success).length
+    });
+  } catch (err) {
+    console.error("POST /api/admin/products/bulk-discount error:", err);
+    res.status(500).json({ message: "Internal server error", error: err.message });
+  }
+});
+
+// Update or create section configuration (e.g., discounted_products)
+router.post("/sections/:sectionId", upload.single("image"), async (req, res) => {
+  try {
+    const { sectionId } = req.params;
+    const { title, subtitle, isVisible, metadata } = req.body;
+
+    let config = await SectionConfig.findOne({ sectionId });
+
+    const hasCloudinary = Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
+
+    let imageUrl = config?.imageUrl || "";
+    let publicId = config?.publicId || "";
+
+    // Handle new image upload
+    if (req.file) {
+      if (hasCloudinary) {
+        // Delete old image if it exists
+        if (publicId && publicId !== "local") {
+          try {
+            await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+          } catch (e) {
+            console.warn("Cloudinary destroy failed:", e?.message || e);
+          }
+        }
+
+        // Upload new image
+        const result = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "mdmart/sections",
+              resource_type: "image",
+              transformation: [{ width: 1200, height: 400, crop: "fill", gravity: "auto" }]
+            },
+            (error, uploadResult) => {
+              if (error) reject(error);
+              else resolve(uploadResult);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+        imageUrl = result.secure_url;
+        publicId = result.public_id;
+      } else {
+        // Local fallback: store base64
+        const mime = req.file.mimetype || "image/png";
+        const base64 = req.file.buffer.toString("base64");
+        imageUrl = `data:${mime};base64,${base64}`;
+        publicId = "local";
+      }
+    }
+
+    let resolvedMetadata = config?.metadata || {};
+    if (metadata) {
+      try {
+        resolvedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+      } catch (e) {
+        console.warn("Failed to parse metadata", e);
+      }
+    }
+
+    const updateFields = {
+      title: title !== undefined ? title : config?.title,
+      subtitle: subtitle !== undefined ? subtitle : config?.subtitle,
+      isVisible: isVisible !== undefined ? (isVisible === "true" || isVisible === true) : config?.isVisible,
+      imageUrl,
+      publicId,
+      metadata: resolvedMetadata
+    };
+
+    config = await SectionConfig.findOneAndUpdate(
+      { sectionId },
+      { $set: updateFields },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    res.json(config);
+  } catch (err) {
+    console.error("POST /api/admin/sections error:", err);
+    res.status(500).json({ message: "Failed to update section", error: err?.message || String(err) });
+  }
+});
+
 export default router;
-
-
-/ /   . . .   e x i s t i n g   i m p o r t s  
- / /   . . .   e x i s t i n g   r o u t e s  
-  
- / /   - - -   S e c t i o n   C o n f i g   M a n a g e m e n t   - - -  
-  
- / /   G e t   s e c t i o n   c o n f i g  
- r o u t e r . g e t ( " / s e c t i o n s / : s e c t i o n I d " ,   a s y n c   ( r e q ,   r e s )   = >   {  
-         t r y   {  
-                 c o n s t   {   s e c t i o n I d   }   =   r e q . p a r a m s ;  
-                 c o n s t   c o n f i g   =   a w a i t   S e c t i o n C o n f i g . f i n d O n e ( {   s e c t i o n I d   } ) ;  
-                 / /   R e t u r n   e m p t y / d e f a u l t   i f   n o t   f o u n d  
-                 r e s . j s o n ( c o n f i g   | |   {   s e c t i o n I d ,   t i t l e :   " " ,   i m a g e U r l :   " " ,   i s V i s i b l e :   t r u e   } ) ;  
-         }   c a t c h   ( e r r o r )   {  
-                 c o n s o l e . e r r o r ( " E r r o r   f e t c h i n g   s e c t i o n   c o n f i g : " ,   e r r o r ) ;  
-                 r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   m e s s a g e :   " S e r v e r   e r r o r "   } ) ;  
-         }  
- } ) ;  
-  
- / /   U p d a t e   s e c t i o n   c o n f i g  
- r o u t e r . p o s t ( " / s e c t i o n s / : s e c t i o n I d " ,   u p l o a d . s i n g l e ( " i m a g e " ) ,   a s y n c   ( r e q ,   r e s )   = >   {  
-         t r y   {  
-                 c o n s t   {   s e c t i o n I d   }   =   r e q . p a r a m s ;  
-                 c o n s t   {   t i t l e ,   i s V i s i b l e   }   =   r e q . b o d y ;  
-  
-                 l e t   i m a g e U r l   =   r e q . b o d y . i m a g e U r l ;   / /   k e e p   e x i s t i n g   i f   n o t   c h a n g e d  
-                 l e t   p u b l i c I d   =   r e q . b o d y . p u b l i c I d ;  
-  
-                 / /   H a n d l e   I m a g e   U p l o a d  
-                 i f   ( r e q . f i l e )   {  
-                         i f   ( p r o c e s s . e n v . C L O U D I N A R Y _ C L O U D _ N A M E )   {  
-                                 / /   C l o u d i n a r y   l o g i c   ( p r o m i s i f i e d   f o r   c l e a n l i n e s s )  
-                                 c o n s t   r e s u l t   =   a w a i t   n e w   P r o m i s e ( ( r e s o l v e ,   r e j e c t )   = >   {  
-                                         c o n s t   s t r e a m   =   c l o u d i n a r y . u p l o a d e r . u p l o a d _ s t r e a m (  
-                                                 {   f o l d e r :   " m d m a r t / s e c t i o n s " ,   r e s o u r c e _ t y p e :   " i m a g e "   } ,  
-                                                 ( e r r ,   r e s )   = >   {   i f   ( e r r )   r e j e c t ( e r r ) ;   e l s e   r e s o l v e ( r e s ) ;   }  
-                                         ) ;  
-                                         s t r e a m . e n d ( r e q . f i l e . b u f f e r ) ;  
-                                 } ) ;  
-                                 i m a g e U r l   =   r e s u l t . s e c u r e _ u r l ;  
-                                 p u b l i c I d   =   r e s u l t . p u b l i c _ i d ;  
-                         }   e l s e   {  
-                                 / /   L o c a l   f a l l b a c k  
-                                 c o n s t   m i m e   =   r e q . f i l e . m i m e t y p e ;  
-                                 c o n s t   b a s e 6 4   =   r e q . f i l e . b u f f e r . t o S t r i n g ( " b a s e 6 4 " ) ;  
-                                 i m a g e U r l   =   ` d a t a : $ { m i m e } ; b a s e 6 4 , $ { b a s e 6 4 } ` ;  
-                                 p u b l i c I d   =   " l o c a l " ;  
-                         }  
-                 }  
-  
-                 c o n s t   c o n f i g   =   a w a i t   S e c t i o n C o n f i g . f i n d O n e A n d U p d a t e (  
-                         {   s e c t i o n I d   } ,  
-                         {  
-                                 s e c t i o n I d ,  
-                                 t i t l e ,  
-                                 i s V i s i b l e :   i s V i s i b l e   = = =   " t r u e "   | |   i s V i s i b l e   = = =   t r u e ,  
-                                 i m a g e U r l ,  
-                                 p u b l i c I d  
-                         } ,  
-                         {   n e w :   t r u e ,   u p s e r t :   t r u e   }  
-                 ) ;  
-  
-                 r e s . j s o n ( c o n f i g ) ;  
-         }   c a t c h   ( e r r o r )   {  
-                 c o n s o l e . e r r o r ( " E r r o r   u p d a t i n g   s e c t i o n   c o n f i g : " ,   e r r o r ) ;  
-                 r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   m e s s a g e :   " U p d a t e   f a i l e d " ,   e r r o r :   e r r o r . m e s s a g e   } ) ;  
-         }  
- } ) ;  
-  
- e x p o r t   d e f a u l t   r o u t e r ;  
- 

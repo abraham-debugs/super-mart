@@ -46,11 +46,10 @@ const PromoCodeSchema = new mongoose.Schema(
 );
 
 // Index for faster lookups
-PromoCodeSchema.index({ code: 1 });
 PromoCodeSchema.index({ expiryDate: 1 });
 
 // Method to check if promo code is valid
-PromoCodeSchema.methods.isValid = function() {
+PromoCodeSchema.methods.isValid = function () {
   if (!this.isActive) return false;
   if (new Date() > this.expiryDate) return false;
   if (this.usageLimit && this.usedCount >= this.usageLimit) return false;

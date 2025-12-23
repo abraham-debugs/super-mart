@@ -34,6 +34,10 @@ router.get("/", async (req, res) => {
       query.isDiscounted = true;
     }
 
+    if (req.query.ids) {
+      query._id = { $in: req.query.ids.split(",") };
+    }
+
     const products = await Product.find(query)
       .sort({ createdAt: -1 })
       .limit(100)
@@ -188,49 +192,61 @@ router.get("/fresh-picks", async (req, res) => {
 // Returns high sales products based on order quantities
 router.get("/most-loved", async (req, res) => {
   try {
-    // Aggregate orders to get total quantities sold per product
-    // Exclude cancelled orders
-    const salesData = await Order.aggregate([
-      { $match: { status: { $ne: "cancelled" } } }, // Exclude cancelled orders
-      { $unwind: "$items" }, // Flatten items array
-      {
-        $group: {
-          _id: "$items.productId",
-          totalQuantity: { $sum: "$items.quantity" }
+    const { SectionConfig } = await import("../models/SectionConfig.js");
+    const sectionConfig = await SectionConfig.findOne({ sectionId: "most_loved" });
+
+    let products = [];
+
+    // If manual mode is configured by admin
+    if (sectionConfig?.metadata?.mode === "manual") {
+      const { selectionType, categoryId, productIds, selectAllInCategory } = sectionConfig.metadata;
+      let query = {};
+
+      if (selectionType === "category" && categoryId) {
+        query.categoryId = categoryId;
+        // If they didn't 'select all', filter by specific IDs if provided
+        if (!selectAllInCategory && Array.isArray(productIds) && productIds.length > 0) {
+          query._id = { $in: productIds };
         }
-      },
-      { $sort: { totalQuantity: -1 } }, // Sort by highest sales first
-      { $limit: 20 } // Get top 20 high sales products
-    ]);
+      } else if (selectionType === "specific_products" && Array.isArray(productIds)) {
+        query._id = { $in: productIds };
+      }
 
-    // Extract product IDs from sales data
-    const productIds = salesData.map(item => item._id).filter(Boolean);
+      products = await Product.find(query)
+        .populate({ path: "categoryId", select: "name" })
+        .limit(20);
+    } else {
+      // DEFAULT: Automated sales-based logic
+      const salesData = await Order.aggregate([
+        { $match: { status: { $ne: "cancelled" } } },
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.productId",
+            totalQuantity: { $sum: "$items.quantity" }
+          }
+        },
+        { $sort: { totalQuantity: -1 } },
+        { $limit: 20 }
+      ]);
 
-    // If no sales data, fall back to empty array
-    if (productIds.length === 0) {
-      return res.json([]);
+      const productIdsArr = salesData.map(item => item._id).filter(Boolean);
+      if (productIdsArr.length > 0) {
+        const fetchedProducts = await Product.find({ _id: { $in: productIdsArr } })
+          .populate({ path: "categoryId", select: "name" });
+
+        const salesMap = new Map();
+        salesData.forEach(item => { if (item._id) salesMap.set(String(item._id), item.totalQuantity); });
+
+        products = fetchedProducts.sort((a, b) => {
+          const aSales = salesMap.get(String(a._id)) || 0;
+          const bSales = salesMap.get(String(b._id)) || 0;
+          return bSales - aSales;
+        });
+      }
     }
 
-    // Fetch product details for high sales products
-    const products = await Product.find({ _id: { $in: productIds } })
-      .populate({ path: "categoryId", select: "name" });
-
-    // Create a map of productId -> totalQuantity for sorting
-    const salesMap = new Map();
-    salesData.forEach(item => {
-      if (item._id) {
-        salesMap.set(String(item._id), item.totalQuantity);
-      }
-    });
-
-    // Sort products by sales quantity (descending)
-    const sortedProducts = products.sort((a, b) => {
-      const aSales = salesMap.get(String(a._id)) || 0;
-      const bSales = salesMap.get(String(b._id)) || 0;
-      return bSales - aSales;
-    });
-
-    const mapped = sortedProducts.map((p) => ({
+    const mapped = products.map((p) => ({
       id: String(p._id),
       name: p.nameEn || "",
       description: "",
@@ -248,6 +264,7 @@ router.get("/most-loved", async (req, res) => {
 
     res.json(mapped);
   } catch (err) {
+    console.error("Most Loved fetch error:", err);
     res.status(500).json({ message: "Failed to fetch most loved", error: err?.message || String(err) });
   }
 });

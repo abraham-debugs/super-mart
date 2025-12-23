@@ -5,8 +5,7 @@ const SectionConfigSchema = new mongoose.Schema(
         sectionId: {
             type: String,
             required: true,
-            unique: true,
-            index: true
+            unique: true
         },
         title: {
             type: String,
@@ -29,8 +28,8 @@ const SectionConfigSchema = new mongoose.Schema(
             default: true
         },
         metadata: {
-            type: Map,
-            of: String
+            type: mongoose.Schema.Types.Mixed,
+            default: {}
         }
     },
     { timestamps: true }

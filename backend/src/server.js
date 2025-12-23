@@ -17,7 +17,6 @@ import imageSearchRoutes from "./routes/imageSearch.js";
 import recommendationRoutes from "./routes/recommendations.js";
 import promoCodeRoutes from "./routes/promoCodes.js";
 import adsRoutes from "./routes/ads.js";
-import adsRoutes from "./routes/ads.js";
 import invoiceRoutes from "./routes/invoices.js";
 import sectionsRoutes from "./routes/sections.js";
 
