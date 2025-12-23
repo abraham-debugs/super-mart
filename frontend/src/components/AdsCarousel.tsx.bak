@@ -22,31 +22,31 @@ interface PosterSlide {
 const FALLBACK_SLIDES: PosterSlide[] = [
   {
     _id: "fallback-1",
-    title: "Fresh Produce Specials",
+    title: "Mega Fresh Grocery Fiesta",
     subtitle: "Limited Time",
     description: "Save up to 40% on fruits, veggies, and everyday essentials. Offer valid till Sunday!",
-    ctaText: "Shop Fresh Produce",
-    ctaLink: "/shop?category=Fresh%20Produce",
+    ctaText: "Shop Groceries",
+    ctaLink: "/#shop",
     imageUrl: heroCart,
     order: 0,
   },
   {
     _id: "fallback-2",
-    title: "Grocery Essentials Deals",
+    title: "Gadgets Festival Week",
     subtitle: "Hot Deals",
     description: "Pick the latest smart devices with exclusive launch prices and free delivery.",
-    ctaText: "Shop Grocery",
-    ctaLink: "/shop?category=Grocery",
+    ctaText: "Grab Tech",
+    ctaLink: "/#shop",
     imageUrl: smartwatch,
     order: 1,
   },
   {
     _id: "fallback-3",
-    title: "Fresh Bakery Treats",
+    title: "Home & Kitchen Super Savers",
     subtitle: "Trending Now",
     description: "Upgrade your kitchen with combos and cashback on cookware & storage picks.",
-    ctaText: "Shop Bakery",
-    ctaLink: "/shop?category=Bakery",
+    ctaText: "Explore Offers",
+    ctaLink: "/#shop",
     imageUrl: heroImage,
     order: 2,
   },
@@ -74,21 +74,13 @@ export const AdsCarousel = () => {
         if (!res.ok) throw new Error("Failed to fetch posters");
         const data = await res.json();
         if (!ignore && Array.isArray(data) && data.length > 0) {
-          const fallbackLinks = [
-            "/shop?category=Fresh%20Produce",
-            "/shop?category=Grocery",
-            "/shop?category=Bakery",
-          ];
           const mapped = data.map((poster: any, idx: number) => ({
             _id: poster._id,
             title: poster.title || "Untitled Poster",
             subtitle: poster.subtitle || "",
             description: poster.description || "",
             ctaText: poster.ctaText || "Shop Now",
-            ctaLink:
-              poster.ctaLink && poster.ctaLink !== "/#shop" && poster.ctaLink !== "/"
-                ? poster.ctaLink
-                : fallbackLinks[idx % fallbackLinks.length],
+            ctaLink: poster.ctaLink || "/",
             imageUrl: poster.imageUrl,
             order:
               typeof poster.order === "number"

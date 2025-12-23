@@ -8,8 +8,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
+  const navigate = useNavigate();
   const slides = [
     {
       id: 1,
@@ -73,7 +75,7 @@ export const Hero = () => {
                       </p>
 
                       <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
-                        <Button size="lg" className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:bg-primary-dark shadow-lg shadow-primary/25">
+                        <Button size="lg" className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:bg-primary-dark shadow-lg shadow-primary/25" onClick={() => navigate('/shop?category=Fresh%20Produce')}>
                           Shop Now <ArrowRight className="ml-2 h-5 w-5" />
                         </Button>
                         <Button size="lg" variant="outline" className="rounded-full px-8 py-6 text-lg font-bold border-2">
