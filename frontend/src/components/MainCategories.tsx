@@ -8,14 +8,10 @@ type Category = {
     _id: string;
     name: string;
     imageUrl: string;
+    showInNavbar?: boolean;
 };
 
-const TARGET_CATEGORIES = [
-    "Fresh Produce",
-    "Dairy & Eggs",
-    "Snacks & Beverages",
-    "Personal Care"
-];
+
 
 export const MainCategories = () => {
     const navigate = useNavigate();
@@ -31,13 +27,9 @@ export const MainCategories = () => {
                 const res = await fetch(`${API_BASE}/api/admin/categories`);
                 if (res.ok) {
                     const data = await res.json();
-
-                    // Filter to show only the selected main categories
-                    const selected = TARGET_CATEGORIES.map(name =>
-                        data.find((c: Category) => c.name.toLowerCase() === name.toLowerCase())
-                    ).filter(Boolean) as Category[];
-
-                    setCategories(selected);
+                    // Filter to show only categories marked as Main/Navbar
+                    const navbarCategories = data.filter((c: Category) => c.showInNavbar);
+                    setCategories(navbarCategories);
                 }
             } catch (error) {
                 console.error("Failed to fetch main categories", error);
@@ -89,9 +81,12 @@ export const MainCategories = () => {
                             <div className="w-full aspect-square bg-[#F3F4F6] rounded-2xl overflow-hidden p-3 transition-all duration-300 group-hover/item:shadow-md group-hover/item:-translate-y-1">
                                 <div className="w-full h-full relative">
                                     <img
-                                        src={category.imageUrl}
+                                        src={category.imageUrl || "https://placehold.co/100x100?text=No+Image"}
                                         alt={category.name}
                                         className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/item:scale-110"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
+                                        }}
                                     />
                                 </div>
                             </div>

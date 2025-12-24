@@ -58,13 +58,23 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
       )}
 
+      {/* Out of Stock Overlay */}
+      {product.stock === 0 && (
+        <div className="absolute inset-0 bg-white/60 z-30 flex items-center justify-center rounded-2xl pointer-events-none">
+          <div className="bg-red-600 text-white px-3 py-1 text-sm font-bold rounded-full shadow-md transform -rotate-12 pointer-events-auto">
+            Out of Stock
+          </div>
+        </div>
+      )}
+
       <CardContent className="p-4 pt-8">
         {/* Product Image */}
         <div className="relative aspect-square mb-4 overflow-hidden rounded-lg bg-gray-50/50">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full object-contain mix-blend-multiply transition-transform duration-500 ${product.stock === 0 ? "grayscale" : "group-hover:scale-105"
+              }`}
           />
         </div>
 
@@ -89,12 +99,17 @@ export const ProductCard = ({ product }: ProductCardProps) => {
                 Rs.{Number(product.originalPrice).toFixed(2)}
               </span>
             )}
+            {product.stock !== undefined && product.stock > 0 && product.stock < 5 && (
+              <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                Only {product.stock} left
+              </span>
+            )}
           </div>
 
           {/* Actions Row */}
           <div className="flex items-center gap-3 pt-2">
             {/* Quantity Selector */}
-            <div className="flex items-center border border-gray-200 rounded-lg bg-white h-10 w-24">
+            <div className={`flex items-center border border-gray-200 rounded-lg bg-white h-10 w-24 ${product.stock === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
               <button
                 onClick={handleDecrement}
                 disabled={quantity <= 1}
@@ -107,6 +122,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               </div>
               <button
                 onClick={handleIncrement}
+                disabled={product.stock !== undefined && quantity >= product.stock}
                 className="w-8 h-full flex items-center justify-center text-gray-500 hover:text-green-600 transition-colors"
               >
                 <span className="text-lg">+</span>
@@ -116,12 +132,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             {/* Add Button */}
             <Button
               onClick={handleAddToCart}
-              disabled={!product.inStock}
+              disabled={product.stock === 0}
               variant="outline"
-              className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm transition-all duration-200 gap-2"
+              className="flex-1 h-10 w-5 -px-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm transition-all duration-200 gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
             >
-              <span>Add</span>
-              <ShoppingCart className="w-4 h-4" />
+              <span>{product.stock === 0 ? 'No Stock' : 'Add'}</span>
+              <ShoppingCart className="w-2 h-4" />
             </Button>
           </div>
         </div>

@@ -136,6 +136,8 @@ export const Header = () => {
               <div className="absolute top-full left-0 w-64 bg-white shadow-xl border border-gray-100 rounded-b-xl overflow-hidden hidden group-hover:block animate-in fade-in slide-in-from-top-1 duration-200 z-50">
                 <ul className="py-2">
                   {[
+                    "Grocery",
+                    "Bakery",
                     "Fruits & Vegetables",
                     "Dairy & Breakfast",
                     "Meat & Seafood",

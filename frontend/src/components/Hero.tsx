@@ -21,7 +21,8 @@ export const Hero = () => {
       image: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=2670&auto=format&fit=crop",
       color: "text-green-600",
       bgFrom: "from-green-50",
-      bgTo: "to-green-100"
+      bgTo: "to-green-100",
+      link: "/shop?category=Fresh%20Produce"
     },
     {
       id: 2,
@@ -31,7 +32,8 @@ export const Hero = () => {
       image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2574&auto=format&fit=crop",
       color: "text-orange-600",
       bgFrom: "from-orange-50",
-      bgTo: "to-orange-100"
+      bgTo: "to-orange-100",
+      link: "/shop?category=Grocery"
     },
     {
       id: 3,
@@ -41,12 +43,13 @@ export const Hero = () => {
       image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=2672&auto=format&fit=crop",
       color: "text-amber-600",
       bgFrom: "from-amber-50",
-      bgTo: "to-amber-100"
+      bgTo: "to-amber-100",
+      link: "/shop?category=Bakery"
     }
   ];
 
   return (
-    <section className="relative w-full -my-14 -py-8 overflow-hidden bg-white">
+    <section className="relative w-full overflow-hidden bg-white">
       <Carousel
         plugins={[
           Autoplay({
@@ -75,7 +78,7 @@ export const Hero = () => {
                       </p>
 
                       <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
-                        <Button size="lg" className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:bg-primary-dark shadow-lg shadow-primary/25" onClick={() => navigate('/shop?category=Fresh%20Produce')}>
+                        <Button size="lg" className="rounded-full px-8 py-6 text-lg font-bold bg-primary hover:bg-primary-dark shadow-lg shadow-primary/25" onClick={() => navigate(slide.link)}>
                           Shop Now <ArrowRight className="ml-2 h-5 w-5" />
                         </Button>
                         <Button size="lg" variant="outline" className="rounded-full px-8 py-6 text-lg font-bold border-2">

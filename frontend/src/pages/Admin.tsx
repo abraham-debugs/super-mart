@@ -227,8 +227,25 @@ const Admin = () => {
     categoryId: "",
     image: null as File | null,
     isFreshPick: false,
-    isMostLoved: false
+    isMostLoved: false,
+    isDiscounted: false
   });
+
+  async function handleDeleteCategory(id: string) {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/categories/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to delete category");
+      await loadCategories();
+    } catch (err: any) {
+      console.error("Delete category error:", err);
+      alert(err.message || "Failed to delete category");
+    }
+  }
   const [editProductLoading, setEditProductLoading] = useState(false);
   const [deleteProductLoading, setDeleteProductLoading] = useState(false);
   const [editProductError, setEditProductError] = useState<string | null>(null);
@@ -3698,7 +3715,14 @@ const Admin = () => {
                                     {category.name.charAt(0).toUpperCase()}
                                   </div>
                                   <div>
-                                    <p className="font-semibold text-gray-900">{category.name}</p>
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-semibold text-gray-900">{category.name}</p>
+                                      {category.showInNavbar && (
+                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0 h-5">
+                                          <Home className="h-3 w-3 mr-1" /> Navbar
+                                        </Badge>
+                                      )}
+                                    </div>
                                     {category.parentCategory ? (
                                       <p className="text-xs text-gray-500">
                                         <span className="text-blue-600">↳ {category.parentCategory.name}</span> • ID: {category._id.slice(-6)}
@@ -3813,6 +3837,8 @@ const Admin = () => {
                                     variant="outline"
                                     size="sm"
                                     className="hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-all"
+                                    title="Delete Category"
+                                    onClick={() => handleDeleteCategory(category._id)}
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>

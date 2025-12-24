@@ -12,6 +12,7 @@ export interface Product {
   discount?: number;
   isNew?: boolean;
   isBestSeller?: boolean;
+  stock?: number;
 }
 
 export interface CartItem extends Product {

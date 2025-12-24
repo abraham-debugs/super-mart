@@ -594,6 +594,42 @@ router.put("/categories/:id", upload.single("image"), async (req, res) => {
   }
 });
 
+// Delete category
+router.delete("/categories/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user is admin or superadmin
+    if (req.user.role !== "admin" && req.user.role !== "superadmin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const category = await Category.findById(id);
+    if (!category) return res.status(404).json({ message: "Category not found" });
+
+    // Remove image from Cloudinary if it exists
+    const hasCloudinary = Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
+
+    if (hasCloudinary && category.publicId && category.publicId !== "local" && category.publicId !== "placeholder") {
+      try {
+        await cloudinary.uploader.destroy(category.publicId, { resource_type: "image" });
+      } catch (e) {
+        console.warn("Cloudinary destroy failed:", e?.message || e);
+      }
+    }
+
+    await Category.findByIdAndDelete(id);
+    res.json({ message: "Category deleted successfully" });
+  } catch (err) {
+    console.error("DELETE /api/admin/categories/:id error:", err);
+    res.status(500).json({ message: "Failed to delete category", error: err?.message || String(err) });
+  }
+});
+
 // Delivery partners - list
 router.get("/delivery-partners", async (_req, res) => {
   try {
@@ -1178,7 +1214,14 @@ router.post("/products/bulk-discount", async (req, res) => {
 });
 
 // Update or create section configuration (e.g., discounted_products)
-router.post("/sections/:sectionId", upload.single("image"), async (req, res) => {
+// Update or create section configuration (e.g., discounted_products) - Supports multiple files
+const sectionUpload = upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'orangeBannerImage', maxCount: 1 },
+  { name: 'greenBannerImage', maxCount: 1 }
+]);
+
+router.post("/sections/:sectionId", sectionUpload, async (req, res) => {
   try {
     const { sectionId } = req.params;
     const { title, subtitle, isVisible, metadata } = req.body;
@@ -1191,16 +1234,15 @@ router.post("/sections/:sectionId", upload.single("image"), async (req, res) => 
       process.env.CLOUDINARY_API_SECRET
     );
 
-    let imageUrl = config?.imageUrl || "";
-    let publicId = config?.publicId || "";
+    // Helper to upload file
+    const uploadFile = async (file, currentUrl, currentPublicId, folder = "mdmart/sections") => {
+      if (!file) return { url: currentUrl, publicId: currentPublicId };
 
-    // Handle new image upload
-    if (req.file) {
       if (hasCloudinary) {
-        // Delete old image if it exists
-        if (publicId && publicId !== "local") {
+        // Delete old image if it exists and is not local
+        if (currentPublicId && currentPublicId !== "local") {
           try {
-            await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+            await cloudinary.uploader.destroy(currentPublicId, { resource_type: "image" });
           } catch (e) {
             console.warn("Cloudinary destroy failed:", e?.message || e);
           }
@@ -1210,43 +1252,83 @@ router.post("/sections/:sectionId", upload.single("image"), async (req, res) => 
         const result = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             {
-              folder: "mdmart/sections",
+              folder: folder,
               resource_type: "image",
-              transformation: [{ width: 1200, height: 400, crop: "fill", gravity: "auto" }]
             },
             (error, uploadResult) => {
               if (error) reject(error);
               else resolve(uploadResult);
             }
           );
-          stream.end(req.file.buffer);
+          stream.end(file.buffer);
         });
-        imageUrl = result.secure_url;
-        publicId = result.public_id;
+        return { url: result.secure_url, publicId: result.public_id };
       } else {
-        // Local fallback: store base64
-        const mime = req.file.mimetype || "image/png";
-        const base64 = req.file.buffer.toString("base64");
-        imageUrl = `data:${mime};base64,${base64}`;
-        publicId = "local";
+        // Local fallback
+        const mime = file.mimetype || "image/png";
+        const base64 = file.buffer.toString("base64");
+        return { url: `data:${mime};base64,${base64}`, publicId: "local" };
       }
-    }
+    };
 
+    const files = req.files || {};
+
+    // 1. Handle Main Section Image
+    const mainFile = files['image'] ? files['image'][0] : null;
+    const mainImg = await uploadFile(mainFile, config?.imageUrl, config?.publicId);
+
+    // Parse metadata early to merge with new uploads
     let resolvedMetadata = config?.metadata || {};
     if (metadata) {
       try {
-        resolvedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+        const parsed = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+        resolvedMetadata = { ...resolvedMetadata, ...parsed };
       } catch (e) {
         console.warn("Failed to parse metadata", e);
       }
     }
 
+    // 2. Handle Orange Banner Image
+    const orangeFile = files['orangeBannerImage'] ? files['orangeBannerImage'][0] : null;
+    // We store the publicId for these in metadata too if we want to delete them later, 
+    // but for now let's just update the URL `orangeBanner`.
+    // If we want full management, we should add `orangeBannerPublicId` to metadata schema/logic.
+    // For simplicity, we just upload and get URL. cleaning up old specific generic banners might be skipped or we try best effort.
+    // Best effort: check if resolvedMetadata.orangeBannerPublicId exists.
+
+    // Note: We need to decide where to store publicIds for these sub-images. 
+    // Let's store them in metadata as well: orangeBannerPublicId, greenBannerPublicId.
+    const orangeImg = await uploadFile(
+      orangeFile,
+      resolvedMetadata.orangeBanner || "",
+      resolvedMetadata.orangeBannerPublicId || "",
+      "mdmart/sections/banners"
+    );
+    if (orangeFile) {
+      resolvedMetadata.orangeBanner = orangeImg.url;
+      resolvedMetadata.orangeBannerPublicId = orangeImg.publicId;
+    }
+
+    // 3. Handle Green Banner Image
+    const greenFile = files['greenBannerImage'] ? files['greenBannerImage'][0] : null;
+    const greenImg = await uploadFile(
+      greenFile,
+      resolvedMetadata.greenBanner || "",
+      resolvedMetadata.greenBannerPublicId || "",
+      "mdmart/sections/banners"
+    );
+    if (greenFile) {
+      resolvedMetadata.greenBanner = greenImg.url;
+      resolvedMetadata.greenBannerPublicId = greenImg.publicId;
+    }
+
+
     const updateFields = {
       title: title !== undefined ? title : config?.title,
       subtitle: subtitle !== undefined ? subtitle : config?.subtitle,
       isVisible: isVisible !== undefined ? (isVisible === "true" || isVisible === true) : config?.isVisible,
-      imageUrl,
-      publicId,
+      imageUrl: mainImg.url,
+      publicId: mainImg.publicId,
       metadata: resolvedMetadata
     };
 

@@ -41,6 +41,7 @@ export const SectionConfigForm = ({ apiBase, sectionId, sectionName }: SectionCo
     const [orangeTitle, setOrangeTitle] = useState("");
     const [orangePrice, setOrangePrice] = useState("");
     const [orangeBanner, setOrangeBanner] = useState("");
+    const [orangeFile, setOrangeFile] = useState<File | null>(null); // NEW
     const [orangeProductIds, setOrangeProductIds] = useState<string[]>([]);
     const [orangeCatId, setOrangeCatId] = useState("");
     const [orangeProducts, setOrangeProducts] = useState<any[]>([]);
@@ -48,6 +49,7 @@ export const SectionConfigForm = ({ apiBase, sectionId, sectionName }: SectionCo
     const [greenTitle, setGreenTitle] = useState("");
     const [greenPrice, setGreenPrice] = useState("");
     const [greenBanner, setGreenBanner] = useState("");
+    const [greenFile, setGreenFile] = useState<File | null>(null); // NEW
     const [greenProductIds, setGreenProductIds] = useState<string[]>([]);
     const [greenCatId, setGreenCatId] = useState("");
     const [greenProducts, setGreenProducts] = useState<any[]>([]);
@@ -164,6 +166,12 @@ export const SectionConfigForm = ({ apiBase, sectionId, sectionName }: SectionCo
             form.append("isVisible", String(isVisible));
             if (file) {
                 form.append("image", file);
+            }
+            if (orangeFile) {
+                form.append("orangeBannerImage", orangeFile);
+            }
+            if (greenFile) {
+                form.append("greenBannerImage", greenFile);
             }
 
             // Append metadata as JSON string
@@ -417,7 +425,14 @@ export const SectionConfigForm = ({ apiBase, sectionId, sectionName }: SectionCo
                                             </div>
                                             <div className="space-y-2 md:col-span-2">
                                                 <Label>Banner / Asset URL (Image on the right)</Label>
-                                                <Input value={orangeBanner} onChange={e => setOrangeBanner(e.target.value)} placeholder="Image URL for the juice bottle" />
+                                                <div className="flex gap-2">
+                                                    <Input value={orangeBanner} onChange={e => setOrangeBanner(e.target.value)} placeholder="Image URL for the juice bottle" className="flex-1" />
+                                                    <div className="relative overflow-hidden w-10 h-10 flex items-center justify-center bg-gray-100 border rounded hover:bg-gray-200 cursor-pointer transition-colors" title="Upload Image">
+                                                        <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && setOrangeFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                                        <Upload className={`w-4 h-4 ${orangeFile ? 'text-green-600' : 'text-gray-500'}`} />
+                                                    </div>
+                                                </div>
+                                                {orangeFile && <p className="text-xs text-green-600">Selected: {orangeFile.name}</p>}
                                             </div>
                                         </div>
 
@@ -469,7 +484,14 @@ export const SectionConfigForm = ({ apiBase, sectionId, sectionName }: SectionCo
                                             </div>
                                             <div className="space-y-2 md:col-span-2">
                                                 <Label>Banner / Asset URL (Image on the right)</Label>
-                                                <Input value={greenBanner} onChange={e => setGreenBanner(e.target.value)} placeholder="Image URL for the food plate" />
+                                                <div className="flex gap-2">
+                                                    <Input value={greenBanner} onChange={e => setGreenBanner(e.target.value)} placeholder="Image URL for the food plate" className="flex-1" />
+                                                    <div className="relative overflow-hidden w-10 h-10 flex items-center justify-center bg-gray-100 border rounded hover:bg-gray-200 cursor-pointer transition-colors" title="Upload Image">
+                                                        <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && setGreenFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                                        <Upload className={`w-4 h-4 ${greenFile ? 'text-green-600' : 'text-gray-500'}`} />
+                                                    </div>
+                                                </div>
+                                                {greenFile && <p className="text-xs text-green-600">Selected: {greenFile.name}</p>}
                                             </div>
                                         </div>
 

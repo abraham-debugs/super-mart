@@ -57,16 +57,13 @@ export const CategoryCarousel = () => {
 
   // Group categories by parent
   const categoryGroups: CategoryGroup[] = [];
-  const standaloneParents: BackendCategory[] = [];
+
   const parentCategories = categories.filter(c => !c.parentCategory);
 
   parentCategories.forEach(parent => {
     const children = categories.filter(c => c.parentCategory?._id === parent._id);
     if (children.length > 0) {
       categoryGroups.push({ parent, children });
-    } else {
-      // Parent category without children - show as standalone
-      standaloneParents.push(parent);
     }
   });
 
@@ -118,6 +115,11 @@ export const CategoryCarousel = () => {
               <h2 className="text-3xl font-bold text-gray-900">Shop by Category</h2>
               <p className="text-sm text-gray-500">Pick your favorite items from our categories</p>
             </div>
+
+
+
+
+
             {/* Parent Categories with Subcategories */}
             {(showAllCategories ? categoryGroups : categoryGroups.slice(0, 4)).map((group, groupIdx) => (
               <div key={group.parent._id} className="space-y-1.5">
@@ -213,54 +215,6 @@ export const CategoryCarousel = () => {
                   View Less
                   <ChevronLeft className="h-4 w-4 mr-1" />
                 </Button>
-              </div>
-            )}
-
-            {/* Standalone Parent Categories (without children) */}
-            {showAllCategories && standaloneParents.length > 0 && (
-              <div className="space-y-1.5">
-                <h2 className="text-base font-bold text-gray-900">Other Categories</h2>
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-                  {standaloneParents.map((category, index) => {
-                    const isSelected = selectedCategory === category._id;
-                    const gradient = categoryGradients[index % categoryGradients.length];
-
-                    return (
-                      <div
-                        key={category._id}
-                        className={`flex flex-col items-center gap-[2px] cursor-pointer group transition-all duration-100 ${isSelected ? 'scale-105' : 'hover:scale-105'
-                          }`}
-                        onClick={() => handleCategoryClick(category)}
-                      >
-                        {/* Category Card */}
-                        <div className="relative w-full">
-                          <div className={`aspect-square rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-200 ${isSelected ? 'ring-2 ring-black' : ''
-                            }`}>
-                            <div className="relative w-full h-full">
-                              <img
-                                src={category.imageUrl}
-                                alt={category.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                              {/* Overlay gradient on hover */}
-                              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-200`}></div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Category name */}
-                        <div className="text-center w-full">
-                          <span className={`text-[8px] font-medium leading-tight block transition-colors duration-100 line-clamp-2 ${isSelected
-                            ? 'text-black'
-                            : 'text-gray-700 group-hover:text-black'
-                            }`}>
-                            {category.name}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             )}
           </div>
