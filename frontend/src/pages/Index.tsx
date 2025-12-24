@@ -3,7 +3,6 @@ import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
 import { Features } from "@/components/Features";
-
 import RecommendedProducts from "@/components/RecommendedProducts";
 import type { Product } from "@/types/product";
 import { AdsCarousel } from "@/components/AdsCarousel";
@@ -11,6 +10,7 @@ import { DiscountedProducts } from "@/components/DiscountedProducts";
 import { MainCategories } from "@/components/MainCategories";
 import { HowItWorks } from "@/components/HowItWorks";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -23,127 +23,92 @@ interface SearchCategory {
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [searchCategories, setSearchCategories] = useState<SearchCategory[]>([]);
-  const [freshPicks, setFreshPicks] = useState<Product[]>([]);
-  const [mostLoved, setMostLoved] = useState<Product[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Handle URL search params
   useEffect(() => {
-    // Normalize strings to improve matching between category names/ids and product.category
-    const normalize = (s: string) => s?.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+    const params = new URLSearchParams(location.search);
+    const q = (params.get("q") || "").trim();
+    if (q) {
+      setSearchQuery(q);
+      setSelectedCategory(null);
+    } else {
+      setSearchQuery("");
+      // When clearing search via URL, we don't strictly reset selectedCategory here
+      // to avoid jumping if the user was just navigating.
+    }
+  }, [location.search]);
 
+  // Handle Custom Event for Category Selection
+  useEffect(() => {
     const onCategory = (e: Event) => {
       const detail = (e as CustomEvent).detail as { id: string; name: string };
       setSelectedCategory(detail.name);
-
-      const targetId = normalize(detail.id || "");
-      const targetName = normalize(detail.name || "");
-
-      // Fetch products from backend API for the selected category
-      (async () => {
-        try {
-          const res = await fetch(`${API_BASE}/api/products?category=${encodeURIComponent(detail.name)}`);
-          if (res.ok) {
-            const data = await res.json();
-            const prods = Array.isArray(data) ? data : [];
-            setAllProducts(prods);
-          } else {
-            setAllProducts([]);
-          }
-        } catch (e) {
-          console.warn("Failed to fetch category products:", e);
-          setAllProducts([]);
-        }
-      })();
-      setSearchQuery("");
+      setSearchQuery(""); // Clear search query when a category is selected
     };
 
     window.addEventListener("category:selected", onCategory as EventListener);
     return () => window.removeEventListener("category:selected", onCategory as EventListener);
   }, []);
 
-  // Load Fresh Picks and Most Loved from backend
-  useEffect(() => {
-    async function loadFeaturedProducts() {
-      try {
-        // Load Fresh Picks
-        const freshRes = await fetch(`${API_BASE}/api/products/fresh-picks`);
-        if (freshRes.ok) {
-          const freshData = await freshRes.json();
-          setFreshPicks(freshData || []);
-        }
+  // Fetch Fresh Picks with Caching
+  const { data: freshPicks = [] } = useQuery({
+    queryKey: ['fresh-picks'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/products/fresh-picks`);
+      if (!res.ok) throw new Error("Failed to load fresh picks");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-        // Load Most Loved
-        const lovedRes = await fetch(`${API_BASE}/api/products/most-loved`);
-        if (lovedRes.ok) {
-          const lovedData = await lovedRes.json();
-          setMostLoved(lovedData || []);
+  // Fetch Most Loved with Caching
+  const { data: mostLoved = [] } = useQuery({
+    queryKey: ['most-loved'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/products/most-loved`);
+      if (!res.ok) throw new Error("Failed to load most loved");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Fetch Main Products (Search / Category / All) with Caching
+  const { data: mainData = { products: [], categories: [] }, isLoading: isMainLoading } = useQuery({
+    queryKey: ['products', selectedCategory, searchQuery],
+    queryFn: async () => {
+      if (searchQuery) {
+        const res = await fetch(`${API_BASE}/api/products/search?q=${encodeURIComponent(searchQuery)}`);
+        if (!res.ok) throw new Error("Search failed");
+        const data = await res.json();
+
+        let products: Product[] = [];
+        let categories: SearchCategory[] = [];
+
+        if (data && typeof data === 'object') {
+          products = Array.isArray(data.products) ? data.products : (Array.isArray(data) ? data : []);
+          categories = Array.isArray(data.categories) ? data.categories : [];
         }
-      } catch (err) {
-        console.warn("Failed to load featured products:", err);
+        return { products, categories };
+      } else {
+        let url = `${API_BASE}/api/products`;
+        if (selectedCategory) {
+          url = `${API_BASE}/api/products?category=${encodeURIComponent(selectedCategory)}`;
+        }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch products");
+        const data = await res.json();
+        const products = Array.isArray(data) ? data : [];
+        return { products, categories: [] };
       }
-    }
-    loadFeaturedProducts();
-  }, []);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    placeholderData: (prev) => prev, // Keep previous data visible while fetching new
+  });
 
-  // Apply URL query (?q=) based search from DB; re-run when location.search changes
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const q = (params.get("q") || "").trim();
-    if (q) {
-      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
-      setSearchQuery(q);
-      setSelectedCategory(null);
-      // fetch from backend search
-      (async () => {
-        try {
-          const res = await fetch(`${API_BASE}/api/products/search?q=${encodeURIComponent(q)}`);
-          if (!res.ok) throw new Error("Search failed");
-          const data = await res.json();
-
-          // Handle new response format with products and categories
-          if (data && typeof data === 'object') {
-            const prods = Array.isArray(data.products) ? data.products : (Array.isArray(data) ? data : []);
-            const cats = Array.isArray(data.categories) ? data.categories : [];
-
-            setAllProducts(prods);
-            setSearchCategories(cats);
-          } else {
-            setAllProducts([]);
-            setSearchCategories([]);
-          }
-        } catch (e) {
-          console.warn("Search error:", e);
-          setAllProducts([]);
-          setSearchCategories([]);
-        }
-      })();
-    } else {
-      // if no query and no category selection, fetch all products from backend
-      if (!selectedCategory) {
-        (async () => {
-          try {
-            const res = await fetch(`${API_BASE}/api/products`);
-            if (res.ok) {
-              const data = await res.json();
-              const prods = Array.isArray(data) ? data : [];
-              setAllProducts(prods);
-            } else {
-              setAllProducts([]);
-            }
-          } catch (e) {
-            console.warn("Failed to fetch products:", e);
-            setAllProducts([]);
-          }
-        })();
-      }
-      setSearchQuery("");
-      setSearchCategories([]);
-    }
-  }, [location.search]);
+  const { products: allProducts, categories: searchCategories } = mainData;
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -151,7 +116,8 @@ const Index = () => {
       <div className="fixed inset-0 bg-pattern opacity-30 pointer-events-none"></div>
 
       <div className="relative z-10">
-        {/* Category Carousel */}
+        {/* Category Carousel - Note: Hero includes the Carousel logically in some designs, but here it's separate? 
+            Original had Hero, then MainCategories, then CategoryCarousel. Keeping order. */}
 
         {/* Hero Section */}
         <Hero />
@@ -159,10 +125,8 @@ const Index = () => {
         {/* Main Top Categories */}
         <MainCategories />
 
+        {/* Category Carousel */}
         <CategoryCarousel />
-
-        {/* Features */}
-
 
         {/* Personalized Recommendations */}
         <RecommendedProducts limit={10} />

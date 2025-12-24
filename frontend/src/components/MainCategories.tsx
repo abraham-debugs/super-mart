@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -11,34 +12,25 @@ type Category = {
     showInNavbar?: boolean;
 };
 
-
-
 export const MainCategories = () => {
     const navigate = useNavigate();
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
 
-    useEffect(() => {
-        async function fetchCategories() {
-            try {
-                const res = await fetch(`${API_BASE}/api/admin/categories`);
-                if (res.ok) {
-                    const data = await res.json();
-                    // Filter to show only categories marked as Main/Navbar
-                    const navbarCategories = data.filter((c: Category) => c.showInNavbar);
-                    setCategories(navbarCategories);
-                }
-            } catch (error) {
-                console.error("Failed to fetch main categories", error);
-            } finally {
-                setLoading(false);
+    const { data: categories = [], isLoading: loading } = useQuery({
+        queryKey: ['main-categories'],
+        queryFn: async () => {
+            const res = await fetch(`${API_BASE}/api/admin/categories`);
+            if (res.ok) {
+                const data = await res.json();
+                // Filter to show only categories marked as Main/Navbar
+                return data.filter((c: Category) => c.showInNavbar);
             }
-        }
-        fetchCategories();
-    }, []);
+            return [];
+        },
+        staleTime: 1000 * 60 * 30, // 30 mins
+    });
 
     const handleScroll = () => {
         if (scrollContainerRef.current) {

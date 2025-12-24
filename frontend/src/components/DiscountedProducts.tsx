@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from './ui/button';
 import { ShoppingCart, ChevronUp, ChevronDown, Tag } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
 
@@ -123,19 +124,17 @@ const MiniProductCard = ({ product }: { product: BackendProduct }) => {
 };
 
 export const DiscountedProducts = ({ className }: DiscountedProductsProps) => {
-    const [products, setProducts] = useState<BackendProduct[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [sectionConfig, setSectionConfig] = useState<{ title: string; subtitle?: string; imageUrl: string; isVisible: boolean; metadata?: any } | null>(null);
+    const { data: fetchedData, isLoading: loading } = useQuery({
+        queryKey: ['discounted-section-config'],
+        queryFn: async () => {
+            let config = null;
+            let products: BackendProduct[] = [];
 
-    useEffect(() => {
-        const fetchData = async () => {
             try {
                 // 1. Fetch Section Config
                 const configRes = await fetch(`${API_BASE}/api/sections/discounted_products`);
-                let config = null;
                 if (configRes.ok) {
                     config = await configRes.json();
-                    setSectionConfig(config);
                 }
 
                 // 2. Build Products URL
@@ -145,7 +144,7 @@ export const DiscountedProducts = ({ className }: DiscountedProductsProps) => {
                     const curatedIds = [
                         ...(meta.orangeProductIds || []),
                         ...(meta.greenProductIds || [])
-                    ].filter(id => id && id.length > 0);
+                    ].filter((id: string) => id && id.length > 0);
 
                     if (curatedIds.length > 0) {
                         url = `${API_BASE}/api/products?ids=${curatedIds.join(',')}`;
@@ -156,17 +155,19 @@ export const DiscountedProducts = ({ className }: DiscountedProductsProps) => {
                 const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
-                    setProducts(Array.isArray(data) ? data : []);
+                    products = Array.isArray(data) ? data : [];
                 }
             } catch (error) {
                 console.error("Failed to fetch discounted products data", error);
-            } finally {
-                setLoading(false);
             }
-        };
 
-        fetchData();
-    }, []);
+            return { config, products };
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes caching
+    });
+
+    const products = fetchedData?.products || [];
+    const sectionConfig = fetchedData?.config || null;
 
     if (loading) return null;
     if (sectionConfig && sectionConfig.isVisible === false) return null;

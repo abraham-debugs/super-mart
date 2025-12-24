@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BalancingLoader } from "@/components/BalancingLoader";
 import { FollowerPointerCard } from "@/components/ui/following-pointer";
+import { useQuery } from "@tanstack/react-query";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const PLACEHOLDER_IMG = "https://placehold.co/80x80";
@@ -50,10 +51,27 @@ const categoryGradients = [
 
 export const CategoryCarousel = () => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState<BackendCategory[]>(fallbackCategories);
-  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(false);
+
+  const { data: categories = fallbackCategories, isLoading: loading } = useQuery({
+    queryKey: ['categories-carousel'],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/categories`);
+        if (!res.ok) return fallbackCategories;
+        const data: BackendCategory[] = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+        return fallbackCategories;
+      } catch (err) {
+        return fallbackCategories;
+      }
+    },
+    staleTime: 1000 * 60 * 30, // 30 mins
+    placeholderData: fallbackCategories,
+  });
 
   // Group categories by parent
   const categoryGroups: CategoryGroup[] = [];
@@ -66,26 +84,6 @@ export const CategoryCarousel = () => {
       categoryGroups.push({ parent, children });
     }
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch(`${API_BASE}/api/admin/categories`);
-        if (!res.ok) return;
-        const data: BackendCategory[] = await res.json();
-        if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setCategories(data);
-        }
-      } catch (_err) {
-        // keep fallbacks
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
 
   const handleCategoryClick = (category: BackendCategory) => {
     setSelectedCategory(category._id);

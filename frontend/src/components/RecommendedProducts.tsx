@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Sparkles, TrendingUp, Star, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { ProductCard } from './ProductCard';
 import type { Product as CartProduct } from '@/types/product';
+import { useQuery } from '@tanstack/react-query';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
 
@@ -33,27 +33,14 @@ interface RecommendedProductsProps {
 export default function RecommendedProducts({ limit = 10, title }: RecommendedProductsProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [strategy, setStrategy] = useState<string>('');
-  const [message, setMessage] = useState<string>('');
+  // const { addToCart } = useCart(); // Not used directly in this refactor, but kept if needed
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    fetchRecommendations();
-  }, [user, limit]);
-
-  const fetchRecommendations = async () => {
-    try {
+  const { data: recommendationsData, isLoading: loading } = useQuery({
+    queryKey: ['recommendations', user?.id, limit],
+    queryFn: async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-        setLoading(false);
-        return;
+        return { recommendations: [], strategy: '', message: '' };
       }
 
       const response = await fetch(`${API_BASE}/api/recommendations/personalized?limit=${limit}`, {
@@ -64,24 +51,29 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
 
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.recommendations || []);
-        setStrategy(data.strategy || '');
-        setMessage(data.message || '');
+        return {
+          recommendations: data.recommendations || [],
+          strategy: data.strategy || '',
+          message: data.message || ''
+        };
       } else if (response.status === 401) {
-        // Token expired or invalid - clear it and don't show recommendations
+        // Token expired or invalid - clear it and specific handling
         console.warn('Authentication failed for recommendations');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        setProducts([]);
+        return { recommendations: [], strategy: '', message: '' };
       }
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      throw new Error('Failed to fetch recommendations');
+    },
+    enabled: !!user, // Only run if user is logged in
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
-  if (!user || products.length === 0) {
+  const products = recommendationsData?.recommendations || [];
+  const strategy = recommendationsData?.strategy || '';
+  const message = recommendationsData?.message || '';
+
+  if (!user || (products.length === 0 && !loading)) {
     return null;
   }
 
@@ -130,11 +122,13 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
                 {title || 'Recommended For You'}
               </h2>
             </div>
-            <div className="flex items-center gap-2 ml-13">
-              <Badge className={`${getStrategyBadgeColor()} border`}>
-                {message}
-              </Badge>
-            </div>
+            {message && (
+              <div className="flex items-center gap-2 ml-13">
+                <Badge className={`${getStrategyBadgeColor()} border`}>
+                  {message}
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
 
@@ -151,7 +145,7 @@ export default function RecommendedProducts({ limit = 10, title }: RecommendedPr
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {products.map((product) => {
+            {products.map((product: Product) => {
               const cartProduct: CartProduct = {
                 id: product._id,
                 name: product.nameEn,
