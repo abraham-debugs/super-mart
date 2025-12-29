@@ -122,7 +122,7 @@ userActivitySchema.index({ lastUpdated: -1 });
 // Method to add viewed product
 userActivitySchema.methods.addViewedProduct = function (productId) {
   const existing = this.viewedProducts.find(
-    v => v.productId.toString() === productId.toString()
+    v => v.productId && v.productId.toString() === productId.toString()
   );
 
   if (existing) {
@@ -159,7 +159,7 @@ userActivitySchema.methods.addPurchasedProduct = function (productId, quantity, 
 // Method to add cart product
 userActivitySchema.methods.addCartProduct = function (productId) {
   const existing = this.cartProducts.find(
-    c => c.productId.toString() === productId.toString() && !c.removed
+    c => c.productId && c.productId.toString() === productId.toString() && !c.removed
   );
 
   if (!existing) {
@@ -176,7 +176,7 @@ userActivitySchema.methods.addCartProduct = function (productId) {
 // Method to add rating
 userActivitySchema.methods.addRating = function (productId, rating, review) {
   const existing = this.ratings.find(
-    r => r.productId.toString() === productId.toString()
+    r => r.productId && r.productId.toString() === productId.toString()
   );
 
   if (existing) {
@@ -213,7 +213,7 @@ userActivitySchema.methods.addSearchQuery = function (query) {
 // Method to update category preference
 userActivitySchema.methods.updateCategoryPreference = function (categoryId) {
   const existing = this.categoryPreferences.find(
-    c => c.categoryId.toString() === categoryId.toString()
+    c => c.categoryId && c.categoryId.toString() === categoryId.toString()
   );
 
   if (existing) {
