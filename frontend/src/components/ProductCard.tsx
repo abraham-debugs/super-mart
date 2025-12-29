@@ -16,7 +16,7 @@ interface ProductCardProps {
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { token } = useAuth() as any;
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
   const discountPercentage = product.originalPrice
@@ -24,11 +24,15 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     : 0;
 
   const handleIncrement = () => setQuantity(q => q + 1);
-  const handleDecrement = () => setQuantity(q => Math.max(1, q - 1));
+  const handleDecrement = () => setQuantity(q => Math.max(0, q - 1));
 
   const handleAddToCart = () => {
+    if (quantity === 0) {
+      setQuantity(1);
+      return;
+    }
     addToCart(product, quantity);
-    setQuantity(1); // Reset after adding
+    setQuantity(0); // Reset after adding
   };
 
   return (
@@ -112,7 +116,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <div className={`flex items-center border border-gray-200 rounded-lg bg-white h-10 w-24 ${product.stock === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
               <button
                 onClick={handleDecrement}
-                disabled={quantity <= 1}
+                disabled={quantity <= 0}
                 className="w-8 h-full flex items-center justify-center text-gray-500 hover:text-green-600 disabled:opacity-50 transition-colors"
               >
                 <span className="text-lg">-</span>
@@ -134,10 +138,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               onClick={handleAddToCart}
               disabled={product.stock === 0}
               variant="outline"
-              className="flex-1 h-10 w-5 -px-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm transition-all duration-200 gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+              className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm transition-all duration-200 gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent px-2"
             >
               <span>{product.stock === 0 ? 'No Stock' : 'Add'}</span>
-              <ShoppingCart className="w-2 h-4" />
+              <ShoppingCart className="w-4 h-4" />
             </Button>
           </div>
         </div>

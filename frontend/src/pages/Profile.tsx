@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Check, User, Package, MapPin, LogOut, Mail, Phone, Home, Lock, ShoppingBag, Calendar, TrendingUp, Crown, CreditCard, Download, FileText, History } from "lucide-react";
 import { AddressBook } from "@/components/AddressBook";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const Profile: React.FC = () => {
   const { user, logout, token } = useAuth() as any;
+  const { addToCart } = useCart();
   const navigate = useNavigate();
 
   // Redirect if not authenticated
@@ -458,7 +460,23 @@ const Profile: React.FC = () => {
                                   variant="outline"
                                   size="sm"
                                   className="flex-1 h-12 rounded-2xl border-gray-200 hover:bg-gray-50 transition-colors"
-                                  onClick={() => navigate(`/shop`)}
+                                  onClick={() => {
+                                    order.items.forEach((item: any) => {
+                                      addToCart({
+                                        id: item.productId || item._id,
+                                        name: item.name,
+                                        price: item.price,
+                                        image: item.imageUrl,
+                                        description: item.description || "",
+                                        category: item.category || "General",
+                                        rating: 0,
+                                        reviews: 0,
+                                        inStock: true,
+                                        stock: 100 // Assume stock is available for re-order or user will find out in cart
+                                      }, item.quantity);
+                                    });
+                                    navigate("/cart");
+                                  }}
                                 >
                                   Buy Again
                                 </Button>

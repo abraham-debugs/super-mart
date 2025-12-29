@@ -79,7 +79,11 @@ export const Header = () => {
               <div className="hidden sm:flex flex-col items-end text-xs mr-2">
                 <span className="text-gray-500">Welcome</span>
                 {user ? (
-                  <Link to="/profile" className="font-bold text-gray-900 hover:text-primary">My Account</Link>
+                  <div className="flex gap-1">
+                    <Link to="/profile" className="font-bold text-gray-900 hover:text-primary">My Account</Link>
+                    <span>/</span>
+                    <button onClick={logout} className="font-bold text-gray-900 hover:text-red-600">Logout</button>
+                  </div>
                 ) : (
                   <div className="flex gap-1">
                     <Link to="/login" className="font-bold text-gray-900 hover:text-primary">Login</Link>
@@ -205,17 +209,61 @@ export const Header = () => {
         {/* Mobile Menu Overlay */}
         {isMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-50 bg-white pt-20 px-4 overflow-y-auto">
+            <div className="absolute top-4 right-4">
+              <Button size="icon" variant="ghost" onClick={() => setIsMenuOpen(false)}>
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
             <nav className="flex flex-col space-y-4">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="text-lg font-semibold py-2 border-b border-gray-100"
+                  className="text-lg font-semibold py-2 border-b border-gray-100 text-gray-900 hover:text-primary transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
                 </Link>
               ))}
+
+              {user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="text-lg font-semibold py-2 border-b border-gray-100 text-gray-900 hover:text-primary transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    My Account
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMenuOpen(false);
+                      navigate('/');
+                    }}
+                    className="text-lg font-semibold py-2 border-b border-gray-100 text-left text-red-600 hover:text-red-700 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col gap-3 pt-4 mt-2 border-t border-gray-100">
+                  <Link
+                    to="/login"
+                    className="w-full bg-primary text-white text-center py-3 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors shadow-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="w-full bg-gray-50 text-gray-900 text-center py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
             </nav>
           </div>
         )}
