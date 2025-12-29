@@ -113,34 +113,37 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           {/* Actions Row */}
           <div className="flex items-center gap-3 pt-2">
             {/* Quantity Selector */}
-            <div className={`flex items-center border border-gray-200 rounded-lg bg-white h-10 w-24 ${product.stock === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-              <button
-                onClick={handleDecrement}
-                disabled={quantity <= 0}
-                className="w-8 h-full flex items-center justify-center text-gray-500 hover:text-green-600 disabled:opacity-50 transition-colors"
-              >
-                <span className="text-lg">-</span>
-              </button>
-              <div className="flex-1 h-full flex items-center justify-center font-semibold text-gray-900 text-sm">
-                {quantity}
+            {product.stock !== 0 && (
+              <div className="flex items-center border border-gray-200 rounded-lg bg-white h-10 w-24">
+                <button
+                  onClick={handleDecrement}
+                  disabled={quantity <= 0}
+                  className="w-8 h-full flex items-center justify-center text-gray-500 hover:text-green-600 disabled:opacity-50 transition-colors"
+                >
+                  <span className="text-lg">-</span>
+                </button>
+                <div className="flex-1 h-full flex items-center justify-center font-semibold text-gray-900 text-sm">
+                  {quantity}
+                </div>
+                <button
+                  onClick={handleIncrement}
+                  disabled={product.stock !== undefined && quantity >= product.stock}
+                  className="w-8 h-full flex items-center justify-center text-gray-500 hover:text-green-600 transition-colors"
+                >
+                  <span className="text-lg">+</span>
+                </button>
               </div>
-              <button
-                onClick={handleIncrement}
-                disabled={product.stock !== undefined && quantity >= product.stock}
-                className="w-8 h-full flex items-center justify-center text-gray-500 hover:text-green-600 transition-colors"
-              >
-                <span className="text-lg">+</span>
-              </button>
-            </div>
+            )}
 
             {/* Add Button */}
             <Button
               onClick={handleAddToCart}
               disabled={product.stock === 0}
               variant="outline"
-              className="flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm transition-all duration-200 gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent px-2"
+              className={`flex-1 h-10 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm transition-all duration-200 gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent px-2 ${product.stock === 0 ? 'w-full' : ''
+                }`}
             >
-              <span>{product.stock === 0 ? 'No Stock' : 'Add'}</span>
+              <span>{product.stock === 0 ? 'Out of Stock' : 'Add'}</span>
               <ShoppingCart className="w-4 h-4" />
             </Button>
           </div>
